@@ -1,9 +1,20 @@
+<?php
+// Iniciar el sistema de sesiones
+session_start();
+
+// Si NO existe una sesión activa, lo regresamos al login
+if (!isset($_SESSION['id_usuario'])) {
+    header("Location: login.php");
+    exit(); // Detenemos la carga de la página
+}
+?>
 <!doctype html>
 <html lang="es" data-bs-theme="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sistema ETS · Panel de Administración</title>
+    <!-- Tus rutas locales (asegúrate de que las carpetas css y js existan en esa ruta) -->
     <link href="./../css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
@@ -50,7 +61,7 @@
                 <ul class="dropdown-menu text-small shadow">
                     <li><a class="dropdown-item" href="#">Mi Perfil</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="#">Cerrar sesión</a></li>
+                    <li><a class="dropdown-item text-danger" href="./../../php/endpoints/logout.php">Cerrar sesión</a></li>
                 </ul>
             </div>
         </div>
