@@ -15,15 +15,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $usuario = $consulta->fetch(PDO::FETCH_ASSOC);
 
-        // ====================================================================
-        // VERIFICACIÓN TEMPORAL EN TEXTO PLANO (MODO DESARROLLO)
-        // Comparamos directamente si la contraseña coincide con lo que hay en BD
-        if ($usuario && $pass_ingresada === $usuario['contrasena_hash']) {
-        // ====================================================================
-        
-        // NOTA PARA EL FUTURO: Cuando ya tengas las contraseñas encriptadas, 
-        // borra la línea del "if" de arriba y descomenta esta de abajo:
-        // if ($usuario && password_verify($pass_ingresada, $usuario['contrasena_hash'])) {
+        if ($usuario && password_verify($pass_ingresada, $usuario['contrasena_hash'])) {
 
             $_SESSION['usuario_correo'] = $usuario['correo'];
             $_SESSION['usuario_id'] = $usuario['id_usuario'];
