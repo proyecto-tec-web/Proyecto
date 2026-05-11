@@ -1,39 +1,43 @@
 <?php
 session_start();
-
-// Si el usuario ya había iniciado sesión, lo mandamos directo al index
-if (isset($_SESSION['id_usuario'])) {
-    header("Location: index.php");
-    exit();
-}
+require_once './../config/db.php';
 
 $error = "";
 
-// Si el formulario fue enviado...
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // 1. Aquí te conectarías a tu Base de Datos real
-    // $conexion = new mysqli("localhost", "root", "", "tu_base_datos");
+    
+    $correo_ingresado = $_POST['correo']; 
+    $pass_ingresada = $_POST['password'];
 
-    $correo = $_POST['correo'];
-    $password = $_POST['password'];
+    try {
+        $consulta = $conexion->prepare("SELECT id_usuario, correo, contrasena_hash, rol FROM usuario WHERE correo = ?");
+        $consulta->execute([$correo_ingresado]);
 
-    // --- SIMULACIÓN DE BASE DE DATOS PARA QUE LO PRUEBES ---
-    // (Borra esto y usa tu BD real consultando la tabla 'usuario')
-    $correo_bd = "admin@ipn.mx";
-    $password_bd = "12345"; 
-    // -------------------------------------------------------
+        $usuario = $consulta->fetch(PDO::FETCH_ASSOC);
 
-    if ($correo === $correo_bd && $password === $password_bd) {
-        // 2. Si es correcto, creamos las variables de sesión
-        $_SESSION['id_usuario'] = 100; // El ID de tu tabla usuario
-        $_SESSION['rol'] = 'Administrador';
-        $_SESSION['correo'] = $correo;
+        // ====================================================================
+        // VERIFICACIÓN TEMPORAL EN TEXTO PLANO (MODO DESARROLLO)
+        // Comparamos directamente si la contraseña coincide con lo que hay en BD
+        if ($usuario && $pass_ingresada === $usuario['contrasena_hash']) {
+        // ====================================================================
+        
+        // NOTA PARA EL FUTURO: Cuando ya tengas las contraseñas encriptadas, 
+        // borra la línea del "if" de arriba y descomenta esta de abajo:
+        // if ($usuario && password_verify($pass_ingresada, $usuario['contrasena_hash'])) {
 
-        // 3. ¡LA REDIRECCIÓN! Lo mandamos a tu dashboard
-        header("Location: ./../../frondend/html/index.php");
-        exit();
-    } else {
-        $error = "Correo o contraseña incorrectos.";
+            $_SESSION['usuario_correo'] = $usuario['correo'];
+            $_SESSION['usuario_id'] = $usuario['id_usuario'];
+            $_SESSION['usuario_rol'] = $usuario['rol'];
+            
+            header("Location: ./../../frondend/html/index.php");
+            exit; 
+            
+        } else {
+            $error = "Correo o contraseña incorrecta. Intenta de nuevo.";
+        }
+
+    } catch (Exception $e) {
+        $error = "Algo salió mal con la base de datos: " . $e->getMessage();
     }
 }
 ?>
@@ -58,13 +62,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <p class="text-muted">Ingresa tus credenciales</p>
         </div>
 
-        <!-- Muestra error si se equivocan -->
         <?php if($error != ""): ?>
             <div class="alert alert-danger p-2 text-center"><?php echo $error; ?></div>
         <?php endif; ?>
 
-        <!-- Formulario -->
-        <form method="POST" action="login.php">
+        <form method="POST" action="">
             <div class="mb-3">
                 <label class="form-label fw-bold">Correo Institucional</label>
                 <input type="email" name="correo" class="form-control" required placeholder="ejemplo@ipn.mx">
