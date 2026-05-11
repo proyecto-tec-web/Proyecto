@@ -19,14 +19,20 @@ CREATE TABLE salon(
     numero VARCHAR(20) NOT NULL
 );
 
-CREATE TABLE materia(
+CREATE TABLE area (
+    id_area INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE materia (
     id_materia INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     semestre INT NOT NULL,
     id_carrera INT NOT NULL,
-    FOREIGN KEY (id_carrera) REFERENCES carrera(id_carrera)
+    id_area INT NOT NULL,
+    FOREIGN KEY (id_carrera) REFERENCES carrera(id_carrera),
+    FOREIGN KEY (id_area) REFERENCES area(id_area)
 );
-
 CREATE TABLE alumno(
     id_alumno INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
@@ -86,6 +92,10 @@ CREATE TABLE inscripcion_examen(
     FOREIGN KEY (id_examen) REFERENCES examen(id_examen)
 );
 
+-- -----------------------------------------------------
+-- INSERCIÓN DE DATOS DE PRUEBA
+-- -----------------------------------------------------
+
 -- 1. Usuarios
 INSERT INTO usuario (correo, contrasena_hash, rol) VALUES 
 ('admin@ipn.mx', 'admin123', 'admin'),
@@ -97,29 +107,35 @@ INSERT INTO carrera (nombre, acronimo) VALUES
 ('Ingeniería en Sistemas Computacionales', 'ISC'),
 ('Ingeniería en Inteligencia Artificial', 'IIA');
 
--- 3. Salones
+-- 3. Áreas (Nueva tabla)
+INSERT INTO area (nombre) VALUES 
+('Ciencias Básicas'), 
+('Sistemas y Programación'), 
+('Comunicaciones y Redes');
+
+-- 4. Salones
 INSERT INTO salon (edificio, piso, numero) VALUES 
 ('Edificio 1', 'Planta Baja', '1101'),
 ('Edificio de Pesados', 'Piso 2', 'Lab-Redes');
 
--- 4. Materias (Conectadas a ISC que es id 1)
-INSERT INTO materia (nombre, semestre, id_carrera) VALUES 
-('Cálculo Aplicado', 2, 1),
-('Sistemas Operativos', 5, 1),
-('Redes de Computadoras', 6, 1);
+-- 5. Materias (Ahora incluyen el id_area)
+INSERT INTO materia (nombre, semestre, id_carrera, id_area) VALUES 
+('Cálculo Aplicado', 2, 1, 1),      -- Área 1: Ciencias Básicas
+('Sistemas Operativos', 5, 1, 2),    -- Área 2: Sistemas y Programación
+('Redes de Computadoras', 6, 1, 3);  -- Área 3: Comunicaciones y Redes
 
--- 5. Profesor (Conectado al usuario id 2)
+-- 6. Profesor
 INSERT INTO profesor (nombre, apellido_materno, apellido_paterno, boleta, id_usuario) VALUES 
 ('Isaac', 'Newton', 'Pérez', 'P000001', 2);
 
--- 6. Alumno (Conectado al usuario id 3 y carrera id 1)
+-- 7. Alumno
 INSERT INTO alumno (nombre, apellido_materno, apellido_paterno, boleta, situacion_academica, id_carrera, id_usuario) VALUES 
 ('Cris', 'G', 'M', '2026123456', 'Regular', 1, 3);
 
--- 7. Kardex (Simulamos que se reprobó Redes para que pueda presentar ETS)
+-- 8. Kardex
 INSERT INTO kardex (id_alumno, id_materia, calificacion) VALUES 
 (1, 3, 5.00);
 
--- 8. Examen ETS
+-- 9. Examen
 INSERT INTO examen (fecha, hora_inicio, hora_fin, estado, periodo_escolar, tipo_examen, cupo, id_materia, id_profesor, id_salon) VALUES 
 ('2026-06-15', '10:00:00', '12:00:00', 'Abierto', '2026-2', 'Ordinario', 30, 3, 1, 2);
