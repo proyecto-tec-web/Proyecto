@@ -75,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .bg-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to right, rgba(0, 31, 63, 0.85), rgba(0, 0, 0, 0.6));
+            background: linear-gradient(to right, rgba(0, 8, 15, 0.85), rgba(0, 0, 0, 0.6));
             z-index: -1;
         }
 
