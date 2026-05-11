@@ -27,10 +27,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             $_SESSION['usuario_correo'] = $usuario['correo'];
             $_SESSION['usuario_id'] = $usuario['id_usuario'];
+            // Compatibilidad: algunas páginas comprueban `id_usuario`
+            $_SESSION['id_usuario'] = $usuario['id_usuario'];
             $_SESSION['usuario_rol'] = $usuario['rol'];
             
-            header("Location: ./../../frondend/html/index.php");
-            exit; 
+            header("Location: ../../frondend/html/index.php");//No FUNCIONA 
+            exit();
             
         } else {
             $error = "Correo o contraseña incorrecta. Intenta de nuevo.";
