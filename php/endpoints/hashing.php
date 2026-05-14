@@ -1,10 +1,11 @@
 <?php
 require_once './../config/db.php';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $correo = $_POST['correo'];
-    $nueva_pass = $_POST['nueva_password'];
-
+//if ($_SERVER["REQUEST_METHOD"] == "POST") {
+//    $correo = $_POST['correo'];
+//    $nueva_pass = $_POST['nueva_password'];
+    $correo = "admin@ipn.mx";
+    $nueva_pass = "admin123";
     try {
         $password_hasheada = password_hash($nueva_pass, PASSWORD_DEFAULT);
 
@@ -22,5 +23,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } catch (PDOException $e) {
         echo "Error: " . $e->getMessage();
     }
-}
+//}
 ?>
