@@ -98,9 +98,9 @@ CREATE TABLE inscripcion_examen(
 
 -- 1. Usuarios
 INSERT INTO usuario (correo, contrasena_hash, rol) VALUES 
-('admin@ipn.mx', 'admin123', 'admin'),
-('profesor@ipn.mx', 'profe123', 'profesor'),
-('crisg@alumno.ipn.mx', 'cris123', 'alumno');
+('admin@ipn.mx', ' $2y$10$eNuITl8qnHkEn6c7MhaXQeRCgyBmXpHCpBJBy26Bk1p7YS.u0C2W2', 'admin'),
+('profesor@ipn.mx', ' $2y$10$eNuITl8qnHkEn6c7MhaXQeRCgyBmXpHCpBJBy26Bk1p7YS.u0C2W2', 'profesor'),
+('crisg@alumno.ipn.mx', ' $2y$10$eNuITl8qnHkEn6c7MhaXQeRCgyBmXpHCpBJBy26Bk1p7YS.u0C2W2', 'alumno');
 
 -- 2. Carreras
 INSERT INTO carrera (nombre, acronimo) VALUES 
