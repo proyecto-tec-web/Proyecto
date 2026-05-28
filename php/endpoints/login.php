@@ -1,31 +1,87 @@
 <?php
+// 1. Iniciar sesión y conectar a la BD
 session_start();
 require_once './../config/db.php';
 
 $error = "";
 
+// 2. Procesar el formulario cuando el usuario presiona "Entrar"
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     $correo_ingresado = $_POST['correo']; 
     $pass_ingresada = $_POST['password'];
 
     try {
+        // Buscar al usuario por correo
         $consulta = $conexion->prepare("SELECT id_usuario, correo, contrasena_hash, rol FROM usuario WHERE correo = ?");
         $consulta->execute([$correo_ingresado]);
-
         $usuario = $consulta->fetch(PDO::FETCH_ASSOC);
 
-        if ($usuario && password_verify($pass_ingresada, $usuario['contrasena_hash'])) {
+        if ($usuario) {
+            $pass_guardada = $usuario['contrasena_hash'];
+            $acceso_concedido = false;
 
-            $_SESSION['usuario_correo'] = $usuario['correo'];
-            $_SESSION['usuario_id'] = $usuario['id_usuario'];
-            // Compatibilidad: algunas páginas comprueban `id_usuario`
-            $_SESSION['id_usuario'] = $usuario['id_usuario'];
-            $_SESSION['usuario_rol'] = $usuario['rol'];
-            
-            header("Location: ../../frondend/html/index.php");//No FUNCIONA 
-            exit();
-            
+            // 3. DETECTAR TIPO DE CONTRASEÑA (Bcrypt siempre empieza con $2y$)
+            $es_hash_seguro = (substr($pass_guardada, 0, 4) === '$2y$');
+
+            if (!$es_hash_seguro) {
+                
+                // ==========================================
+                // MODO MIGRACIÓN: Es texto plano (Ej. admin123)
+                // ==========================================
+                if ($pass_ingresada === $pass_guardada) {
+                    $acceso_concedido = true;
+                    
+                    // Hasheamos la contraseña en este preciso instante
+                    $nuevo_hash = password_hash($pass_ingresada, PASSWORD_DEFAULT);
+                    
+                    // Actualizamos la base de datos silenciosamente
+                    $update_stmt = $conexion->prepare("UPDATE usuario SET contrasena_hash = ? WHERE id_usuario = ?");
+                    $update_stmt->execute([$nuevo_hash, $usuario['id_usuario']]);
+                }
+                
+            } else {
+                
+                if (password_verify($pass_ingresada, $pass_guardada)) {
+                    $acceso_concedido = true;
+                }
+            }
+
+            if ($acceso_concedido) {
+                
+                $_SESSION['usuario_correo'] = $usuario['correo'];
+                $_SESSION['usuario_id'] = $usuario['id_usuario'];
+                $_SESSION['id_usuario'] = $usuario['id_usuario'];
+                $_SESSION['usuario_rol'] = $usuario['rol'];
+                
+                $rol_normalizado = strtolower(trim($usuario['rol']));
+
+
+                switch ($rol_normalizado) {
+                    case 'administrador':
+                    case 'admin':
+                        header("Location: ../../frondend/html/index.php");
+                        break;
+                        
+                    case 'alumno':
+                        header("Location: ../../frondend/html/panel_alumno.php");
+                        break;
+                        
+                    case 'profesor':
+                    case 'sinodal':
+                        header("Location: ../../frondend/html/panel_profesor.php");
+                        break;
+                        
+                    default:
+                        header("Location: ../../frondend/html/index.php");
+                        break;
+                }
+                exit(); 
+                
+            } else {
+                $error = "Correo o contraseña incorrecta. Intenta de nuevo.";
+            }
+
         } else {
             $error = "Correo o contraseña incorrecta. Intenta de nuevo.";
         }
@@ -35,7 +91,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
