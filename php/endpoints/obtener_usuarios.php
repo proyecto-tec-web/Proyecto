@@ -1,5 +1,4 @@
 <?php
-// php/endpoints/obtener_usuarios.php
 header('Content-Type: application/json'); // Le decimos al navegador que devolveremos JSON
 require_once './../config/db.php';
 

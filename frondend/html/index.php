@@ -104,6 +104,6 @@ if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="./../js/app.js?v=999"></script>
+    <script src="./../js/app.js?v=1000"></script>
 </body>
 </html>

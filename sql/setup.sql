@@ -1,4 +1,4 @@
-
+SET NAMES utf8mb4;
 CREATE TABLE carrera (
     id_carrera INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
