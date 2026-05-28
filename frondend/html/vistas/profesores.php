@@ -1,3 +1,9 @@
+<?php require_once '../../../php/endpoints/seguridad_admin.php'; ?>
+
+<div class="alert alert-info border-0 shadow-sm rounded-3">
+    <i class="bi bi-info-circle me-2"></i><strong>Buscador rápido:</strong>...
+</div>
+
 <div class="d-flex justify-content-end mb-3">
     <button class="btn btn-success"><i class="bi bi-person-plus"></i> Dar de alta Profesor</button>
 </div>

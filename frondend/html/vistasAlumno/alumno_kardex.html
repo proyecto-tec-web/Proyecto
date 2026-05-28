@@ -1,0 +1,64 @@
+<div class="container-fluid p-0">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="btn-group" role="group" aria-label="Filtros de materias">
+            <button type="button" class="btn btn-outline-secondary active">Mostrar Todas</button>
+            <button type="button" class="btn btn-outline-success">Aprobadas</button>
+            <button type="button" class="btn btn-outline-danger">Reprobadas</button>
+        </div>
+        
+        <button class="btn btn-outline-dark btn-sm">
+            <i class="bi bi-printer"></i> Imprimir Kardex
+        </button>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary">
+                    <tr>
+                        <th class="ps-4 py-3">Semestre</th>
+                        <th class="py-3">Unidad de Aprendizaje (Materia)</th>
+                        <th class="py-3">Calificación</th>
+                        <th class="py-3">Tipo de Examen</th>
+                        <th class="pe-4 py-3 text-center">Resultado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="ps-4 text-muted">1er Semestre</td>
+                        <td class="fw-bold">Álgebra Lineal</td>
+                        <td>9</td>
+                        <td>Ordinario</td>
+                        <td class="text-center"><span class="badge bg-success-subtle text-success">Aprobada</span></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 text-muted">2do Semestre</td>
+                        <td class="fw-bold">Programación Orientada a Objetos</td>
+                        <td>8</td>
+                        <td>Ordinario</td>
+                        <td class="text-center"><span class="badge bg-success-subtle text-success">Aprobada</span></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 text-muted">3er Semestre</td>
+                        <td class="fw-bold">Estructuras de Datos</td>
+                        <td class="text-danger fw-bold">5</td>
+                        <td>Ordinario</td>
+                        <td class="text-center"><span class="badge bg-danger-subtle text-danger">Reprobada</span></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 text-muted">3er Semestre</td>
+                        <td class="fw-bold">Cálculo Aplicado</td>
+                        <td class="text-danger fw-bold">NP</td>
+                        <td>Extraordinario</td>
+                        <td class="text-center"><span class="badge bg-danger-subtle text-danger">Reprobada</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="mt-5 text-muted" style="font-size: 0.85rem;">
+        © 2026 <strong>Sistema de Gestión Escolar</strong>. Portal del Alumno (ESCOM).
+    </footer>
+</div>

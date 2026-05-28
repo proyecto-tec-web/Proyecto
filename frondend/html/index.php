@@ -1,12 +1,22 @@
 <?php
-// Iniciar el sistema de sesiones
 session_start();
 
-// Si NO existe una sesión activa, lo regresamos al login
 if (!isset($_SESSION['id_usuario'])) {
-    // Redirigimos al endpoint real de login en el proyecto
     header("Location: ./../../php/endpoints/login.php");
-    exit(); // Detenemos la carga de la página
+    exit(); 
+}
+
+$rol_usuario = strtolower(trim($_SESSION['usuario_rol']));
+
+if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
+    if ($rol_usuario === 'alumno') {
+        header("Location: panel_alumno.php");
+    } elseif ($rol_usuario === 'profesor' || $rol_usuario === 'sinodal') {
+        header("Location: panel_profesor.php");
+    } else {
+        header("Location: ./../../php/endpoints/login.php");
+    }
+    exit(); 
 }
 ?>
 <!doctype html>
@@ -94,6 +104,6 @@ if (!isset($_SESSION['id_usuario'])) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="./../js/app.js"></script>
+    <script src="./../js/app.js?v=999"></script>
 </body>
 </html>

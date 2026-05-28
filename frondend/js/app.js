@@ -1,8 +1,6 @@
 let chartInscripciones = null;
 
-// Cargar el dashboard apenas abres la página
 document.addEventListener("DOMContentLoaded", () => {
-    // Buscamos el primer enlace del menú para pasarlo como elemento activo
     const primerEnlace = document.querySelector('.menu-link');
     if (primerEnlace) {
         cargarVista('dashboard', primerEnlace);
@@ -12,24 +10,20 @@ document.addEventListener("DOMContentLoaded", () => {
 function cargarVista(nombreVista, elementoClick) {
     const contenedor = document.getElementById('view-container');
     
-    // 1. Mostrar estado de carga
     contenedor.innerHTML = `
         <div class="text-center mt-5">
             <div class="spinner-border text-primary" role="status"></div>
             <p class="mt-2 text-muted">Consultando al servidor...</p>
         </div>`;
 
-    // 2. Pedimos .php con anti-caché
-    fetch(`vistas/${nombreVista}.html?v=${Date.now()}`)
+    fetch(`/frondend/html/vistas/${nombreVista}.php?v=${Date.now()}`)
         .then(respuesta => {
-            if (!respuesta.ok) throw new Error(`El archivo vistas/${nombreVista}.html no existe.`);
+            if (!respuesta.ok) throw new Error(`No se encontró el archivo en: /frondend/html/vistas/${nombreVista}.php`);
             return respuesta.text();
         })
         .then(html => {
-            // 3. Inyectar el HTML procesado
             contenedor.innerHTML = html;
             
-            // 4. Actualizar título y colores del menú
             if (elementoClick) {
                 document.querySelectorAll('.menu-link').forEach(enlace => {
                     enlace.classList.remove('active');
@@ -38,20 +32,17 @@ function cargarVista(nombreVista, elementoClick) {
                 elementoClick.classList.add('active');
                 elementoClick.classList.remove('link-body-emphasis');
                 
-                // Actualizar el H1 de arriba
                 const tituloSeccion = document.getElementById('titulo-seccion');
                 if (tituloSeccion) {
                     tituloSeccion.innerText = elementoClick.innerText.trim();
                 }
             }
 
-            // 5. Cerrar menú en móviles
             let bsOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('sidebarMenu'));
             if (bsOffcanvas && window.innerWidth < 768) {
                 bsOffcanvas.hide();
             }
 
-            // 6. Ejecutar lógica específica de la vista
             inicializarLogicaVista(nombreVista);
         })
         .catch(error => {
@@ -63,29 +54,51 @@ function cargarVista(nombreVista, elementoClick) {
         });
 }
 
-// =========================================================================
-// ¡AQUÍ ESTÁ LA FUNCIÓN QUE FALTABA!
-// =========================================================================
 function inicializarLogicaVista(nombreVista) {
-    
-    // ... (Aquí está tu código del dashboard y la gráfica) ...
+    if (nombreVista === 'dashboard') {
+        const kpiExamenes = document.getElementById('kpi-examenes');
+        const kpiInscritos = document.getElementById('kpi-inscritos');
+        const kpiPagos = document.getElementById('kpi-pagos');
+        const kpiActas = document.getElementById('kpi-actas');
 
-    // NUEVA LÓGICA: Si entramos a la vista de usuarios
+        if(kpiExamenes) kpiExamenes.innerText = "24";
+        if(kpiInscritos) kpiInscritos.innerText = "342";
+        if(kpiPagos) kpiPagos.innerText = "45";
+        if(kpiActas) kpiActas.innerText = "8 / 24";
+
+        const canvas = document.getElementById('inscripcionesChart');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            if (chartInscripciones) chartInscripciones.destroy(); 
+            
+            chartInscripciones = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Cálculo Dif.', 'Física Clásica', 'Álgebra', 'Química', 'Programación'],
+                    datasets: [{
+                        label: 'Alumnos inscritos a ETS',
+                        data: [120, 95, 80, 65, 45],
+                        backgroundColor: 'rgba(13, 110, 253, 0.8)',
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+    }
+
     if (nombreVista === 'usuarios') {
         cargarTablaUsuarios();
     }
 }
 
-// Nueva función para pedir los datos al servidor
 function cargarTablaUsuarios() {
     const tbody = document.getElementById('cuerpo-tabla-usuarios');
     const alertaError = document.getElementById('alerta-error-usuarios');
 
-    // 1. Llamamos a tu archivo PHP (API)
     fetch('/php/endpoints/obtener_usuarios.php')
-        .then(respuesta => respuesta.json()) // Recibimos el JSON
+        .then(respuesta => respuesta.json())
         .then(datos => {
-            
             if (datos.status === 'error') {
                 alertaError.classList.remove('d-none');
                 alertaError.innerText = "Error BD: " + datos.message;
@@ -93,7 +106,6 @@ function cargarTablaUsuarios() {
                 return;
             }
 
-            // 2. Si todo salió bien, vaciamos la tabla y la llenamos
             tbody.innerHTML = ''; 
             
             if (datos.data.length === 0) {
@@ -101,7 +113,6 @@ function cargarTablaUsuarios() {
                 return;
             }
 
-            // 3. Recorremos los datos y creamos el HTML fila por fila
             datos.data.forEach(user => {
                 let colorBadge = (user.rol === 'Administrador') ? 'danger' : 'primary';
                 
@@ -120,7 +131,7 @@ function cargarTablaUsuarios() {
                         </td>
                     </tr>
                 `;
-                tbody.innerHTML += filaHTML; // Inyectamos la fila
+                tbody.innerHTML += filaHTML;
             });
         })
         .catch(error => {

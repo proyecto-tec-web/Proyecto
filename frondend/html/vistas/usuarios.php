@@ -1,3 +1,9 @@
+<?php require_once '../../../php/endpoints/seguridad_admin.php'; ?>
+
+<div class="alert alert-info border-0 shadow-sm rounded-3">
+    <i class="bi bi-info-circle me-2"></i><strong>Buscador rápido:</strong>...
+</div>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div class="alert alert-warning border-0 shadow-sm rounded-3 mb-0 flex-grow-1 me-3">
         <i class="bi bi-shield-exclamation me-2"></i><strong>Seguridad:</strong> Control de accesos al sistema.

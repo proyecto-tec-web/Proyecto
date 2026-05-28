@@ -1,3 +1,9 @@
+<?php require_once '../../../php/endpoints/seguridad_admin.php'; ?>
+
+<div class="alert alert-info border-0 shadow-sm rounded-3">
+    <i class="bi bi-info-circle me-2"></i><strong>Buscador rápido:</strong>...
+</div>
+
 <div class="row">
     <div class="col-12 col-md-5 mb-3">
         <label class="form-label fw-bold">Selecciona el Examen para calificar:</label>

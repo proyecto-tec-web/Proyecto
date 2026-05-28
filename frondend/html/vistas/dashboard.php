@@ -1,3 +1,9 @@
+<?php require_once './../../../php/endpoints/seguridad_admin.php'; ?>
+
+<div class="alert alert-info border-0 shadow-sm rounded-3">
+    <i class="bi bi-info-circle me-2"></i><strong>Buscador rápido:</strong>...
+</div>
+
 <div class="row g-3 mb-4">
     <div class="col-12 col-sm-6 col-xl-3"><div class="card shadow-sm border-0 h-100 rounded-3 border-start border-primary border-4"><div class="card-body">
         <h6 class="text-muted fw-semibold">ETS Programados</h6><h3 class="mb-0 fw-bold text-primary" id="kpi-examenes">--</h3>
