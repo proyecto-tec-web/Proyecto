@@ -16,9 +16,10 @@ function cargarVista(nombreVista, elementoClick) {
             <p class="mt-2 text-muted">Consultando al servidor...</p>
         </div>`;
 
-    fetch(`/frondend/html/vistas/${nombreVista}.php?v=${Date.now()}`)
+    // Ruta con destructor de caché integrado
+    fetch(`vistas/${nombreVista}.php?v=${Date.now()}`)
         .then(respuesta => {
-            if (!respuesta.ok) throw new Error(`No se encontró el archivo en: /frondend/html/vistas/${nombreVista}.php`);
+            if (!respuesta.ok) throw new Error(`El archivo vistas/${nombreVista}.php no respondió correctamente.`);
             return respuesta.text();
         })
         .then(html => {
@@ -43,18 +44,25 @@ function cargarVista(nombreVista, elementoClick) {
                 bsOffcanvas.hide();
             }
 
+            // Despierta los modales inyectados dinámicamente
+            document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => new bootstrap.Modal(document.querySelector(btn.getAttribute('data-bs-target'))));
+
             inicializarLogicaVista(nombreVista);
         })
         .catch(error => {
             contenedor.innerHTML = `
                 <div class="alert alert-danger shadow-sm border-0 border-start border-danger border-4 rounded-3">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <strong>Error de carga:</strong> ${error.message}
+                    <strong>Fallo de conexión:</strong> ${error.message}
                 </div>`;
         });
 }
 
 function inicializarLogicaVista(nombreVista) {
+    
+    // ==========================================
+    // VISTA: DASHBOARD
+    // ==========================================
     if (nombreVista === 'dashboard') {
         const kpiExamenes = document.getElementById('kpi-examenes');
         const kpiInscritos = document.getElementById('kpi-inscritos');
@@ -87,47 +95,204 @@ function inicializarLogicaVista(nombreVista) {
         }
     }
 
+    // ==========================================
+    // VISTA: USUARIOS
+    // ==========================================
     if (nombreVista === 'usuarios') {
         cargarTablaUsuarios();
+    }
+
+    // ==========================================
+    // VISTA: EXÁMENES
+    // ==========================================
+    if (nombreVista === 'examenes') {
+        cargarTablaExamenes();
+
+        fetch('/php/endpoints/obtener_catalogos_ets.php')
+            .then(res => res.json())
+            .then(data => {
+                console.log("👉 2. Datos recibidos del servidor:", data);
+                
+                if(data.status === 'success') {
+                    const selectMateria = document.getElementById('select-materia');
+                    if (selectMateria) {
+                        selectMateria.innerHTML = '<option value="" selected disabled>Selecciona una materia...</option>';
+                        data.materias.forEach(m => {
+                            selectMateria.innerHTML += `<option value="${m.id_materia}">${m.nombre}</option>`;
+                        });
+                    }
+
+                    const selectSinodal = document.getElementById('select-sinodal');
+                    if (selectSinodal) {
+                        selectSinodal.innerHTML = '<option value="" selected disabled>Asigna un sinodal...</option>';
+                        data.profesores.forEach(p => {
+                            selectSinodal.innerHTML += `<option value="${p.id_profesor}">${p.nombre}</option>`;
+                        });
+                    }
+
+                    const selectSalon = document.getElementById('select-salon');
+                    if (selectSalon) {
+                        selectSalon.innerHTML = '<option value="" selected disabled>Selecciona un salón...</option>';
+                        data.salones.forEach(s => {
+                            selectSalon.innerHTML += `<option value="${s.id_salon}">${s.nombre}</option>`;
+                        });
+                    }
+                    console.log("👉 3. Menús desplegables llenados con éxito.");
+                } else {
+                    console.error("❌ Error del servidor:", data.message);
+                }
+            })
+            .catch(err => console.error("❌ Fallo de JavaScript al procesar catálogos:", err));
+
+        const btnGuardarETS = document.getElementById('btn-guardar-ets');
+        if (btnGuardarETS) {
+            btnGuardarETS.addEventListener('click', () => {
+                const materia = document.getElementById('select-materia').value;
+                const sinodal = document.getElementById('select-sinodal').value;
+                const fecha = document.getElementById('input-fecha').value;
+                const hora = document.getElementById('input-hora').value;
+                const salon = document.getElementById('select-salon').value;
+                const cupo = document.getElementById('input-cupo').value;
+
+                if(!materia || !sinodal || !fecha || !hora || !salon || !cupo) {
+                    alert("Por favor, llena todos los campos del formulario.");
+                    return;
+                }
+
+                btnGuardarETS.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+                btnGuardarETS.disabled = true;
+
+                const datosETS = { materia, sinodal, fecha, hora, salon, cupo };
+
+                fetch('/php/endpoints/crear_ets.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosETS)
+                })
+                .then(respuesta => respuesta.json())
+                .then(datos => {
+                    if (datos.status === 'success') {
+                        // Ocultamos el modal
+                        const modalElement = document.getElementById('modalNuevoETS');
+                        if(modalElement) {
+                            const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                            modalInstance.hide();
+                        }
+                        
+                        document.getElementById('form-nuevo-ets').reset();
+                        btnGuardarETS.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
+                        btnGuardarETS.disabled = false;
+                        alert("¡Examen programado con éxito!"); 
+                    } else {
+                        alert("Error: " + datos.message);
+                        btnGuardarETS.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
+                        btnGuardarETS.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error("❌ Error guardando ETS:", error);
+                    alert("Ocurrió un error al intentar comunicar con el servidor.");
+                    btnGuardarETS.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
+                    btnGuardarETS.disabled = false;
+                });
+            });
+        }
     }
 }
 
 function cargarTablaUsuarios() {
     const tbody = document.getElementById('cuerpo-tabla-usuarios');
     const alertaError = document.getElementById('alerta-error-usuarios');
+    
+    if(!tbody) return;
 
     fetch('/php/endpoints/obtener_usuarios.php')
         .then(respuesta => respuesta.json())
         .then(datos => {
             if (datos.status === 'error') {
-                alertaError.classList.remove('d-none');
-                alertaError.innerText = "Error BD: " + datos.message;
+                if(alertaError){
+                    alertaError.classList.remove('d-none');
+                    alertaError.innerText = "Error BD: " + datos.message;
+                }
                 tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Fallo la conexión.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = ''; 
             
-            if (datos.data.length === 0) {
+            if (datos.data && datos.data.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay usuarios registrados.</td></tr>`;
                 return;
             }
 
-            datos.data.forEach(user => {
-                let colorBadge = (user.rol === 'Administrador') ? 'danger' : 'primary';
+            if(datos.data){
+                datos.data.forEach(user => {
+                    let colorBadge = (user.rol === 'Administrador' || user.rol === 'admin') ? 'danger' : 'primary';
+                    
+                    let filaHTML = `
+                        <tr>
+                            <td class="ps-4 fw-bold text-secondary">#${user.id_usuario}</td>
+                            <td>${user.correo}</td>
+                            <td>
+                                <span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">
+                                    ${user.rol}
+                                </span>
+                            </td>
+                            <td class="pe-4 text-end">
+                                <button class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += filaHTML;
+                });
+            }
+        })
+        .catch(error => {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error al procesar los datos.</td></tr>`;
+            console.error("Error:", error);
+        });
+}
+
+function cargarTablaExamenes() {
+    const tbody = document.getElementById('tbody-examenes');
+    if(!tbody) return;
+
+    fetch('/php/endpoints/obtener_examenes.php')
+        .then(respuesta => respuesta.json())
+        .then(datos => {
+            if (datos.status === 'error') {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error: ${datos.message}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = ''; // Limpiamos la tabla
+            
+            if (datos.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Aún no hay exámenes programados.</td></tr>`;
+                return;
+            }
+
+            // Pintamos cada examen en la tabla
+            datos.data.forEach(ex => {
+                // Le damos color al estado (verde si está Abierto, azul si está Programado)
+                let colorBadge = (ex.estado === 'Programado') ? 'primary' : (ex.estado === 'Abierto' ? 'success' : 'secondary');
                 
                 let filaHTML = `
                     <tr>
-                        <td class="ps-4 fw-bold text-secondary">#${user.id_usuario}</td>
-                        <td>${user.correo}</td>
+                        <td class="ps-4 fw-bold text-secondary">#${ex.id_examen}</td>
+                        <td class="fw-semibold">${ex.materia}</td>
                         <td>
-                            <span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">
-                                ${user.rol}
-                            </span>
+                            <div>${ex.fecha}</div>
+                            <small class="text-muted">${ex.hora_inicio} - ${ex.hora_fin}</small>
                         </td>
+                        <td>${ex.sinodal}</td>
+                        <td>${ex.salon}</td>
+                        <td>${ex.cupo} alumnos</td>
                         <td class="pe-4 text-end">
-                            <button class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            <span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">
+                                ${ex.estado}
+                            </span>
                         </td>
                     </tr>
                 `;
@@ -135,7 +300,7 @@ function cargarTablaUsuarios() {
             });
         })
         .catch(error => {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error al procesar los datos.</td></tr>`;
-            console.error("Error:", error);
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error de conexión al cargar la tabla.</td></tr>`;
+            console.error("Error cargando tabla de exámenes:", error);
         });
 }

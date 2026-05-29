@@ -52,13 +52,19 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Materia a Evaluar</label>
                             <select class="form-select" id="select-materia" required>
-                                <option value="" selected disabled>Cargando materias...</option>
+                                <option value="" selected disabled>Selecciona una materia...</option>
+                                <option value="1">Cálculo Diferencial</option>
+                                <option value="2">Física Clásica</option>
+                                <option value="3">Álgebra Lineal</option>
+                                <option value="4">Programación Orientada a Objetos</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Profesor (Sinodal)</label>
                             <select class="form-select" id="select-sinodal" required>
-                                <option value="" selected disabled>Cargando profesores...</option>
+                                <option value="" selected disabled>Asigna un sinodal...</option>
+                                <option value="1">Dr. Pérez Gómez</option>
+                                <option value="2">Mtra. López Martínez</option>
                             </select>
                         </div>
                     </div>
@@ -77,13 +83,11 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Salón Asignado</label>
-                            <select class="form-select" id="select-salon" required>
-                                <option value="" selected disabled>Cargando salones...</option>
-                            </select>
+                            <input type="text" class="form-control" id="input-salon" placeholder="Ej. 1101, 2204" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Cupo Máximo</label>
-                            <input type="number" class="form-control" id="input-cupo" placeholder="Ej. 40" min="1" required>
+                            <input type="number" class="form-control" id="input-cupo" placeholder="Ej. 40" min="1" max="100" required>
                         </div>
                     </div>
                     
