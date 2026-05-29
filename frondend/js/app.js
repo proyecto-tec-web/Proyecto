@@ -8,6 +8,12 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function cargarVista(nombreVista, elementoClick) {
+    // 🧹 Limpieza: Evita que el fondo oscuro se quede pegado al cambiar de menú
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+
     const contenedor = document.getElementById('view-container');
     
     contenedor.innerHTML = `
@@ -44,8 +50,16 @@ function cargarVista(nombreVista, elementoClick) {
                 bsOffcanvas.hide();
             }
 
-            // Despierta los modales inyectados dinámicamente
-            document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => new bootstrap.Modal(document.querySelector(btn.getAttribute('data-bs-target'))));
+            // 🛡️ Inicialización SEGURA de Modales para no romper Bootstrap
+            document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
+                const targetAttr = btn.getAttribute('data-bs-target');
+                if (targetAttr) {
+                    const targetModal = document.querySelector(targetAttr);
+                    if (targetModal) { 
+                        new bootstrap.Modal(targetModal);
+                    }
+                }
+            });
 
             inicializarLogicaVista(nombreVista);
         })
@@ -108,42 +122,31 @@ function inicializarLogicaVista(nombreVista) {
     if (nombreVista === 'examenes') {
         cargarTablaExamenes();
 
+        // Llenar selectores para AMBOS modales (Crear y Editar)
         fetch('/php/endpoints/obtener_catalogos_ets.php')
             .then(res => res.json())
             .then(data => {
-                console.log("👉 2. Datos recibidos del servidor:", data);
-                
                 if(data.status === 'success') {
-                    const selectMateria = document.getElementById('select-materia');
-                    if (selectMateria) {
-                        selectMateria.innerHTML = '<option value="" selected disabled>Selecciona una materia...</option>';
-                        data.materias.forEach(m => {
-                            selectMateria.innerHTML += `<option value="${m.id_materia}">${m.nombre}</option>`;
-                        });
+                    const mapas = {
+                        'select-materia': 'materias', 'select-sinodal': 'profesores', 'select-salon': 'salones',
+                        'edit-materia': 'materias', 'edit-sinodal': 'profesores', 'edit-salon': 'salones'
+                    };
+                    for(let id in mapas) {
+                        let select = document.getElementById(id);
+                        if(select) {
+                            select.innerHTML = '<option value="" selected disabled>Seleccione...</option>';
+                            data[mapas[id]].forEach(item => {
+                                select.innerHTML += `<option value="${item.id_materia || item.id_profesor || item.id_salon}">${item.nombre}</option>`;
+                            });
+                        }
                     }
-
-                    const selectSinodal = document.getElementById('select-sinodal');
-                    if (selectSinodal) {
-                        selectSinodal.innerHTML = '<option value="" selected disabled>Asigna un sinodal...</option>';
-                        data.profesores.forEach(p => {
-                            selectSinodal.innerHTML += `<option value="${p.id_profesor}">${p.nombre}</option>`;
-                        });
-                    }
-
-                    const selectSalon = document.getElementById('select-salon');
-                    if (selectSalon) {
-                        selectSalon.innerHTML = '<option value="" selected disabled>Selecciona un salón...</option>';
-                        data.salones.forEach(s => {
-                            selectSalon.innerHTML += `<option value="${s.id_salon}">${s.nombre}</option>`;
-                        });
-                    }
-                    console.log("👉 3. Menús desplegables llenados con éxito.");
                 } else {
-                    console.error("❌ Error del servidor:", data.message);
+                    console.error("❌ Error del servidor al cargar catálogos:", data.message);
                 }
             })
             .catch(err => console.error("❌ Fallo de JavaScript al procesar catálogos:", err));
 
+        // Evento para CREAR Examen
         const btnGuardarETS = document.getElementById('btn-guardar-ets');
         if (btnGuardarETS) {
             btnGuardarETS.addEventListener('click', () => {
@@ -172,17 +175,20 @@ function inicializarLogicaVista(nombreVista) {
                 .then(respuesta => respuesta.json())
                 .then(datos => {
                     if (datos.status === 'success') {
-                        // Ocultamos el modal
                         const modalElement = document.getElementById('modalNuevoETS');
                         if(modalElement) {
                             const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
                             modalInstance.hide();
+                            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                            document.body.classList.remove('modal-open');
+                            document.body.style = '';
                         }
                         
                         document.getElementById('form-nuevo-ets').reset();
                         btnGuardarETS.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
                         btnGuardarETS.disabled = false;
                         alert("¡Examen programado con éxito!"); 
+                        cargarTablaExamenes(); 
                     } else {
                         alert("Error: " + datos.message);
                         btnGuardarETS.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
@@ -194,6 +200,57 @@ function inicializarLogicaVista(nombreVista) {
                     alert("Ocurrió un error al intentar comunicar con el servidor.");
                     btnGuardarETS.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
                     btnGuardarETS.disabled = false;
+                });
+            });
+        }
+
+        // Evento para ACTUALIZAR Examen Editado
+        const btnActualizarETS = document.getElementById('btn-actualizar-ets');
+        if (btnActualizarETS) {
+            btnActualizarETS.addEventListener('click', () => {
+                const datosEdit = {
+                    id: document.getElementById('edit-id').value,
+                    materia: document.getElementById('edit-materia').value,
+                    sinodal: document.getElementById('edit-sinodal').value,
+                    fecha: document.getElementById('edit-fecha').value,
+                    hora: document.getElementById('edit-hora').value,
+                    salon: document.getElementById('edit-salon').value,
+                    cupo: document.getElementById('edit-cupo').value
+                };
+
+                btnActualizarETS.disabled = true;
+                btnActualizarETS.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Actualizando...';
+
+                fetch('/php/endpoints/actualizar_ets.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosEdit)
+                })
+                .then(res => res.json())
+                .then(datos => {
+                    if (datos.status === 'success') {
+                        const modalEdit = document.getElementById('modalEditarETS');
+                        if(modalEdit) {
+                            const modalInstance = bootstrap.Modal.getInstance(modalEdit) || new bootstrap.Modal(modalEdit);
+                            modalInstance.hide();
+                            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                            document.body.classList.remove('modal-open');
+                            document.body.style = '';
+                        }
+                        
+                        alert("¡Examen actualizado con éxito!");
+                        cargarTablaExamenes();
+                    } else {
+                        alert("Error: " + datos.message);
+                    }
+                    btnActualizarETS.disabled = false;
+                    btnActualizarETS.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Actualizar Examen';
+                })
+                .catch(err => {
+                    console.error("Error al actualizar:", err);
+                    alert("Ocurrió un error de conexión.");
+                    btnActualizarETS.disabled = false;
+                    btnActualizarETS.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Actualizar Examen';
                 });
             });
         }
@@ -254,7 +311,6 @@ function cargarTablaUsuarios() {
         });
 }
 
-
 function cargarTablaExamenes() {
     const tbody = document.getElementById('tbody-examenes');
     if(!tbody) return;
@@ -267,16 +323,14 @@ function cargarTablaExamenes() {
                 return;
             }
 
-            tbody.innerHTML = ''; // Limpiamos la tabla
+            tbody.innerHTML = ''; 
             
             if (datos.data.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">Aún no hay exámenes programados.</td></tr>`;
                 return;
             }
 
-            // Pintamos cada examen en la tabla
             datos.data.forEach(ex => {
-                // Le damos color al estado (verde si está Abierto, azul si está Programado)
                 let colorBadge = (ex.estado === 'Programado') ? 'primary' : (ex.estado === 'Abierto' ? 'success' : 'secondary');
                 
                 let filaHTML = `
@@ -297,104 +351,88 @@ function cargarTablaExamenes() {
                         </td>
                         
                         <td class="text-center" style="width: 1%; white-space: nowrap;">
-    <div class="d-flex justify-content-center align-items-center gap-1">
-        <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1 btn-modificar" data-id="${ex.id_examen}" title="Modificar examen" style="font-size: 0.85rem;">
-            <i class="bi bi-pencil-square me-1"></i>Modificar
-        </button>
-        <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-eliminar" data-id="${ex.id_examen}" title="Eliminar examen" style="font-size: 0.85rem;">
-            <i class="bi bi-trash3 me-1"></i>Eliminar
-        </button>
-    </div>
-</td>
+                            <div class="d-flex justify-content-center align-items-center gap-1">
+                                <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1 btn-modificar" data-id="${ex.id_examen}" title="Modificar examen" style="font-size: 0.85rem;">
+                                    <i class="bi bi-pencil-square me-1"></i>Modificar
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-eliminar" data-id="${ex.id_examen}" title="Eliminar examen" style="font-size: 0.85rem;">
+                                    <i class="bi bi-trash3 me-1"></i>Eliminar
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 `;
                 tbody.innerHTML += filaHTML;
             });
-            // ... Aquí termina tu datos.data.forEach ...
 
-// 🎯 CAPTURA DE EVENTOS DINÁMICOS (Pon esto justo abajo del bucle de la tabla)
-const botonesEliminar = tbody.querySelectorAll('.btn-eliminar');
-botonesEliminar.forEach(boton => {
-    boton.addEventListener('click', function() {
-        const idExamen = this.getAttribute('data-id');
-        
-        // Ejecutamos la confirmación y la petición PDO
-        if (confirm(`¿Estás seguro de que deseas eliminar el examen #${idExamen}? Esta acción no se puede deshacer.`)) {
+            // 🎯 ASIGNAR EVENTOS A LOS BOTONES GENERADOS
             
-            fetch('/php/endpoints/eliminar_ets.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_examen: idExamen })
-            })
-            .then(respuesta => respuesta.json())
-            .then(datos => {
-                if (datos.status === 'success') {
-                    alert("¡Examen eliminado con éxito!");
-                    cargarTablaExamenes(); // Recargamos la tabla al instante
-                } else {
-                    alert("Error al eliminar: " + datos.message);
-                }
-            })
-            .catch(error => {
-                console.error("❌ Error en la petición:", error);
-                alert("Ocurrió un error al intentar conectar con el servidor.");
+            // Botones Eliminar
+            const botonesEliminar = tbody.querySelectorAll('.btn-eliminar');
+            botonesEliminar.forEach(boton => {
+                boton.addEventListener('click', function() {
+                    const idExamen = this.getAttribute('data-id');
+                    if (confirm(`¿Estás seguro de que deseas eliminar el examen #${idExamen}? Esta acción no se puede deshacer.`)) {
+                        fetch('/php/endpoints/eliminar_ets.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id_examen: idExamen })
+                        })
+                        .then(respuesta => respuesta.json())
+                        .then(datos => {
+                            if (datos.status === 'success') {
+                                alert("¡Examen eliminado con éxito!");
+                                cargarTablaExamenes(); 
+                            } else {
+                                alert("Error al eliminar: " + datos.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error("❌ Error en la petición:", error);
+                            alert("Ocurrió un error al intentar conectar con el servidor.");
+                        });
+                    }
+                });
             });
 
-        }
-    });
-});
+            // Botones Modificar (Abre el modal con los datos inyectados)
+            const botonesModificar = tbody.querySelectorAll('.btn-modificar');
+            botonesModificar.forEach(boton => {
+                boton.addEventListener('click', function() {
+                    const idExamen = this.getAttribute('data-id');
+                    
+                    // Consultar los datos del examen a PHP
+                    fetch(`/php/endpoints/obtener_examen_id.php?id=${idExamen}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // Inyectar datos en el formulario
+                                document.getElementById('edit-id').value = data.examen.id_examen;
+                                document.getElementById('edit-materia').value = data.examen.id_materia;
+                                document.getElementById('edit-sinodal').value = data.examen.id_profesor;
+                                document.getElementById('edit-fecha').value = data.examen.fecha;
+                                document.getElementById('edit-hora').value = data.examen.hora_inicio;
+                                document.getElementById('edit-salon').value = data.examen.id_salon;
+                                document.getElementById('edit-cupo').value = data.examen.cupo;
+
+                                // Mostrar el modal
+                                const modalElement = document.getElementById('modalEditarETS');
+                                const modalInstance = new bootstrap.Modal(modalElement);
+                                modalInstance.show();
+                            } else {
+                                alert("Error al cargar los datos del examen: " + data.message);
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Error al obtener datos:", err);
+                            alert("Hubo un problema de conexión con el servidor.");
+                        });
+                });
+            });
+
         })
         .catch(error => {
             tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Error de conexión al cargar la tabla.</td></tr>`;
             console.error("Error cargando tabla de exámenes:", error);
         });
-
-
-
-
-        function confirmarEliminarExamen(idExamen) {
-    // 1. Una confirmación nativa para evitar clicks por accidente
- // Aseguramos que pertenezca al objeto global window
-// Declaración explícita en el entorno global
-function confirmarEliminarExamen(idExamen) {
-    ejecutarFlujoEliminacion(idExamen);
-}
-
-// Mapeo directo al objeto Window para el atributo onclick del HTML
-window.confirmarEliminarExamen = confirmarEliminarExamen;
-// 🌍 HACEMOS LA FUNCIÓN GLOBAL PARA QUE EL ONCLICK DEL HTML LA ENCUENTRE
-window.confirmarEliminarExamen = function(idExamen) {
-    
-    if (confirm(`¿Estás seguro de que deseas eliminar el examen #${idExamen}? Esta acción no se puede deshacer.`)) {
-        
-        fetch('/php/endpoints/eliminar_ets.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_examen: idExamen })
-        })
-        .then(respuesta => respuesta.json())
-        .then(datos => {
-            if (datos.status === 'success') {
-                alert("¡Examen eliminado con éxito!");
-                
-                // Ejecutamos la recarga de la tabla (asegúrate de que esta función también sea accesible)
-                if (typeof cargarTablaExamenes === 'function') {
-                    cargarTablaExamenes();
-                } else if (window.cargarTablaExamenes) {
-                    window.cargarTablaExamenes();
-                }
-            } else {
-                alert("Error al eliminar: " + datos.message);
-            }
-        })
-        .catch(error => {
-            console.error("❌ Error en la petición:", error);
-            alert("Ocurrió un error al intentar conectar con el servidor.");
-        });
-    }
-};
-}
-
-
-
 }
