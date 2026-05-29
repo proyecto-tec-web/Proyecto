@@ -14,7 +14,7 @@ if ($datos) {
 
         $password_hash = password_hash($datos['password'], PASSWORD_DEFAULT);
         
-        $sql = "INSERT INTO usuario (correo, password, rol) VALUES (?, ?, ?)";
+        $sql = "INSERT INTO usuario (correo, contrasena_hash, rol) VALUES (?, ?, ?)";
         $stmt = $conexion->prepare($sql);
         $stmt->execute([$datos['correo'], $password_hash, $datos['rol']]);
         
