@@ -8,19 +8,21 @@ if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol']
 }
 
 try {
-    // 1. Materias (Solo pedimos el ID y el Nombre, sin asteriscos)
     $stmtMateria = $conexion->query("SELECT id_materia, nombre FROM materia");
     $materias = $stmtMateria->fetchAll(PDO::FETCH_ASSOC);
-
-    // 2. Profesores (Pedimos el ID y construimos el Nombre completo)
-    $stmtProfesor = $conexion->query("SELECT id_profesor, CONCAT(nombre, ' ', apellido_paterno, ' ', apellido_materno) AS nombre FROM profesor");
+    $sqlProfesor = "
+        SELECT p.id_profesor, CONCAT(p.nombre, ' ', p.apellido_paterno, ' ', p.apellido_materno) AS nombre 
+        FROM profesor p
+        INNER JOIN usuario u ON p.id_usuario = u.id_usuario
+        WHERE u.estado = 'Activo' OR u.estado IS NULL
+    ";
+    $stmtProfesor = $conexion->query($sqlProfesor);
     $profesores = $stmtProfesor->fetchAll(PDO::FETCH_ASSOC);
 
-    // 3. Salones (Pedimos el ID y construimos el Nombre del salón)
+
     $stmtSalon = $conexion->query("SELECT id_salon, CONCAT(edificio, ' - ', piso, ' - ', numero) AS nombre FROM salon");
     $salones = $stmtSalon->fetchAll(PDO::FETCH_ASSOC);
 
-    // Si todo sale bien, empaquetamos el JSON limpio
     echo json_encode([
         "status" => "success",
         "materias" => $materias,

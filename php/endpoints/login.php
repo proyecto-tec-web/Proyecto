@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $pass_ingresada = $_POST['password'];
 
     try {
-        $consulta = $conexion->prepare("SELECT id_usuario, correo, contrasena_hash, rol FROM usuario WHERE correo = ?");
+        $consulta = $conexion->prepare("SELECT id_usuario, correo, contrasena_hash, rol FROM usuario WHERE correo = ? AND (estado = 'Activo' OR estado IS NULL)");
         $consulta->execute([$correo_ingresado]);
         $usuario = $consulta->fetch(PDO::FETCH_ASSOC);
 

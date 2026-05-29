@@ -34,3 +34,74 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="modalNuevoUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white border-bottom-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2"></i>Registrar Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="form-nuevo-usuario">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="input-correo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Contraseña</label>
+                        <input type="password" class="form-control" id="input-password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Rol en el Sistema</label>
+                        <select class="form-select" id="select-rol" required>
+                            <option value="" selected disabled>Selecciona un rol...</option>
+                            <option value="Administrador">Administrador</option>
+                            <option value="Profesor">Profesor</option>
+                            <option value="Alumno">Alumno</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary fw-bold" id="btn-guardar-usuario">Guardar Usuario</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark border-bottom-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Editar Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="form-editar-usuario">
+                    <input type="hidden" id="edit-user-id">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="edit-user-correo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nueva Contraseña <small class="text-muted">(Dejar en blanco para no cambiar)</small></label>
+                        <input type="password" class="form-control" id="edit-user-password">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Rol en el Sistema</label>
+                        <select class="form-select" id="edit-user-rol" required>
+                            <option value="Administrador">Administrador</option>
+                            <option value="Profesor">Profesor</option>
+                            <option value="Alumno">Alumno</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning fw-bold text-dark" id="btn-actualizar-usuario">Actualizar Usuario</button>
+            </div>
+        </div>
+    </div>
+</div>
