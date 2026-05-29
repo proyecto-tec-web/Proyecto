@@ -1,3 +1,6 @@
+// =================================================================
+// MÓDULO INDEPENDIENTE: GESTIÓN DE ALUMNOS Y KARDEX
+// =================================================================
 
 function iniciarVistaAlumnos() {
     cargarTablaAlumnos();
@@ -44,7 +47,6 @@ function cargarTablaAlumnos() {
             datos.data.forEach(al => {
                 let badgeSit = (al.situacion_academica === 'Regular') ? 'success' : (al.situacion_academica === 'Irregular' ? 'warning' : 'danger');
                 
-                // 🛠️ AQUÍ INYECTAMOS LOS ID A LOS BOTONES
                 tbody.innerHTML += `
                     <tr>
                         <td class="ps-4 fw-bold text-secondary">${al.boleta}</td>
@@ -63,7 +65,11 @@ function cargarTablaAlumnos() {
                 `;
             });
 
-            // 1. Botón Editar
+            // ==========================================
+            // EVENTOS DE LOS BOTONES DE LA TABLA
+            // ==========================================
+            
+            // 1. Botón Editar (¡CORREGIDO!)
             tbody.querySelectorAll('.btn-editar-alumno').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const idAlumno = this.getAttribute('data-id');
@@ -75,7 +81,7 @@ function cargarTablaAlumnos() {
                                 document.getElementById('edit-alum-id').value = data.alumno.id_alumno;
                                 document.getElementById('edit-alum-boleta').value = data.alumno.boleta;
                                 document.getElementById('edit-alum-carrera').value = data.alumno.id_carrera;
-                                document.getElementById('edit-alum-situacion').value = data.alumno.situacion_academica;
+                                // ELIMINAMOS LA LÍNEA QUE ROMPÍA EL CÓDIGO AQUÍ
                                 document.getElementById('edit-alum-nombre').value = data.alumno.nombre;
                                 document.getElementById('edit-alum-paterno').value = data.alumno.apellido_paterno;
                                 document.getElementById('edit-alum-materno').value = data.alumno.apellido_materno;
@@ -87,10 +93,12 @@ function cargarTablaAlumnos() {
                         });
                 });
             });
+
+            // 2. Botón Kardex
             tbody.querySelectorAll('.btn-kardex').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const idAlumno = this.getAttribute('data-id');
-                    const nombreAlumno = this.closest('tr').cells[1].innerText; // Sacamos el nombre de la tabla
+                    const nombreAlumno = this.closest('tr').cells[1].innerText;
 
                     document.getElementById('kardex-nombre-alumno').innerText = `Kardex: ${nombreAlumno}`;
 
@@ -106,7 +114,6 @@ function cargarTablaAlumnos() {
                                 } else {
                                     data.data.forEach(item => {
                                         let calif = parseFloat(item.calificacion);
-                                        // Rojo si reprobó, verde si aprobó
                                         let claseColor = (calif < 6) ? 'text-danger fw-bold' : 'text-success fw-bold';
                                         
                                         tbodyKardex.innerHTML += `
@@ -120,8 +127,6 @@ function cargarTablaAlumnos() {
                                 }
                                 
                                 new bootstrap.Modal(document.getElementById('modalKardex')).show();
-                                
-                                // Refrescamos la tabla azul de atrás por si su situación académica cambió al abrir el Kardex
                                 cargarTablaAlumnos(); 
                             } else {
                                 alert("Error al cargar Kardex: " + data.message);
@@ -186,7 +191,7 @@ function configurarEventosAlumnos() {
         });
     }
 
-    // ACTUALIZAR ALUMNO
+    // ACTUALIZAR ALUMNO (¡CORREGIDO!)
     const btnActualizar = document.getElementById('btn-actualizar-alumno');
     if(btnActualizar) {
         btnActualizar.addEventListener('click', () => {
@@ -194,7 +199,7 @@ function configurarEventosAlumnos() {
                 id: document.getElementById('edit-alum-id').value,
                 boleta: document.getElementById('edit-alum-boleta').value,
                 carrera: document.getElementById('edit-alum-carrera').value,
-                situacion: document.getElementById('edit-alum-situacion').value,
+                // ELIMINAMOS LA LÍNEA QUE ROMPÍA EL CÓDIGO AQUÍ
                 nombre: document.getElementById('edit-alum-nombre').value,
                 paterno: document.getElementById('edit-alum-paterno').value,
                 materno: document.getElementById('edit-alum-materno').value
@@ -224,6 +229,7 @@ function configurarEventosAlumnos() {
         });
     }
 
+    // MAGIA DEL BUSCADOR COMBINADO
     const buscador = document.getElementById('buscador-alumnos');
     const filtroSituacion = document.getElementById('filtro-situacion');
 
@@ -234,20 +240,13 @@ function configurarEventosAlumnos() {
         const filas = document.querySelectorAll('#tbody-alumnos tr');
         
         filas.forEach(fila => {
-            // Evitamos que oculte el mensaje de "Cargando..." o "Tabla vacía"
             if(fila.cells.length > 1) { 
                 const textoFila = fila.innerText.toLowerCase();
-                
-                // La situación académica está en la 4ta columna (índice 3)
                 const situacionFila = fila.cells[3].innerText.trim();
                 
-                // Revisamos si cumple con lo que el usuario escribió
                 const pasaFiltroTexto = textoFila.includes(textoBuscar);
-                
-                // Revisamos si cumple con el selector (Regular/Irregular/Todos)
                 const pasaFiltroEstado = (estadoBuscar === 'Todos') || (situacionFila === estadoBuscar);
                 
-                // Si pasa AMBAS pruebas, lo mostramos. Si no, lo escondemos.
                 if (pasaFiltroTexto && pasaFiltroEstado) {
                     fila.style.display = '';
                 } else {
@@ -257,10 +256,6 @@ function configurarEventosAlumnos() {
         });
     }
 
-    if (buscador) {
-        buscador.addEventListener('keyup', aplicarFiltros);
-    }
-    if (filtroSituacion) {
-        filtroSituacion.addEventListener('change', aplicarFiltros);
-    }
+    if (buscador) buscador.addEventListener('keyup', aplicarFiltros);
+    if (filtroSituacion) filtroSituacion.addEventListener('change', aplicarFiltros);
 }
