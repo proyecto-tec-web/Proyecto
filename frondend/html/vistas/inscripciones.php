@@ -1,7 +1,7 @@
 <?php require_once '../../../php/endpoints/seguridad_admin.php'; ?>
 
 <div class="alert alert-info border-0 shadow-sm rounded-3">
-    <i class="bi bi-info-circle me-2"></i><strong>Buscador rápido:</strong>...
+    <i class="bi bi-info-circle me-2"></i><strong>Inscribir un alumno</strong>...
 </div>
 
 <div class="card shadow-sm border-0 rounded-3">
