@@ -23,7 +23,8 @@
                         <th>Sinodal</th>
                         <th>Salón</th>
                         <th>Cupo</th>
-                        <th class="pe-4 text-end">Estado</th>
+                        <th>Estado</th>
+                        <th class="pe-4 text-end">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tbody-examenes">

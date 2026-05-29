@@ -254,6 +254,7 @@ function cargarTablaUsuarios() {
         });
 }
 
+
 function cargarTablaExamenes() {
     const tbody = document.getElementById('tbody-examenes');
     if(!tbody) return;
@@ -262,14 +263,14 @@ function cargarTablaExamenes() {
         .then(respuesta => respuesta.json())
         .then(datos => {
             if (datos.status === 'error') {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error: ${datos.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Error: ${datos.message}</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = ''; // Limpiamos la tabla
             
             if (datos.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Aún no hay exámenes programados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">Aún no hay exámenes programados.</td></tr>`;
                 return;
             }
 
@@ -289,18 +290,111 @@ function cargarTablaExamenes() {
                         <td>${ex.sinodal}</td>
                         <td>${ex.salon}</td>
                         <td>${ex.cupo} alumnos</td>
-                        <td class="pe-4 text-end">
+                        <td>
                             <span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">
                                 ${ex.estado}
                             </span>
                         </td>
+                        
+                        <td class="text-center" style="width: 1%; white-space: nowrap;">
+    <div class="d-flex justify-content-center align-items-center gap-1">
+        <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1 btn-modificar" data-id="${ex.id_examen}" title="Modificar examen" style="font-size: 0.85rem;">
+            <i class="bi bi-pencil-square me-1"></i>Modificar
+        </button>
+        <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-eliminar" data-id="${ex.id_examen}" title="Eliminar examen" style="font-size: 0.85rem;">
+            <i class="bi bi-trash3 me-1"></i>Eliminar
+        </button>
+    </div>
+</td>
                     </tr>
                 `;
                 tbody.innerHTML += filaHTML;
             });
+            // ... Aquí termina tu datos.data.forEach ...
+
+// 🎯 CAPTURA DE EVENTOS DINÁMICOS (Pon esto justo abajo del bucle de la tabla)
+const botonesEliminar = tbody.querySelectorAll('.btn-eliminar');
+botonesEliminar.forEach(boton => {
+    boton.addEventListener('click', function() {
+        const idExamen = this.getAttribute('data-id');
+        
+        // Ejecutamos la confirmación y la petición PDO
+        if (confirm(`¿Estás seguro de que deseas eliminar el examen #${idExamen}? Esta acción no se puede deshacer.`)) {
+            
+            fetch('/php/endpoints/eliminar_ets.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_examen: idExamen })
+            })
+            .then(respuesta => respuesta.json())
+            .then(datos => {
+                if (datos.status === 'success') {
+                    alert("¡Examen eliminado con éxito!");
+                    cargarTablaExamenes(); // Recargamos la tabla al instante
+                } else {
+                    alert("Error al eliminar: " + datos.message);
+                }
+            })
+            .catch(error => {
+                console.error("❌ Error en la petición:", error);
+                alert("Ocurrió un error al intentar conectar con el servidor.");
+            });
+
+        }
+    });
+});
         })
         .catch(error => {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error de conexión al cargar la tabla.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Error de conexión al cargar la tabla.</td></tr>`;
             console.error("Error cargando tabla de exámenes:", error);
         });
+
+
+
+
+        function confirmarEliminarExamen(idExamen) {
+    // 1. Una confirmación nativa para evitar clicks por accidente
+ // Aseguramos que pertenezca al objeto global window
+// Declaración explícita en el entorno global
+function confirmarEliminarExamen(idExamen) {
+    ejecutarFlujoEliminacion(idExamen);
+}
+
+// Mapeo directo al objeto Window para el atributo onclick del HTML
+window.confirmarEliminarExamen = confirmarEliminarExamen;
+// 🌍 HACEMOS LA FUNCIÓN GLOBAL PARA QUE EL ONCLICK DEL HTML LA ENCUENTRE
+window.confirmarEliminarExamen = function(idExamen) {
+    
+    if (confirm(`¿Estás seguro de que deseas eliminar el examen #${idExamen}? Esta acción no se puede deshacer.`)) {
+        
+        fetch('/php/endpoints/eliminar_ets.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_examen: idExamen })
+        })
+        .then(respuesta => respuesta.json())
+        .then(datos => {
+            if (datos.status === 'success') {
+                alert("¡Examen eliminado con éxito!");
+                
+                // Ejecutamos la recarga de la tabla (asegúrate de que esta función también sea accesible)
+                if (typeof cargarTablaExamenes === 'function') {
+                    cargarTablaExamenes();
+                } else if (window.cargarTablaExamenes) {
+                    window.cargarTablaExamenes();
+                }
+            } else {
+                alert("Error al eliminar: " + datos.message);
+            }
+        })
+        .catch(error => {
+            console.error("❌ Error en la petición:", error);
+            alert("Ocurrió un error al intentar conectar con el servidor.");
+        });
+    }
+};
+}
+
+
+
 }

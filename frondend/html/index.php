@@ -22,7 +22,7 @@ if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
 <!doctype html>
 <html lang="es" data-bs-theme="light">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sistema ETS · Panel de Administración</title>
     <link href="./../css/bootstrap.min.css" rel="stylesheet">
@@ -104,6 +104,6 @@ if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="./../js/app.js?v=1000"></script>
+    <script src="./../js/app.js?v=1001"></script>
 </body>
 </html>
