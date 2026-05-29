@@ -291,6 +291,14 @@ function inicializarLogicaVista(nombreVista) {
             });
         }
     }
+    
+    if (nombreVista === 'alumnos') {
+        if (typeof iniciarVistaAlumnos === 'function') {
+            iniciarVistaAlumnos();
+        } else {
+            console.error("El archivo alumnos.js no está cargado correctamente.");
+        }
+    }
 }
 
 // ==========================================
