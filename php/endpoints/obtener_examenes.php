@@ -2,6 +2,10 @@
 session_start();
 require_once '../config/db.php';
 
+// ⏱️ Usamos la hora de la Ciudad de México
+date_default_timezone_set('America/Mexico_City');
+$fecha_hora_actual = date('Y-m-d H:i:s'); 
+
 // Validar que sea administrador
 if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'admin' && strtolower(trim($_SESSION['usuario_rol'])) !== 'administrador')) {
     echo json_encode(["status" => "error", "message" => "Acceso denegado."]);
@@ -9,7 +13,13 @@ if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol']
 }
 
 try {
-    // Cruzamos las 4 tablas para traer los nombres reales en lugar de puros IDs numéricos
+    // 🚀 NIVEL DIOS (REGLA FINANCIERA): Cerramos el examen exactamente 2 días (48 horas) ANTES de su hora de inicio.
+    // Si la fecha del examen es menor o igual a "hoy + 2 días", lo cierra automáticamente.
+    $sqlCierre = "UPDATE examen SET estado = 'Cerrado' WHERE CONCAT(fecha, ' ', hora_inicio) <= DATE_ADD(?, INTERVAL 2 DAY) AND estado = 'Abierto'";
+    $stmtCierre = $conexion->prepare($sqlCierre);
+    $stmtCierre->execute([$fecha_hora_actual]);
+
+    // Cruzamos las tablas para traer la información a la vista
     $sql = "SELECT 
                 e.id_examen,
                 m.nombre AS materia,

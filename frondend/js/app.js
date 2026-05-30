@@ -185,7 +185,7 @@ function inicializarLogicaVista(nombreVista) {
     }
 
     // ==========================================
-    // VISTA: EXÁMENES (Intacto, exactamente igual)
+    // VISTA: EXÁMENES (Con Apertura Manual y Buscador)
     // ==========================================
     if (nombreVista === 'examenes') {
         cargarTablaExamenes();
@@ -209,6 +209,22 @@ function inicializarLogicaVista(nombreVista) {
                     }
                 }
             });
+
+        // Magia del buscador de Exámenes en tiempo real
+        const buscadorExamenes = document.getElementById('buscador-examenes');
+        if (buscadorExamenes) {
+            buscadorExamenes.addEventListener('keyup', function() {
+                const textoBuscar = this.value.toLowerCase();
+                const filas = document.querySelectorAll('#tbody-examenes tr');
+                
+                filas.forEach(fila => {
+                    if(fila.cells.length > 1) { 
+                        const textoFila = fila.innerText.toLowerCase();
+                        fila.style.display = textoFila.includes(textoBuscar) ? '' : 'none';
+                    }
+                });
+            });
+        }
 
         const btnGuardarETS = document.getElementById('btn-guardar-ets');
         if (btnGuardarETS) {
@@ -402,6 +418,16 @@ function cargarTablaExamenes() {
 
             datos.data.forEach(ex => {
                 let colorBadge = (ex.estado === 'Programado') ? 'primary' : (ex.estado === 'Abierto' ? 'success' : 'secondary');
+                
+                // Botón dinámico: Solo aparece si está "Programado"
+                let btnAbrirHTML = '';
+                if (ex.estado === 'Programado') {
+                    btnAbrirHTML = `
+                        <button class="btn btn-outline-success btn-sm rounded-pill px-2 py-1 btn-abrir-ets" data-id="${ex.id_examen}" title="Abrir Inscripciones">
+                            <i class="bi bi-unlock-fill me-1"></i>Abrir
+                        </button>`;
+                }
+
                 let filaHTML = `
                     <tr>
                         <td class="ps-4 fw-bold text-secondary">#${ex.id_examen}</td>
@@ -413,11 +439,12 @@ function cargarTablaExamenes() {
                         <td><span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">${ex.estado}</span></td>
                         <td class="text-center" style="width: 1%; white-space: nowrap;">
                             <div class="d-flex justify-content-center align-items-center gap-1">
-                                <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1 btn-modificar-ets" data-id="${ex.id_examen}">
-                                    <i class="bi bi-pencil-square me-1"></i>Modificar
+                                ${btnAbrirHTML}
+                                <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1 btn-modificar-ets" data-id="${ex.id_examen}" title="Modificar">
+                                    <i class="bi bi-pencil-square"></i>
                                 </button>
-                                <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-eliminar-ets" data-id="${ex.id_examen}">
-                                    <i class="bi bi-trash3 me-1"></i>Eliminar
+                                <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-eliminar-ets" data-id="${ex.id_examen}" title="Eliminar">
+                                    <i class="bi bi-trash3"></i>
                                 </button>
                             </div>
                         </td>
@@ -426,7 +453,29 @@ function cargarTablaExamenes() {
                 tbody.innerHTML += filaHTML;
             });
 
-            // Eventos Eliminar ETS
+            // 1. Evento Abrir ETS (El nuevo botón manual)
+            tbody.querySelectorAll('.btn-abrir-ets').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const idExamen = this.getAttribute('data-id');
+                    if (confirm("¿Estás seguro de ABRIR las inscripciones para este examen? Los alumnos ya podrán registrarse.")) {
+                        fetch('/php/endpoints/abrir_examen.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id_examen: idExamen })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                cargarTablaExamenes();
+                            } else {
+                                alert("Error: " + data.message);
+                            }
+                        });
+                    }
+                });
+            });
+
+            // 2. Eventos Eliminar ETS
             tbody.querySelectorAll('.btn-eliminar-ets').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const idExamen = this.getAttribute('data-id');
@@ -445,7 +494,7 @@ function cargarTablaExamenes() {
                 });
             });
 
-            // Eventos Modificar ETS
+            // 3. Eventos Modificar ETS
             tbody.querySelectorAll('.btn-modificar-ets').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const idExamen = this.getAttribute('data-id');
