@@ -47,9 +47,7 @@ try {
         exit;
     }
 
-    // ==========================================
-    // INICIA LA TRANSACCIÓN SEGURA
-    // ==========================================
+    //actualizaciones 
     $conexion->beginTransaction();
 
     // 4. Insertar la inscripción

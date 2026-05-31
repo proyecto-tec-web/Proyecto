@@ -18,7 +18,7 @@
             <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalInscribirAlumno">
                 <i class="bi bi-plus-circle"></i> Nueva Inscripción
             </button>
-            <button class="btn btn-outline-primary btn-sm"><i class="bi bi-download"></i> Exportar Lista</button>
+            <button class="btn btn-outline-primary btn-sm" onclick="exportarCSV()"><i class="bi bi-download"></i> Exportar Lista</button>
         </div>
     </div>
     <div class="card-body p-0">

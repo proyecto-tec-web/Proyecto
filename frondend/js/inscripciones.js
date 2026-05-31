@@ -1,6 +1,4 @@
-// ==========================================
-// LÓGICA EXCLUSIVA: VISTA INSCRIPCIONES
-// ==========================================
+// LÓGICA : VISTA INSCRIPCIONES
 
 function cargarTablaInscripciones() {
     const tbody = document.getElementById('tbody-inscripciones');
@@ -57,9 +55,7 @@ function cargarTablaInscripciones() {
         });
 }
 
-// =========================================================================
-// EL SECRETO: DETECTAR EL MOMENTO EXACTO EN QUE SE ABRE EL MODAL ACTIVO
-// =========================================================================
+//DETECTAR EL MOMENTO EXACTO EN QUE SE ABRE EL MODAL ACTIVO
 document.addEventListener('show.bs.modal', function (event) {
     // Verificamos que el modal que se está abriendo sea el de inscripciones
     if (event.target.id === 'modalInscribirAlumno') {
@@ -110,9 +106,7 @@ document.addEventListener('show.bs.modal', function (event) {
 function cargarExamenesParaSelect() {}
 function manejarFormularioInscripcion() {}
 
-// =========================================================================
 // CAPTURADOR GLOBAL DEL FORMULARIO (Evita envíos duplicados)
-// =========================================================================
 document.addEventListener('submit', function(e) {
     if (e.target.id === 'form-inscribir-alumno') {
         e.preventDefault();
@@ -187,9 +181,7 @@ function eliminarInscripcionAlumno(idInscripcion) {
     });
 }
 
-// =========================================================================
 // FUNCIÓN PARA APROBAR / RECHAZAR PAGOS
-// =========================================================================
 window.cambiarEstadoPago = function(idInscripcion, nuevoEstado) {
     // Definimos la palabra para la alerta según el botón que presionen
     let accion = nuevoEstado === 'Aprobado' ? 'aprobar' : 'rechazar';
@@ -223,9 +215,7 @@ window.cambiarEstadoPago = function(idInscripcion, nuevoEstado) {
     });
 };
 
-// =========================================================================
-// BUSCADOR EN TIEMPO REAL POR BOLETA
-// =========================================================================
+// BUSCADOR POR BOLETA
 document.addEventListener('keyup', function(e) {
     if (e.target.id === 'buscar-boleta') {
         const textoBusqueda = e.target.value.toLowerCase();
@@ -242,3 +232,52 @@ document.addEventListener('keyup', function(e) {
         });
     }
 });
+
+// EXPORTAR TABLA A CSV (EXCEL)
+window.exportarCSV = function() {
+    let csv = [];
+    
+    // 1. Extraer los encabezados de la tabla (Ignoramos la última columna "Acciones")
+    let headers = [];
+    let celdasEncabezado = document.querySelectorAll('.table thead th');
+    for (let i = 0; i < celdasEncabezado.length - 1; i++) {
+        headers.push(celdasEncabezado[i].innerText.trim());
+    }
+    csv.push(headers.join(','));
+
+    // 2. Extraer las filas de la tabla
+    let filas = document.querySelectorAll('#tbody-inscripciones tr');
+    
+    filas.forEach(fila => {
+        // Solo exportamos las filas que NO están ocultas por el buscador
+        if (fila.style.display !== 'none' && fila.cells.length > 1) {
+            let datosFila = [];
+            
+            // Recorremos las celdas (ignorando la última de botones)
+            for (let i = 0; i < fila.cells.length - 1; i++) {
+                // Limpiamos el texto (quitamos comas para que no rompan el formato CSV)
+                let textoCelda = fila.cells[i].innerText.replace(/,/g, '').trim();
+                datosFila.push(`"${textoCelda}"`); // Envolvemos en comillas por seguridad
+            }
+            csv.push(datosFila.join(','));
+        }
+    });
+
+    // 3. Crear el archivo descargable con soporte para Acentos 
+    let csvString = "\uFEFF" + csv.join('\n');
+    let blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    
+    // 4. Crear un enlace invisible y simular un clic para forzar la descarga
+    let link = document.createElement("a");
+    let url = URL.createObjectURL(blob);
+    
+    // Nombre del archivo con la fecha de hoy
+    let fechaHoy = new Date().toISOString().split('T')[0];
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Inscripciones_ETS_${fechaHoy}.csv`);
+    
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
