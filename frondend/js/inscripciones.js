@@ -207,7 +207,9 @@ window.cambiarEstadoPago = function(idInscripcion, nuevoEstado) {
             cargarTablaInscripciones();
         } else {
             alert("Error: " + datos.message);
-        }
+        }if (nuevoEstado === 'Rechazado') {
+                alert("Esta boleta sigue manteniendo su cupo hasta que la borre.");
+            }
     })
     .catch(err => {
         console.error("Fallo de red:", err);
