@@ -222,3 +222,23 @@ window.cambiarEstadoPago = function(idInscripcion, nuevoEstado) {
         alert("Fallo la conexión con el servidor.");
     });
 };
+
+// =========================================================================
+// BUSCADOR EN TIEMPO REAL POR BOLETA
+// =========================================================================
+document.addEventListener('keyup', function(e) {
+    if (e.target.id === 'buscar-boleta') {
+        const textoBusqueda = e.target.value.toLowerCase();
+        const filas = document.querySelectorAll('#tbody-inscripciones tr');
+
+        filas.forEach(fila => {
+            // Asumimos que la boleta está en la segunda columna (índice 1)
+            const columnaBoleta = fila.cells[1]; 
+            if (columnaBoleta) {
+                const boleta = columnaBoleta.textContent.toLowerCase();
+                // Si la boleta incluye lo que escribimos, se muestra; si no, se oculta
+                fila.style.display = boleta.includes(textoBusqueda) ? '' : 'none';
+            }
+        });
+    }
+});

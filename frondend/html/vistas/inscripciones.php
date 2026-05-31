@@ -5,9 +5,16 @@
 </div>
 
 <div class="card shadow-sm border-0 rounded-3">
-    <div class="card-header bg-white pt-4 pb-2 border-bottom d-flex justify-content-between align-items-center">
+    
+<div class="card-header bg-white pt-4 pb-2 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h5 class="card-title fw-bold mb-0">Pagos y Asignaciones</h5>
-        <div>
+        
+        <div class="d-flex align-items-center gap-2">
+            <div class="input-group input-group-sm" style="width: 250px;">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" id="buscar-boleta" class="form-control" placeholder="Buscar boleta..." maxlength="10" inputmode="numeric" pattern="[0-9]*">
+            </div>
+            
             <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalInscribirAlumno">
                 <i class="bi bi-plus-circle"></i> Nueva Inscripción
             </button>
