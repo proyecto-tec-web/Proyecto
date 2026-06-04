@@ -4,10 +4,10 @@ let chartInscripciones = null;
 // INICIALIZACIÓN
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-    // Cargar el dashboard por defecto al abrir la página principal
+    // Simula un clic en el primer enlace del menú para cargar su vista correspondiente
     const primerEnlace = document.querySelector('.menu-link');
     if (primerEnlace) {
-        cargarVista('dashboard', primerEnlace);
+        primerEnlace.click();
     }
 });
 
@@ -29,10 +29,13 @@ function cargarVista(nombreVista, elementoClick) {
             <p class="mt-2 text-muted">Consultando al servidor...</p>
         </div>`;
 
-    // 3. Petición Fetch con destructor de caché
-    fetch(`vistas/${nombreVista}.php?v=${Date.now()}`)
+    // 3. Petición Fetch con enrutamiento inteligente (Múltiples carpetas)
+    const vistasDelProfesor = ['dashboard_profesor', 'mis_examenes', 'revisiones'];
+    const carpetaDefinitiva = vistasDelProfesor.includes(nombreVista) ? 'vistasProfesor' : 'vistas';
+
+    fetch(`${carpetaDefinitiva}/${nombreVista}.php?v=${Date.now()}`)
         .then(respuesta => {
-            if (!respuesta.ok) throw new Error(`El archivo vistas/${nombreVista}.php no respondió correctamente.`);
+            if (!respuesta.ok) throw new Error(`El archivo ${carpetaDefinitiva}/${nombreVista}.php no respondió correctamente.`);
             return respuesta.text();
         })
         .then(html => {
@@ -69,6 +72,23 @@ function cargarVista(nombreVista, elementoClick) {
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                     <strong>Fallo de conexión:</strong> ${error.message}
                 </div>`;
+        // --- MÓDULO PROFESORES (Dashboard con KPIs) ---
+    if (nombreVista === 'dashboard_profesor') {
+        if (typeof cargarKPIsProfesor === 'function') {
+            cargarKPIsProfesor();
+        } else {
+            console.error("El archivo profesor.js no está cargado.");
+        }
+    }
+
+    // --- MÓDULO PROFESORES (Lista de Exámenes y Calificaciones) ---
+    if (nombreVista === 'mis_examenes') {
+        if (typeof cargarMisExamenes === 'function') {
+            cargarMisExamenes();
+        } else {
+            console.error("El archivo profesor.js no está cargado.");
+        }
+    }
         });
 }
 
@@ -314,8 +334,31 @@ function inicializarLogicaVista(nombreVista) {
             console.error("El archivo alumnos.js no está cargado correctamente.");
         }
     }
+    // --- MÓDULO PROFESORES (Dashboard con KPIs) ---
+    if (nombreVista === 'dashboard_profesor') {
+        if (typeof cargarKPIsProfesor === 'function') {
+            cargarKPIsProfesor();
+        } else {
+            console.error("El archivo profesor.js no está cargado.");
+        }
+    }
+    // --- MÓDULO PROFESORES (Lista de Exámenes y Calificaciones) ---
+    if (nombreVista === 'mis_examenes') {
+        console.log("Entrando a la vista de exámenes..."); // Pista visual
+        if (typeof cargarMisExamenes === 'function') {
+            cargarMisExamenes();
+        } else {
+            console.error("La función cargarMisExamenes no existe.");
+        }
+    }
+    // --- MÓDULO Peticiones de Revisión ---
+    if (nombreVista === 'revisiones') {
+        console.log("Entrando a la vista de revisiones..."); // <-- LÍNEA NUEVA
+        if (typeof cargarRevisiones === 'function') {
+            cargarRevisiones();
+        }
+    }
 }
-
 // ==========================================
 // FUNCIONES GENERALES DEL SISTEMA
 // ==========================================
