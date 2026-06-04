@@ -1,0 +1,192 @@
+<?php
+session_start();
+// Validar que sea profesor o sinodal (Protección de la página)
+if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'profesor' && strtolower(trim($_SESSION['usuario_rol'])) !== 'sinodal')) {
+    header("Location: ../../php/endpoints/login.php");
+    exit();
+}
+
+// Lógica para determinar el saludo según la hora local
+date_default_timezone_set('America/Mexico_City');
+$hora = (int)date('G'); // Hora en formato 24h (0-23)
+$saludo = "buenas noches";
+if ($hora >= 5 && $hora < 12) {
+    $saludo = "buenos días";
+} elseif ($hora >= 12 && $hora < 19) {
+    $saludo = "buenas tardes";
+}
+?>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Docente - Sistema ETS</title>
+    <link rel="icon" href="tiburon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">  
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; }
+        .sidebar { background-color: #004ec2; color: white; }
+        .nav-link { color: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { color: white; background-color: rgba(0, 0, 0, 0.1); border-radius: 5px; }
+        
+        /* Diseño de "Aplicación de Escritorio" para PC */
+        @media (min-width: 768px) {
+            body { 
+                overflow: hidden; 
+            }
+            /* EL FIX: Solo afecta a la fila principal contenedora, no a las tarjetas */
+            .container-fluid > .row { 
+                height: 100vh; 
+            }
+            .sidebar-desktop { 
+                height: 100vh; 
+            }
+            .main-wrapper { 
+                height: 100vh; 
+                overflow-y: auto; 
+                padding-bottom: 50px;
+                display: block; /* Evita que los elementos internos se estiren */
+            } 
+        }
+        
+        /* Límite de ancho para el menú en celulares (no ocupa toda la pantalla) */
+        .offcanvas-md { max-width: 280px !important; }
+
+        /* Estilo del Botón Flotante de Gmail */
+        .btn-flotante-gmail {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #ea4335; /* Rojo característico de Gmail */
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 4px 12px rgba(234, 67, 53, 0.4);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-flotante-gmail:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(234, 67, 53, 0.6);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="navbar d-md-none p-3 shadow-sm sticky-top" style="background-color: #004ec2;">
+        <div class="d-flex align-items-center justify-content-between w-100">
+            <h5 class="text-white mb-0 fw-bold" style="font-family: 'Montserrat', sans-serif;">Portal Docente</h5>
+            
+            <button class="navbar-toggler text-white border-0 p-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                <i class="bi bi-list" style="font-size: 2rem;"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            
+            <nav class="col-md-3 col-lg-2 p-0 sidebar sidebar-desktop shadow">
+                <div class="offcanvas-md offcanvas-start sidebar h-100 d-flex flex-column" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+                    
+                    <div class="offcanvas-header d-md-none border-bottom border-secondary pt-4 pb-3">
+                        <h5 class="offcanvas-title text-white fw-bold" id="sidebarMenuLabel">Menú</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
+                    </div>
+                    
+                    <div class="offcanvas-body d-flex flex-column py-4 flex-grow-1">
+                        
+                        <div class="text-center mb-4 d-none d-md-block">
+                            <div class="d-flex justify-content-center align-items-center gap-3 px-3 mb-2">
+                                <img src="../img/logoESCOMBlanco.png" alt="ESCOM" class="img-fluid" style="max-height: 60px;">
+                                <img src="../img/tiburonProfesor.png" alt="Logo Institucional" class="img-fluid" style="max-height: 60px;">
+                            </div>
+                            <h6 class="fw-bold mt-2">Portal Docente</h6>
+                            <small class="text-light opacity-75"><?php echo $_SESSION['usuario_correo']; ?></small>
+                        </div>
+
+                        <div class="text-center mb-4 d-md-none">
+                            <div class="d-flex justify-content-center align-items-center gap-3 px-4 mb-2">
+                                <img src="../img/logoESCOMBlanco.png" alt="ESCOM" class="img-fluid" style="max-height: 50px;">
+                                <img src="../img/tiburonProfesor.png" alt="Logo Institucional" class="img-fluid" style="max-height: 50px;">
+                            </div>
+                            <br><small class="text-light opacity-75"><?php echo $_SESSION['usuario_correo']; ?></small>
+                        </div>
+
+                        <hr class="text-secondary mt-0">
+                        
+                        <ul class="nav flex-column px-2 w-100 mt-4">
+                            <li class="nav-item mb-3">
+                                <a class="nav-link menu-link active py-2" onclick="cargarVista('dashboard_profesor', this)">
+                                    <i class="bi bi-house-door me-2 fs-5"></i> <b>Inicio</b>
+                                </a>
+                            </li>
+                            <li class="nav-item mb-3">
+                                <a class="nav-link menu-link py-2" onclick="cargarVista('mis_examenes', this)">
+                                    <i class="bi bi-journal-text me-2 fs-5"></i> <b>Mis Exámenes ETS</b>
+                                </a>
+                            </li>
+                            <li class="nav-item mb-3">
+                                <a class="nav-link menu-link py-2" onclick="cargarVista('revisiones', this)">
+                                    <i class="bi bi-search me-2 fs-5"></i> <b>Peticiones de Revisión</b>
+                                </a>
+                            </li>
+                        </ul>
+                        
+                        <div class="mt-auto w-100">
+                            <hr class="text-secondary mb-3">
+                            <ul class="nav flex-column px-2 w-100">
+                                <li class="nav-item">
+                                    <a class="nav-link text-danger fw-bold" href="../../php/endpoints/logout.php">
+                                        <i class="bi bi-box-arrow-left me-2"></i> <b>Cerrar Sesión</b>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                </div>
+            </nav>            
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-wrapper">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                    <h1 class="h2 fw-bold" style="font-family: 'Montserrat', sans-serif;" id="titulo-seccion">¡Hola, <?php echo $saludo; ?>!</h1>
+                </div>
+                
+                <div id="view-container"></div>
+
+                
+                <footer class="mt-auto pt-4 pb-2 text-muted text-center text-md-start">
+                    <div class="border-top pt-3">
+                        <p class="mb-0 small">&copy; 2026 <strong>Sistema de Gestión Escolar</strong>. Departamento de Control Escolar.</p>
+                    </div>
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=admin@ipn.mx&su=Dudas" target="_blank" class="btn-flotante-gmail" title="Enviar correo con dudas a Soporte">
+        <i class="bi bi-envelope-fill"></i>
+    </a>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/just-validate@latest/dist/just-validate.production.min.js"></script>
+    <script src="../js/app.js?v=<?php echo time(); ?>"></script>
+    <script src="../js/profesor.js?v=<?php echo time(); ?>"></script>
+</body>
+</html>
