@@ -67,18 +67,26 @@ try {
         .firma-profesor { width: 300px; border-bottom: 1px solid #000; margin: 0 auto 10px; }
         
         /* Esta regla oculta botones y quita márgenes cuando se imprime en papel */
-        @media print {
+            @media print {
             @page { margin: 1cm; }
-            button.no-print { display: none; }
+            .ocultar-al-imprimir { display: none !important; }
             body { padding: 0; }
         }
     </style>
 </head>
 <body>
     <!-- Botón flotante que desaparece al imprimir -->
-    <button class="no-print" onclick="window.print()" style="margin-bottom: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #003366; color: white; border: none; border-radius: 5px;">
+    <div class="ocultar-al-imprimir" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
+    
+    <button onclick="window.print()" style="background-color: #0d6efd; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         🖨️ Imprimir Pase de Lista
     </button>
+
+    <button onclick="window.close()" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        ❌ Cerrar y Regresar
+    </button>
+
+</div>
 
     <div class="header">
         <h1>Instituto Politécnico Nacional</h1>
