@@ -1,3 +1,5 @@
+<?php require_once '../../../php/endpoints/seguridad_profesor.php'; ?>
+
 <div class="container-fluid p-0">
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
