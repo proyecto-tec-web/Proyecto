@@ -1,3 +1,13 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'alumno') {
+
+    echo "<script>window.location.href = '../../../php/endpoints/login.php';</script>";
+    exit();
+}
+?>
 <div class="row g-3 mb-4">
     <div class="col-12 col-sm-6 col-xl-3"><div class="card shadow-sm border-0 h-100 rounded-3 border-start border-primary border-4"><div class="card-body">
         <h6 class="text-muted fw-semibold">ETS Programados</h6><h3 class="mb-0 fw-bold text-primary" id="kpi-examenes">--</h3>

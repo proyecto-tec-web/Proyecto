@@ -1,10 +1,12 @@
 <?php
 session_start();
-require_once './../config/db.php';
+require_once __DIR__ . '/../config/db.php';
 
 $error = "";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+if (!isset($conexion) || !is_object($conexion)) {
+    $error = "Error de conexión a la base de datos.";
+} elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     $correo_ingresado = $_POST['correo']; 
     $pass_ingresada = $_POST['password'];

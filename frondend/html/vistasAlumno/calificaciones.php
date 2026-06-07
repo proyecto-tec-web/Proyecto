@@ -1,3 +1,13 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'alumno') {
+
+    echo "<script>window.location.href = '../../../php/endpoints/login.php';</script>";
+    exit();
+}
+?>
 <div class="row">
     <div class="col-12 col-md-5 mb-3">
         <label class="form-label fw-bold">Selecciona el Examen para calificar:</label>

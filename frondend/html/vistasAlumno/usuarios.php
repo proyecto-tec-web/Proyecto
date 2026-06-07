@@ -1,3 +1,13 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'alumno') {
+
+    echo "<script>window.location.href = '../../../php/endpoints/login.php';</script>";
+    exit();
+}
+?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div class="alert alert-warning border-0 shadow-sm rounded-3 mb-0 flex-grow-1 me-3">
         <i class="bi bi-shield-exclamation me-2"></i><strong>Seguridad:</strong> Control de accesos al sistema.

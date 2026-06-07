@@ -1,3 +1,13 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'alumno') {
+
+    echo "<script>window.location.href = '../../../php/endpoints/login.php';</script>";
+    exit();
+}
+?>
 <div class="alert alert-info border-0 shadow-sm rounded-3">
     <i class="bi bi-info-circle-fill me-2"></i><strong>Proceso de Inscripción:</strong> Selecciona el ETS que deseas presentar. Recuerda que después de inscribirte deberás subir tu comprobante de pago en el Inicio para que el administrador valide tu lugar.
 </div>

@@ -1,3 +1,13 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'alumno') {
+
+    echo "<script>window.location.href = '../../../php/endpoints/login.php';</script>";
+    exit();
+}
+?>
 <div class="row">
     <div class="col-md-4 mb-4">
         <div class="card shadow-sm border-0 h-100">

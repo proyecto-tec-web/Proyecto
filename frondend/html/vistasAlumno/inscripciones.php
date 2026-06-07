@@ -1,3 +1,13 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'alumno') {
+
+    echo "<script>window.location.href = '../../../php/endpoints/login.php';</script>";
+    exit();
+}
+?>
 <div class="card shadow-sm border-0 rounded-3">
     <div class="card-header bg-white pt-4 pb-2 border-bottom d-flex justify-content-between align-items-center">
         <h5 class="card-title fw-bold mb-0">Pagos y Asignaciones</h5>

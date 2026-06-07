@@ -1,3 +1,13 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'alumno') {
+
+    echo "<script>window.location.href = '../../../php/endpoints/login.php';</script>";
+    exit();
+}
+?>
 <div class="d-flex justify-content-between mb-3">
     <input type="text" class="form-control w-25" placeholder="Buscar materia o profesor...">
     <button class="btn btn-success"><i class="bi bi-plus-lg"></i> Nuevo Examen</button>
