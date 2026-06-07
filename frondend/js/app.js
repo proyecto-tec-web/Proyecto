@@ -30,8 +30,18 @@ function cargarVista(nombreVista, elementoClick) {
         </div>`;
 
     // 3. Petición Fetch con enrutamiento inteligente (Múltiples carpetas)
+    // 3. Petición Fetch con enrutamiento inteligente (Múltiples carpetas)
     const vistasDelProfesor = ['dashboard_profesor', 'mis_examenes', 'revisiones'];
-    const carpetaDefinitiva = vistasDelProfesor.includes(nombreVista) ? 'vistasProfesor' : 'vistas';
+    // Agregar las vistas que el alumno va a usar:
+    const vistasDelAlumno = ['dashboard_alumno', 'alumno_inscripcion', 'alumno_kardex', 'inscripcion_ets']; 
+    
+    let carpetaDefinitiva = 'vistas'; // por defecto para admin
+
+    if (vistasDelProfesor.includes(nombreVista)) {
+        carpetaDefinitiva = 'vistasProfesor';
+    } else if (vistasDelAlumno.includes(nombreVista)) {
+        carpetaDefinitiva = 'vistasAlumno';
+    }
 
     fetch(`${carpetaDefinitiva}/${nombreVista}.php?v=${Date.now()}`)
         .then(respuesta => {

@@ -54,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         break;
                         
                     case 'alumno':
-                        header("Location: ../../frondend/html/vistasAlumno/dashboard_alumno.html");
+                        header("Location: ../../frondend/html/panel_alumno.php");
                         break;
                         
                     case 'profesor':
