@@ -73,20 +73,25 @@ try {
             body { padding: 0; }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-    <!-- Botón flotante que desaparece al imprimir -->
     <div class="ocultar-al-imprimir" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
     
-    <button onclick="window.print()" style="background-color: #0d6efd; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        🖨️ Imprimir Pase de Lista
-    </button>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <button onclick="window.print()" style="background-color: #0d6efd; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            🖨️ Imprimir Hoja
+        </button>
+
+        <button onclick="descargarPDFDirecto()" style="background-color: #198754; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            📥 Descargar PDF
+        </button>
+    </div>
 
     <button onclick="window.close()" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         ❌ Cerrar y Regresar
     </button>
-
-</div>
+    </div>
 
     <div class="header">
         <h1>Instituto Politécnico Nacional</h1>
@@ -145,6 +150,29 @@ try {
         // Dispara la ventana de impresión automáticamente en cuanto cargue la página
         window.onload = function() {
             setTimeout(() => { window.print(); }, 500);
+        }
+
+        // Lógica para descargar el PDF directo sin abrir cuadro de impresión
+        function descargarPDFDirecto() {
+            // Ocultamos temporalmente los botones para que no salgan en el PDF generado
+            const botones = document.querySelector('.ocultar-al-imprimir');
+            botones.style.display = 'none';
+
+            const elemento = document.body; // Tomamos todo el cuerpo del documento
+            const opciones = {
+                margin:       1,
+                filename:     'Pase_Lista_<?php echo $id_examen; ?>.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 }, // Mejora la calidad del texto
+                jsPDF:        { unit: 'cm', format: 'letter', orientation: 'portrait' }
+            };
+
+            // Ejecuta la conversión y descarga
+            html2pdf().set(opciones).from(elemento).save().then(() => {
+                // Volvemos a mostrar los botones en la pantalla una vez que terminó la descarga
+                botones.style.style = 'flex';
+                botones.style.display = 'flex';
+            });
         }
     </script>
 </body>
