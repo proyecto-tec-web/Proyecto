@@ -1,3 +1,4 @@
+<?php
 /*
 //Esto se utilizará cuando la base de datos tenga la columna 'nip' en la tabla 'profesor'. Por ahora, como el líder no la ha agregado, dejaremos un NIP fijo (1234) para simular la validación de la firma.
 // Esto se tenrá que poner en la base de datos: ALTER TABLE profesor ADD COLUMN nip VARCHAR(4) NOT NULL DEFAULT '1234';
@@ -35,7 +36,6 @@ try {
     echo json_encode(["status" => "error", "message" => "Error de BD."]);
 }
 */
-<?php
 session_start();
 // require_once '../config/db.php'; // No necesitamos la BD por ahora
 
