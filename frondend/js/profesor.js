@@ -682,8 +682,4 @@ function exportarExamenesAExcel() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 82bbe471c116d5c1cd7e965cdcd581bf68be2b1e
