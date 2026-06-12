@@ -414,6 +414,8 @@ function solicitarNIPParaGuardar(idExamen) {
         title: '<h3 style="font-family: \'Montserrat\', sans-serif; font-weight: bold; color: #004ec2;">Firma Electrónica</h3>',
         html: 'Por seguridad, ingresa tu <b>NIP de 4 dígitos</b> para asentar esta acta de forma definitiva.',
         input: 'password',
+        // ¡LA MAGIA SUCEDE AQUÍ! Le decimos que se ancle al modal de calificaciones
+        target: document.getElementById('modalCalificar'),
         inputAttributes: {
             maxlength: 4,
             autocapitalize: 'off',
@@ -476,14 +478,11 @@ function ejecutarGuardadoFinal(idExamen) {
         return;
     }
 
-    // Mostramos un loader mientras guardamos
     Swal.fire({
         title: 'Asentando Acta...',
         text: 'Guardando calificaciones definitivas.',
         allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
+        didOpen: () => { Swal.showLoading(); }
     });
 
     fetch('/php/endpoints/guardar_calificaciones.php', {
@@ -498,14 +497,20 @@ function ejecutarGuardadoFinal(idExamen) {
     .then(datos => {
         if (datos.status === 'success') {
             Swal.fire({
-                title: '¡Acta Cerrada Exitosamente!',
-                text: 'Las calificaciones han sido registradas. El examen pasará a tu Historial.',
+                title: '¡Acta Cerrada!',
+                text: 'Las calificaciones han sido registradas. ¿Deseas descargar tu acuse?',
                 icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: 'Descargar PDF',
+                cancelButtonText: 'Cerrar',
                 confirmButtonColor: '#004ec2'
-            }).then(() => {
-                // Cerramos el modal
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Abrimos el generador de PDF en una nueva pestaña
+                    window.open(`/php/endpoints/generar_acuse.php?id_examen=${idExamen}`, '_blank');
+                }
+                // Cerramos el modal y actualizamos tablas
                 bootstrap.Modal.getInstance(document.getElementById('modalCalificar')).hide();
-                // Recargamos las vistas para que el examen salte a la pestaña de "Historial"
                 cargarMisExamenes();
                 cargarKPIsProfesor();
             });
@@ -514,8 +519,8 @@ function ejecutarGuardadoFinal(idExamen) {
         }
     })
     .catch(err => {
-        console.error(err);
-        Swal.fire('Error', 'Fallo de conexión al guardar.', 'error');
+        console.error("Error al guardar:", err);
+        Swal.fire('Error de conexión', 'Detalles: ' + err.message, 'error');
     });
 }
 // ==========================================
@@ -631,4 +636,50 @@ function filtrarRevisiones() {
             }
         }
     }
+}
+// ==========================================
+// EXPORTAR TABLA DE EXÁMENES A EXCEL (.CSV)
+// ==========================================
+function exportarExamenesAExcel() {
+    const tabla = document.querySelector("table");
+    if (!tabla) return;
+
+    let filasCsv = [];
+    
+    // TRUCO PRO: Añadimos el BOM UTF-8 para que Excel reconozca los acentos (á, é, í...)
+    const BOM = "\uFEFF";
+    
+    const filas = tabla.querySelectorAll("tr");
+    
+    for (let i = 0; i < filas.length; i++) {
+        // REGLA 1: Si la fila está oculta por el buscador, NO la exportamos
+        if (filas[i].style.display === "none") continue;
+        
+        const columnas = filas[i].querySelectorAll("th, td");
+        let datosFila = [];
+        
+        // REGLA 2: Recorremos las columnas EXCEPTO la última (la de "Acciones")
+        for (let j = 0; j < columnas.length - 1; j++) {
+            let textoCelda = columnas[j].innerText.trim().replace(/(\r\n|\n|\r)/gm, " ");
+            textoCelda = textoCelda.replace(/"/g, '""');
+            datosFila.push(`"${textoCelda}"`);
+        }
+        
+        // EL FIX: Cambiamos el ";" por "," para que tu Excel lo divida en columnas perfectas
+        filasCsv.push(datosFila.join(","));
+    }
+    
+    const contenidoCsv = BOM + filasCsv.join("\n");
+    
+    const blob = new Blob([contenidoCsv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Mis_Examenes_ETS_Docente.csv");
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
