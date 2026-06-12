@@ -46,7 +46,7 @@ if ($hora >= 5 && $hora < 12) {
         /* 2. El enlace SELECCIONADO (Texto negro, Fondo blanco para que resalte) */
         .sidebar .menu-link.active { 
             color: #000000 !important; 
-            background-color: #ffffff !important; 
+            background-color: #ffffffc2 !important; 
             border-radius: 8px; 
             font-weight: bold;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
