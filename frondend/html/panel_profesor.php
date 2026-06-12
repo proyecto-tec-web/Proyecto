@@ -54,8 +54,10 @@ if ($hora >= 5 && $hora < 12) {
             } 
         }
         
-        /* Límite de ancho para el menú en celulares (no ocupa toda la pantalla) */
-        .offcanvas-md { max-width: 280px !important; }
+        /* Límite de ancho exclusivo para celulares (En PC se expande al 100%) */
+        @media (max-width: 767.98px) {
+            .offcanvas-md { max-width: 280px !important; }
+        }
 
         /* Estilo del Botón Flotante de Gmail */
         .btn-flotante-gmail {
@@ -109,13 +111,14 @@ if ($hora >= 5 && $hora < 12) {
                     
                     <div class="offcanvas-body d-flex flex-column py-4 flex-grow-1">
                         
-                        <div class="text-center mb-4 d-none d-md-block">
-                            <div class="d-flex justify-content-center align-items-center gap-3 px-3 mb-2">
-                                <img src="../img/logoESCOMBlanco.png" alt="ESCOM" class="img-fluid" style="max-height: 60px;">
-                                <img src="../img/tiburonProfesor.png" alt="Logo Institucional" class="img-fluid" style="max-height: 60px;">
+                        <div class="text-center mb-4 mt-3 d-none d-md-block">
+                            <div class="d-flex justify-content-center align-items-center gap-3 px-3 mb-3">
+                                <img src="../img/logoESCOMBlanco.png" alt="ESCOM" class="img-fluid" style="max-height: 65px;">
+                                <img src="../img/tiburonProfesor.png" alt="Logo Institucional" class="img-fluid" style="max-height: 65px;">
                             </div>
-                            <h6 class="fw-bold mt-2">Portal Docente</h6>
-                            <small class="text-light opacity-75"><?php echo $_SESSION['usuario_correo']; ?></small>
+                            <h5 class="fw-bold mt-2" style="font-family: 'Montserrat', sans-serif;">Portal Docente</h5>
+                            <span class="badge bg-light text-primary mb-2 px-3 py-1 rounded-pill">Profesor</span><br>
+                            <small class="text-light opacity-75" style="letter-spacing: 0.5px;"><?php echo $_SESSION['usuario_correo']; ?></small>
                         </div>
 
                         <div class="text-center mb-4 d-md-none">
@@ -126,32 +129,32 @@ if ($hora >= 5 && $hora < 12) {
                             <br><small class="text-light opacity-75"><?php echo $_SESSION['usuario_correo']; ?></small>
                         </div>
 
-                        <hr class="text-secondary mt-0">
+                        <hr class="text-secondary mt-0 mb-4 border-2 opacity-25">
                         
-                        <ul class="nav flex-column px-2 w-100 mt-4">
-                            <li class="nav-item mb-3">
-                                <a class="nav-link menu-link active py-2" onclick="cargarVista('dashboard_profesor', this)">
-                                    <i class="bi bi-house-door me-2 fs-5"></i> <b>Inicio</b>
+                        <ul class="nav flex-column px-3 w-100 mb-auto gap-2">
+                            <li class="nav-item">
+                                <a class="nav-link menu-link active py-3 px-3 rounded-3" onclick="cargarVista('dashboard_profesor', this)">
+                                    <i class="bi bi-house-door me-3 fs-5"></i> <b class="fs-6">Inicio</b>
                                 </a>
                             </li>
-                            <li class="nav-item mb-3">
-                                <a class="nav-link menu-link py-2" onclick="cargarVista('mis_examenes', this)">
-                                    <i class="bi bi-journal-text me-2 fs-5"></i> <b>Mis Exámenes ETS</b>
+                            <li class="nav-item">
+                                <a class="nav-link menu-link py-3 px-3 rounded-3" onclick="cargarVista('mis_examenes', this)">
+                                    <i class="bi bi-journal-text me-3 fs-5"></i> <b class="fs-6">Mis Exámenes ETS</b>
                                 </a>
                             </li>
-                            <li class="nav-item mb-3">
-                                <a class="nav-link menu-link py-2" onclick="cargarVista('revisiones', this)">
-                                    <i class="bi bi-search me-2 fs-5"></i> <b>Peticiones de Revisión</b>
+                            <li class="nav-item">
+                                <a class="nav-link menu-link py-3 px-3 rounded-3" onclick="cargarVista('revisiones', this)">
+                                    <i class="bi bi-search me-3 fs-5"></i> <b class="fs-6">Peticiones de Revisión</b>
                                 </a>
                             </li>
                         </ul>
                         
-                        <div class="mt-auto w-100">
-                            <hr class="text-secondary mb-3">
-                            <ul class="nav flex-column px-2 w-100">
+                        <div class="mt-auto w-100 px-3">
+                            <hr class="text-secondary mb-3 border-2 opacity-25">
+                            <ul class="nav flex-column w-100">
                                 <li class="nav-item">
-                                    <a class="nav-link text-danger fw-bold" href="../../php/endpoints/logout.php">
-                                        <i class="bi bi-box-arrow-left me-2"></i> <b>Cerrar Sesión</b>
+                                    <a class="nav-link text-danger fw-bold py-3 px-3 rounded-3" href="../../php/endpoints/logout.php" style="background-color: rgba(220, 53, 69, 0.1); transition: all 0.3s;">
+                                        <i class="bi bi-box-arrow-left me-3 fs-5"></i> <b class="fs-6">Cerrar Sesión</b>
                                     </a>
                                 </li>
                             </ul>
