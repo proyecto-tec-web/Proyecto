@@ -31,8 +31,26 @@ if ($hora >= 5 && $hora < 12) {
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; }
         .sidebar { background-color: #004ec2; color: white; }
-        .nav-link { color: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s; }
-        .nav-link:hover, .nav-link.active { color: white; background-color: rgba(0, 0, 0, 0.1); border-radius: 5px; }
+        /* 1. Todos los enlaces inactivos (Color Blanco por defecto) */
+        .sidebar .menu-link { 
+            color: #ffffff !important; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+        }
+        
+        /* Efecto al pasar el mouse por encima (Leve brillo para saber dónde estás) */
+        .sidebar .menu-link:hover { 
+            background-color: rgba(255, 255, 255, 0.1); 
+        }
+
+        /* 2. El enlace SELECCIONADO (Texto negro, Fondo blanco para que resalte) */
+        .sidebar .menu-link.active { 
+            color: #000000 !important; 
+            background-color: #ffffff !important; 
+            border-radius: 8px; 
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
         
         /* Diseño de "Aplicación de Escritorio" para PC */
         @media (min-width: 768px) {
@@ -153,8 +171,8 @@ if ($hora >= 5 && $hora < 12) {
                             <hr class="text-secondary mb-3 border-2 opacity-25">
                             <ul class="nav flex-column w-100">
                                 <li class="nav-item">
-                                    <a class="nav-link text-danger fw-bold py-3 px-3 rounded-3" href="../../php/endpoints/logout.php" style="background-color: rgba(220, 53, 69, 0.1); transition: all 0.3s;">
-                                        <i class="bi bi-box-arrow-left me-3 fs-5"></i> <b class="fs-6">Cerrar Sesión</b>
+                                    <a class="nav-link fw-bold py-3 px-3 rounded-3 shadow-sm" href="../../php/endpoints/logout.php" style="background-color: #dc3545; color: #000000 !important; transition: transform 0.2s;">
+                                        <i class="bi bi-box-arrow-left me-3 fs-5" style="color: #000000;"></i> <b class="fs-6">Cerrar Sesión</b>
                                     </a>
                                 </li>
                             </ul>
