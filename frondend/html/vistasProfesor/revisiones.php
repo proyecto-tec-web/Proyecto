@@ -10,6 +10,16 @@
             
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
+                    <div class="row mb-3 mt-2">
+                        <div class="col-md-6 col-lg-5">
+                            <div class="input-group shadow-sm rounded-3">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input type="text" id="buscadorRevisiones" onkeyup="filtrarRevisiones()" class="form-control border-start-0" placeholder="Buscar por folio, alumno, boleta, materia, horario o estado...">
+                            </div>
+                        </div>
+                    </div>
                     <thead class="table-light">
                         <tr>
                             <th>Folio</th>
