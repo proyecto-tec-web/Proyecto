@@ -7,6 +7,7 @@
                 <i class="bi bi-calendar-event me-2"></i>Exámenes Pendientes
             </button>
         </li>
+
         <li class="nav-item" role="presentation">
             <button class="nav-link fw-bold text-secondary" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
                 <i class="bi bi-archive me-2"></i>Historial (Calificados)
@@ -19,6 +20,16 @@
         <div class="tab-pane fade show active" id="activos" role="tabpanel">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
+                    <div class="row mb-3 mt-2">
+                        <div class="col-md-6 col-lg-5">
+                            <div class="input-group shadow-sm rounded-3">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input type="text" id="buscadorExamenes" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por ID o nombre de la Materia...">
+                            </div>
+                        </div>
+                    </div>
                     <thead class="table-light">
                         <tr>
                             <th>ID</th><th>Materia</th><th>Fecha y Hora</th><th>Salón</th><th>Estado</th><th class="text-end">Acciones</th>
@@ -33,6 +44,16 @@
         <div class="tab-pane fade" id="historial" role="tabpanel">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
+                    <div class="row mb-3 mt-2">
+                        <div class="col-md-6 col-lg-5">
+                            <div class="input-group shadow-sm rounded-3">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input type="text" id="buscadorExamenes" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por ID o nombre de la Materia...">
+                            </div>
+                        </div>
+                    </div>
                     <thead class="table-light">
                         <tr>
                             <th>ID</th><th>Materia</th><th>Fecha y Hora</th><th>Salón</th><th>Estado</th><th class="text-end">Acciones</th>
@@ -43,7 +64,6 @@
                 </table>
             </div>
         </div>
-
     </div>
 </div>
 
