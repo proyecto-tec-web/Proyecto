@@ -24,7 +24,7 @@ function cargarKPIsProfesor() {
             if (datos.status === 'success') {
                 document.getElementById('kpi-examenes-prof').innerText = datos.data.total_examenes;
                 document.getElementById('kpi-alumnos-prof').innerText = datos.data.total_alumnos;
-                document.getElementById('kpi-pendientes-prof').innerText = datos.data.pendientes_calificar;
+                document.getElementById('kpi-pendientes-prof').innerText = datos.data.examenes_calificados;
             } else {
                 console.error("Error del servidor:", datos.message);
                 // Si hay error, quitamos los spinners y ponemos un aviso

@@ -34,7 +34,7 @@
     <div class="col-md-4 mb-3">
         <div class="card shadow-sm border-0 rounded-3 h-100 border-start border-warning border-4">
             <div class="card-body">
-                <h6 class="text-muted fw-bold mb-2">EXÁMENES POR CALIFICAR</h6>
+                <h6 class="text-muted fw-bold mb-2">EXÁMENES CALIFICADOS</h6>
                 <h2 class="fw-bold text-dark mb-0" id="kpi-pendientes-prof"><span class="spinner-border spinner-border-sm text-warning"></span></h2>
             </div>
         </div>

@@ -24,22 +24,33 @@ try {
     $stmtExamenes->execute([$id_profesor]);
     $totalExamenes = $stmtExamenes->fetch(PDO::FETCH_ASSOC)['total'];
 
-    // KPI 2: Alumnos a Evaluar (Solo los que ya pagaron y están aprobados)
-    $stmtAlumnos = $conexion->prepare("SELECT COUNT(ie.id_inscripcion) as total FROM inscripcion_examen ie INNER JOIN examen e ON ie.id_examen = e.id_examen WHERE e.id_profesor = ? AND ie.estado_pago = 'Aprobado'");
+    // KPI 2: Alumnos a Evaluar (CAMBIADO: Solo cuenta los que NO tienen calificación asignada aún)
+    // Esto hace que el número decrezca conforme vas calificando alumnos
+    $stmtAlumnos = $conexion->prepare("
+        SELECT COUNT(ie.id_inscripcion) as total 
+        FROM inscripcion_examen ie 
+        INNER JOIN examen e ON ie.id_examen = e.id_examen 
+        WHERE e.id_profesor = ? AND ie.calificacion IS NULL
+    ");
     $stmtAlumnos->execute([$id_profesor]);
     $totalAlumnos = $stmtAlumnos->fetch(PDO::FETCH_ASSOC)['total'];
 
-    // KPI 3: Exámenes por Calificar (Los que ya están 'Cerrados' pero aún pertenecen al profe)
-    $stmtPendientes = $conexion->prepare("SELECT COUNT(*) as total FROM examen WHERE id_profesor = ? AND estado = 'Cerrado'");
-    $stmtPendientes->execute([$id_profesor]);
-    $pendientes = $stmtPendientes->fetch(PDO::FETCH_ASSOC)['total'];
+    // KPI 3: Exámenes Calificados (CAMBIADO: Cuenta los exámenes que ya pasaron a estado 'Calificado')
+    $stmtCalificados = $conexion->prepare("
+        SELECT COUNT(*) as total 
+        FROM examen 
+        WHERE id_profesor = ? AND estado = 'Calificado'
+    ");
+    $stmtCalificados->execute([$id_profesor]);
+    $examenesCalificados = $stmtCalificados->fetch(PDO::FETCH_ASSOC)['total'];
 
+    // Enviamos los datos ordenados al JavaScript
     echo json_encode([
         "status" => "success",
         "data" => [
             "total_examenes" => $totalExamenes,
             "total_alumnos" => $totalAlumnos,
-            "pendientes_calificar" => $pendientes
+            "examenes_calificados" => $examenesCalificados
         ]
     ]);
 } catch (PDOException $e) {
