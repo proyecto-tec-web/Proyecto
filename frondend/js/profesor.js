@@ -522,10 +522,6 @@ function ejecutarGuardadoFinal(idExamen) {
 // EXPORTACIÓN DE DOCUMENTOS
 // ==========================================
 
-// ==========================================
-// EXPORTACIÓN DE DOCUMENTOS
-// ==========================================
-
 window.exportarActaCSV = function() {
     const filas = document.querySelectorAll('#tbody-alumnos-examen tr');
     
@@ -563,3 +559,76 @@ window.exportarActaCSV = function() {
     a.click();
     URL.revokeObjectURL(url);
 };
+// ==========================================
+// BUSCADOR EN TIEMPO REAL PARA EXÁMENES
+// ==========================================
+function filtrarExamenes() {
+    // 1. Obtenemos lo que el usuario escribió y lo pasamos a minúsculas
+    const input = document.getElementById("buscadorExamenes");
+    const filtro = input.value.toLowerCase();
+    
+    // 2. Buscamos el cuerpo de la tabla que está visible en pantalla
+    const tabla = document.querySelector("table tbody"); 
+    if (!tabla) return; // Si por alguna razón no hay tabla, no hace nada
+
+    // 3. Obtenemos todas las filas (tr) de la tabla
+    const filas = tabla.getElementsByTagName("tr");
+
+    // 4. Recorremos fila por fila para ver si coincide con la búsqueda
+    for (let i = 0; i < filas.length; i++) {
+        // La columna 0 es el ID y la columna 1 es la Materia
+        const celdaId = filas[i].getElementsByTagName("td")[0];
+        const celdaMateria = filas[i].getElementsByTagName("td")[1];
+
+        // Si la fila tiene columnas (es decir, no es el mensaje de "No hay datos")
+        if (celdaId && celdaMateria) {
+            const textoId = celdaId.textContent || celdaId.innerText;
+            const textoMateria = celdaMateria.textContent || celdaMateria.innerText;
+
+            // Si el texto escrito está en el ID o en la Materia, mostramos la fila
+            if (textoId.toLowerCase().includes(filtro) || textoMateria.toLowerCase().includes(filtro)) {
+                filas[i].style.display = ""; 
+            } else {
+                // Si no coincide, la ocultamos
+                filas[i].style.display = "none"; 
+            }
+        }
+    }
+}
+// ==========================================
+// BUSCADOR EN TIEMPO REAL PARA REVISIONES
+// ==========================================
+function filtrarRevisiones() {
+    const input = document.getElementById("buscadorRevisiones");
+    if (!input) return; // Si no encuentra el buscador, se detiene
+    
+    const filtro = input.value.toLowerCase();
+    const tabla = document.querySelector("table tbody"); 
+    if (!tabla) return; 
+
+    const filas = tabla.getElementsByTagName("tr");
+
+    for (let i = 0; i < filas.length; i++) {
+        const celdas = filas[i].getElementsByTagName("td");
+
+        // Verificamos que la fila tenga al menos 5 columnas para evitar errores
+        if (celdas.length >= 5) {
+            // Extraemos el texto de las columnas de revisiones
+            const folio = celdas[0].textContent || celdas[0].innerText;
+            const alumno = celdas[1].textContent || celdas[1].innerText;
+            const materia = celdas[2].textContent || celdas[2].innerText;
+            const lugarHorario = celdas[3].textContent || celdas[3].innerText;
+            const estado = celdas[4].textContent || celdas[4].innerText;
+
+            // Unimos todo en un solo bloque de texto
+            const contenidoFila = `${folio} ${alumno} ${materia} ${lugarHorario} ${estado}`.toLowerCase();
+
+            // Evaluamos si coincide con la búsqueda
+            if (contenidoFila.includes(filtro)) {
+                filas[i].style.display = ""; 
+            } else {
+                filas[i].style.display = "none"; 
+            }
+        }
+    }
+}
