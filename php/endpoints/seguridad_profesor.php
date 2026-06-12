@@ -10,7 +10,4 @@ if (!isset($_SESSION['id_usuario']) || ($rol_valido !== 'profesor' && $rol_valid
     echo "<script>window.location.href = '../../../php/endpoints/login.php';</script>";
     exit(); 
 }
-?>          </div>";
-    exit(); 
-}
 ?>
