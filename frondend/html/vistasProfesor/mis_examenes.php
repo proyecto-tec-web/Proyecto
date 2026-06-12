@@ -50,21 +50,15 @@
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <div class="row mb-4 mt-2 align-items-center">
-    <div class="col-md-7 col-lg-6 mb-2 mb-md-0">
-        <div class="input-group shadow-sm rounded-3">
-            <span class="input-group-text bg-white border-end-0">
-                <i class="bi bi-search text-muted"></i>
-            </span>
-            <input type="text" id="buscadorExamenes" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por materia, salón, fecha, estado o ID...">
-        </div>
-    </div>
-    
-    <div class="col-md-5 col-lg-6 text-md-end">
-        <button onclick="exportarExamenesAExcel()" class="btn btn-success shadow-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3 fw-bold">
-            <i class="bi bi-download fs-5"></i> Exportar a Excel
-        </button>
-    </div>
-</div>
+                        <div class="col-md-7 col-lg-6 mb-2 mb-md-0">
+                            <div class="input-group shadow-sm rounded-3">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input type="text" id="buscadorExamenes" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por materia, salón, fecha, estado o ID...">
+                            </div>
+                        </div>
+                    </div>
                     <thead class="table-light">
                         <tr>
                             <th>ID</th><th>Materia</th><th>Fecha y Hora</th><th>Salón</th><th>Estado</th><th class="text-end">Acciones</th>
