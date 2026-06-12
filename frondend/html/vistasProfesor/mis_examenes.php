@@ -20,15 +20,20 @@
         <div class="tab-pane fade show active" id="activos" role="tabpanel">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
-                    <div class="row mb-3 mt-2">
-                        <div class="col-md-6 col-lg-5">
+                    <div class="row mb-4 mt-2 align-items-center">
+                        <div class="col-md-7 col-lg-6 mb-2 mb-md-0">
                             <div class="input-group shadow-sm rounded-3">
                                 <span class="input-group-text bg-white border-end-0">
                                     <i class="bi bi-search text-muted"></i>
                                 </span>
-                                <input type="text" id="buscadorExamenes" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por ID o nombre de la Materia...">
+                                <input type="text" id="buscadorExamenes" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por ID, nombre de la Materia, salón, fecha o estado...">
                             </div>
                         </div>
+                    <div class="col-md-5 col-lg-6 text-end mb-3">
+                        <button onclick="exportarExamenesAExcel()" class="btn btn-success shadow-sm d-inline-flex align-items-center gap-2 px-3 rounded-3 fw-bold">
+                            <i class="bi bi-download fs-5"></i> Exportar a Excel
+                        </button>
+                    </div>
                     </div>
                     <thead class="table-light">
                         <tr>
@@ -44,16 +49,22 @@
         <div class="tab-pane fade" id="historial" role="tabpanel">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
-                    <div class="row mb-3 mt-2">
-                        <div class="col-md-6 col-lg-5">
-                            <div class="input-group shadow-sm rounded-3">
-                                <span class="input-group-text bg-white border-end-0">
-                                    <i class="bi bi-search text-muted"></i>
-                                </span>
-                                <input type="text" id="buscadorExamenes" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por ID o nombre de la Materia...">
-                            </div>
-                        </div>
-                    </div>
+                    <div class="row mb-4 mt-2 align-items-center">
+    <div class="col-md-7 col-lg-6 mb-2 mb-md-0">
+        <div class="input-group shadow-sm rounded-3">
+            <span class="input-group-text bg-white border-end-0">
+                <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" id="buscadorExamenes" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por materia, salón, fecha, estado o ID...">
+        </div>
+    </div>
+    
+    <div class="col-md-5 col-lg-6 text-md-end">
+        <button onclick="exportarExamenesAExcel()" class="btn btn-success shadow-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3 fw-bold">
+            <i class="bi bi-download fs-5"></i> Exportar a Excel
+        </button>
+    </div>
+</div>
                     <thead class="table-light">
                         <tr>
                             <th>ID</th><th>Materia</th><th>Fecha y Hora</th><th>Salón</th><th>Estado</th><th class="text-end">Acciones</th>
@@ -67,7 +78,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalCalificar" tabindex="-1" aria-labelledby="modalCalificarLabel" aria-hidden="true">
+<div class="modal fade" id="modalCalificar" aria-labelledby="modalCalificarLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white">
@@ -78,7 +89,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <p class="text-muted mb-0">Captura las calificaciones (0 a 10). Los alumnos no aprobados tendrán el campo vacío.</p>
                     <button class="btn btn-outline-success btn-sm" id="btn-exportar-acta" onclick="exportarActaCSV()">
-                        <i class="bi bi-file-earmark-excel me-1"></i> Exportar Acta CSV
+                        <i class="bi bi-download fs-5"></i> Exportar Acta CSV
                     </button>
                 </div>
                 <div class="table-responsive">
