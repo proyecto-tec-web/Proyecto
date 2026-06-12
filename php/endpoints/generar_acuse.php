@@ -43,4 +43,8 @@ $dompdf->loadHtml($html);
 $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
 $dompdf->stream("Acuse_Examen_$id_examen.pdf");
+<<<<<<< HEAD
 ?>
+=======
+?>
+>>>>>>> 82bbe471c116d5c1cd7e965cdcd581bf68be2b1e
