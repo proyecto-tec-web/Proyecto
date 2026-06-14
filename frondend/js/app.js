@@ -119,36 +119,92 @@ function inicializarLogicaVista(nombreVista) {
     }
     
     // --- MÓDULO DASHBOARD ---
+    // --- MÓDULO DASHBOARD ---
     if (nombreVista === 'dashboard') {
+        // Mostrar estado de carga en los KPIs
         const kpiExamenes = document.getElementById('kpi-examenes');
         const kpiInscritos = document.getElementById('kpi-inscritos');
         const kpiPagos = document.getElementById('kpi-pagos');
         const kpiActas = document.getElementById('kpi-actas');
+        
+        if(kpiExamenes) kpiExamenes.innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span>';
+        if(kpiInscritos) kpiInscritos.innerHTML = '<span class="spinner-border spinner-border-sm text-success"></span>';
+        if(kpiPagos) kpiPagos.innerHTML = '<span class="spinner-border spinner-border-sm text-warning"></span>';
+        if(kpiActas) kpiActas.innerHTML = '<span class="spinner-border spinner-border-sm text-info"></span>';
 
-        if(kpiExamenes) kpiExamenes.innerText = "24";
-        if(kpiInscritos) kpiInscritos.innerText = "342";
-        if(kpiPagos) kpiPagos.innerText = "45";
-        if(kpiActas) kpiActas.innerText = "8 / 24";
+        // Realizar la petición al backend
+        fetch('/php/endpoints/obtener_dashboard_admin.php')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 1. Renderizar KPIs
+                    if(kpiExamenes) kpiExamenes.innerText = data.kpis.examenes;
+                    if(kpiInscritos) kpiInscritos.innerText = data.kpis.inscritos;
+                    if(kpiPagos) kpiPagos.innerText = data.kpis.pagos;
+                    if(kpiActas) kpiActas.innerText = `${data.kpis.actas_capturadas} / ${data.kpis.total_examenes}`;
 
-        const canvas = document.getElementById('inscripcionesChart');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            if (chartInscripciones) chartInscripciones.destroy(); 
-            
-            chartInscripciones = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Cálculo Dif.', 'Física Clásica', 'Álgebra', 'Química', 'Programación'],
-                    datasets: [{
-                        label: 'Alumnos inscritos a ETS',
-                        data: [120, 95, 80, 65, 45],
-                        backgroundColor: 'rgba(13, 110, 253, 0.8)',
-                        borderRadius: 4
-                    }]
-                },
-                options: { responsive: true, plugins: { legend: { display: false } } }
+                    // 2. Renderizar Gráfica
+                    const canvas = document.getElementById('inscripcionesChart');
+                    if (canvas) {
+                        const ctx = canvas.getContext('2d');
+                        if (chartInscripciones) chartInscripciones.destroy(); 
+                        
+                        chartInscripciones = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: data.chart.labels.length > 0 ? data.chart.labels : ['Sin datos'],
+                                datasets: [{
+                                    label: 'Alumnos inscritos a ETS',
+                                    data: data.chart.data.length > 0 ? data.chart.data : [0],
+                                    backgroundColor: 'rgba(13, 110, 253, 0.8)',
+                                    borderRadius: 4
+                                }]
+                            },
+                            options: { responsive: true, plugins: { legend: { display: false } } }
+                        });
+                    }
+
+                    // 3. Renderizar Actividad Reciente
+                    // Buscamos el contenedor de la actividad en la vista (el segundo card-body del row)
+                    const contenedorActividad = document.querySelector('.col-12.col-lg-4 .card-body');
+                    if (contenedorActividad) {
+                        contenedorActividad.innerHTML = ''; // Limpiar el contenido estático
+                        
+                        if (data.actividad.length === 0) {
+                            contenedorActividad.innerHTML = '<p class="text-muted text-center py-3">No hay actividad reciente</p>';
+                        } else {
+                            data.actividad.forEach(act => {
+                                // Definir colores e iconos según el estado del pago
+                                let icono = act.estado_pago === 'Pagado' ? 'bi-check-circle' : 'bi-clock-history';
+                                let color = act.estado_pago === 'Pagado' ? 'success' : 'warning';
+                                let titulo = act.estado_pago === 'Pagado' ? 'Inscripción validada' : 'Pago pendiente';
+                                
+                                contenedorActividad.innerHTML += `
+                                    <div class="d-flex mb-3 border-bottom pb-2">
+                                        <div class="flex-shrink-0 p-2 bg-${color} bg-opacity-10 rounded text-${color}">
+                                            <i class="bi ${icono} fs-5"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-0">${titulo}</h6>
+                                            <small class="text-muted">Boleta ${act.boleta} - ${act.materia}</small>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        }
+                    }
+                } else {
+                    console.error("Error desde el servidor:", data.message);
+                    if(kpiExamenes) kpiExamenes.innerText = "Error";
+                }
+            })
+            .catch(error => {
+                console.error("Error al obtener datos del dashboard:", error);
+                if(kpiExamenes) kpiExamenes.innerText = "--";
+                if(kpiInscritos) kpiInscritos.innerText = "--";
+                if(kpiPagos) kpiPagos.innerText = "--";
+                if(kpiActas) kpiActas.innerText = "-- / --";
             });
-        }
     }
 
     // --- MÓDULO USUARIOS ---
