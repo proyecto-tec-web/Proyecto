@@ -1,37 +1,94 @@
 <?php
 session_start();
-require_once '../config/db.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+header('Content-Type: application/json; charset=utf-8');
 
-$datos_recibidos = json_decode(file_get_contents("php://input"), true);
+require_once __DIR__ . '/../config/db.php';
 
-// 1. Validamos que exista la llave 'calificaciones'
-if (!$datos_recibidos || !isset($datos_recibidos['calificaciones'])) {
-    echo json_encode(["status" => "error", "message" => "Datos inválidos."]);
-    exit();
+// 1. Validar que el usuario esté logueado
+if (!isset($_SESSION['id_usuario'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Acceso denegado. Inicia sesión.']);
+    exit;
 }
 
-$calificaciones = $datos_recibidos['calificaciones'];
-$id_examen = $datos_recibidos['id_examen'];
+// Obtenemos el rol de la sesión actual 
+$rol_usuario = strtolower(trim($_SESSION['rol'] ?? $_SESSION['usuario_rol'] ?? ''));
+
+$data = json_decode(file_get_contents("php://input"), true);
+$id_examen = $data['id_examen'] ?? null;
+$calificaciones = $data['calificaciones'] ?? []; 
+
+if (!$id_examen || empty($calificaciones)) {
+    echo json_encode(['status' => 'error', 'message' => 'Faltan datos para procesar la solicitud.']);
+    exit;
+}
 
 try {
-    $conexion->beginTransaction();
+    // 2. Buscamos en qué estado se encuentra el examen en la base de datos
+    $stmtExamen = $conexion->prepare("SELECT estado FROM examen WHERE id_examen = ?");
+    $stmtExamen->execute([$id_examen]);
+    $examen = $stmtExamen->fetch(PDO::FETCH_ASSOC);
 
-    $stmt = $conexion->prepare("UPDATE inscripcion_examen SET calificacion = ? WHERE id_inscripcion = ?");
-
-    // 2. Iteramos sobre la lista de calificaciones que viene del JS
-    foreach ($calificaciones as $item) {
-        $calificacion = ($item['calificacion'] !== '') ? floatval($item['calificacion']) : null;
-        $stmt->execute([$calificacion, $item['id_inscripcion']]);
+    if (!$examen) {
+        echo json_encode(['status' => 'error', 'message' => 'El examen no existe.']);
+        exit;
     }
 
-    // 3. Cerramos el examen a "Calificado" usando el ID que nos mandó el JS
-    $stmtUpdateExamen = $conexion->prepare("UPDATE examen SET estado = 'Calificado' WHERE id_examen = ?");
-    $stmtUpdateExamen->execute([$id_examen]);
+    $estado_actual = $examen['estado'];
+
+    // ==========================================
+    // 3. REGLAS DE NEGOCIO Y SEGURIDAD
+    // ==========================================
+
+    // REGLA A: No se puede calificar un examen que no esté Cerrado
+    if ($estado_actual === 'Programado' || $estado_actual === 'Abierto') {
+        echo json_encode(['status' => 'error', 'message' => 'El examen aún no está Cerrado. Aún no se pueden capturar calificaciones.']);
+        exit;
+    }
+
+    // REGLA B: Si ya está calificado, SOLO EL ADMINISTRADOR puede cambiarlo
+    // Validamos 'admin' y 'administrador' por si acaso
+    if ($estado_actual === 'Calificado' && $rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
+        echo json_encode(['status' => 'error', 'message' => 'Acceso Denegado: El acta ya fue cerrada. Solo un Administrador puede modificar calificaciones.']);
+        exit;
+    }
+
+    // ==========================================
+
+    // 4. Si pasó las reglas, iniciamos el guardado
+    $conexion->beginTransaction();
+
+    $sql = "UPDATE inscripcion_examen SET calificacion = ? WHERE id_inscripcion = ?";
+    $stmt = $conexion->prepare($sql);
+
+    foreach ($calificaciones as $item) {
+        if (isset($item['calificacion']) && $item['calificacion'] !== "") {
+            $cal = floatval($item['calificacion']);
+            
+            // Validar que la calificación sea del 0 al 10 en el servidor
+            if ($cal < 0 || $cal > 10) {
+                // Si alguien hizo trampa brincándose el JS, cancelamos TODO y mandamos error
+                $conexion->rollBack();
+                echo json_encode(['status' => 'error', 'message' => 'Seguridad: Una calificación detectada está fuera del rango permitido (0-10). Operación cancelada.']);
+                exit;
+            }
+            
+            $stmt->execute([$cal, $item['id_inscripcion']]);
+        }
+    } 
+    // ¡Aquí quitamos la llave extra que tenías!
+
+    // 5. Cambiamos el estado del examen a Calificado
+    $sqlActualizarExamen = "UPDATE examen SET estado = 'Calificado' WHERE id_examen = ?";
+    $stmtActualizarExamen = $conexion->prepare($sqlActualizarExamen);
+    $stmtActualizarExamen->execute([$id_examen]);
 
     $conexion->commit();
-    echo json_encode(["status" => "success"]);
+    echo json_encode(['status' => 'success', 'message' => 'Calificaciones guardadas exitosamente.']);
+
 } catch (PDOException $e) {
     $conexion->rollBack();
-    echo json_encode(["status" => "error", "message" => "Error de BD: " . $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Error de base de datos: ' . $e->getMessage()]);
 }
 ?>
