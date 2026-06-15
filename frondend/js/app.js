@@ -112,9 +112,28 @@ function inicializarLogicaVista(nombreVista) {
         cargarSelectExamenesCalificar();
         document.getElementById('select-examen-calificar')?.addEventListener('change', (e) => cargarAlumnosParaCalificar(e.target.value));
         document.getElementById('btn-guardar-calificaciones')?.addEventListener('click', guardarCalificaciones);
+        
+        // CONECTAMOS EL BOTÓN DE EXPORTAR
+        document.getElementById('btn-exportar-csv')?.addEventListener('click', exportarCalificacionesCSV);
+
+        document.getElementById('buscador-examenes-calificar')?.addEventListener('keyup', function() {
+            const texto = this.value.toLowerCase();
+            const opciones = document.getElementById('select-examen-calificar').options;
+            for (let i = 1; i < opciones.length; i++) {
+                opciones[i].style.display = opciones[i].text.toLowerCase().includes(texto) ? '' : 'none';
+            }
+        });
+
+        document.getElementById('buscador-alumnos-calificar')?.addEventListener('keyup', function() {
+            const texto = this.value.toLowerCase();
+            document.querySelectorAll('#tbody-calificaciones tr').forEach(fila => {
+                if(fila.cells.length > 1) { 
+                    fila.style.display = fila.innerText.toLowerCase().includes(texto) ? '' : 'none';
+                }
+            });
+        });
     }
 
-    // --- MÓDULO PROFESORES REPOTENCIADO ---
     if (nombreVista === 'profesores') {
         cargarTablaProfesoresAdmin();
         document.getElementById('buscador-profesores')?.addEventListener('keyup', aplicarFiltrosProfesor);
@@ -129,6 +148,9 @@ function inicializarLogicaVista(nombreVista) {
 
     if (nombreVista === 'usuarios') {
         cargarTablaUsuarios();
+
+        document.getElementById('buscador-usuarios')?.addEventListener('keyup', aplicarFiltrosUsuario);
+        document.getElementById('filtro-rol-usuario')?.addEventListener('change', aplicarFiltrosUsuario);
 
         const btnGuardarUsuario = document.getElementById('btn-guardar-usuario');
         if (btnGuardarUsuario) {
@@ -254,7 +276,6 @@ function inicializarLogicaVista(nombreVista) {
     if (nombreVista === 'revisiones' && typeof window.cargarRevisiones === 'function') window.cargarRevisiones();
 }
 
-
 // =======================================================
 // FUNCIONES GLOBALES 
 // =======================================================
@@ -271,9 +292,11 @@ function cargarTablaUsuarios() {
             if (datos.data && datos.data.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay usuarios.</td></tr>`; return; }
             if(datos.data){
                 datos.data.forEach(user => {
-                    let colorBadge = (user.rol === 'Administrador' || user.rol === 'admin') ? 'danger' : 'primary';
+                    let colorBadge = (user.rol === 'Administrador' || user.rol === 'admin') ? 'danger' : (user.rol === 'profesor' ? 'success' : 'primary');
+                    let rolNormalizado = user.rol.toLowerCase();
+
                     let filaHTML = `
-                        <tr>
+                        <tr data-rol="${rolNormalizado}">
                             <td class="ps-4 fw-bold text-secondary">#${user.id_usuario}</td>
                             <td>${user.correo}</td>
                             <td><span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">${user.rol}</span></td>
@@ -303,9 +326,26 @@ function cargarTablaUsuarios() {
                         }
                     });
                 });
+
+                aplicarFiltrosUsuario();
             }
         })
         .catch(() => { tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error de conexión.</td></tr>`; });
+}
+
+function aplicarFiltrosUsuario() {
+    const texto = document.getElementById('buscador-usuarios')?.value.toLowerCase() || '';
+    const rolFiltro = document.getElementById('filtro-rol-usuario')?.value.toLowerCase() || 'todos';
+
+    document.querySelectorAll('#cuerpo-tabla-usuarios tr').forEach(fila => {
+        if(fila.cells.length > 1) { 
+            const contenido = fila.innerText.toLowerCase();
+            const rolFila = fila.getAttribute('data-rol') || '';
+            let coincideTexto = contenido.includes(texto);
+            let coincideRol = (rolFiltro === 'todos') || (rolFila.includes(rolFiltro)) || (rolFiltro === 'admin' && rolFila.includes('administrador'));
+            fila.style.display = (coincideTexto && coincideRol) ? '' : 'none';
+        }
+    });
 }
 
 function cargarTablaExamenes() {
@@ -388,7 +428,7 @@ function cargarSelectExamenesCalificar() {
         if (data.status === 'success') {
             select.innerHTML = '<option value="" selected disabled>Selecciona un examen...</option>';
             data.data.filter(ex => ex.estado === 'Cerrado' || ex.estado === 'Calificado').forEach(ex => {
-                select.innerHTML += `<option value="${ex.id_examen}">${ex.estado === 'Calificado' ? '✅' : '📝'} #${ex.id_examen} - ${ex.materia}</option>`;
+                select.innerHTML += `<option value="${ex.id_examen}">${ex.estado === 'Calificado' ? '✅' : '📝'} #${ex.id_examen} - ${ex.materia} | ${ex.fecha}</option>`;
             });
         }
     });
@@ -397,16 +437,26 @@ function cargarSelectExamenesCalificar() {
 function cargarAlumnosParaCalificar(idExamen) {
     const tbody = document.getElementById('tbody-calificaciones');
     const btnGuardar = document.getElementById('btn-guardar-calificaciones');
+    const btnExportar = document.getElementById('btn-exportar-csv'); // Referencia al botón exportar
+    
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span></td></tr>';
     btnGuardar.disabled = true;
+    if(btnExportar) btnExportar.style.display = 'none'; // Lo ocultamos hasta ver si hay datos
 
     fetch(`../../php/endpoints/obtener_alumnos_examen.php?id_examen=${idExamen}`).then(res => res.json()).then(data => {
         tbody.innerHTML = '';
-        if (data.status === 'error' || data.data.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay alumnos.</td></tr>'; return; }
+        if (data.status === 'error' || data.data.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay alumnos en este examen.</td></tr>'; 
+            return; 
+        }
+        
+        // Si hay datos, activamos los botones
         btnGuardar.disabled = false;
+        if(btnExportar) btnExportar.style.display = 'inline-block';
+
         data.data.forEach(al => {
-            tbody.innerHTML += `<tr><td class="ps-4 fw-bold text-secondary">${al.boleta}</td><td>${al.apellido_paterno} ${al.nombre}</td>
+            tbody.innerHTML += `<tr><td class="ps-4 fw-bold text-secondary">${al.boleta}</td><td>${al.apellido_paterno} ${al.apellido_materno} ${al.nombre}</td>
                 <td class="pe-4"><input type="number" class="form-control input-calificacion" data-id="${al.id_inscripcion}" value="${al.calificacion ?? ''}" min="0" max="10" step="0.1"></td></tr>`;
         });
     });
@@ -429,9 +479,48 @@ function guardarCalificaciones() {
     .then(res => res.json()).then(data => { if (data.status === 'success') { alert("¡Guardado!"); cargarSelectExamenesCalificar(); } else alert(data.message); });
 }
 
-// ----------------------------------------------------------------------
-// FUNCIONES DE PROFESORES
-// ----------------------------------------------------------------------
+// --- NUEVA FUNCIÓN PARA EXPORTAR A CSV ---
+function exportarCalificacionesCSV() {
+    const selector = document.getElementById('select-examen-calificar');
+    const idExamen = selector.value;
+    
+    // Sacamos el nombre del examen limpiando los emojis y caracteres raros
+    const nombreExamen = selector.options[selector.selectedIndex].text.replace(/[^a-zA-Z0-9 -]/g, "").trim();
+
+    const filas = document.querySelectorAll('#tbody-calificaciones tr');
+    if (filas.length === 0 || (filas.length === 1 && filas[0].cells.length === 1)) {
+        alert("No hay datos para exportar.");
+        return;
+    }
+
+    // Le agregamos el BOM (\uFEFF) para que Excel (que es medio especial) lea bien los acentos
+    let csvContent = "\uFEFFBoleta,Nombre del Alumno,Calificacion\n";
+
+    filas.forEach(fila => {
+        if (fila.cells.length >= 3) {
+            const boleta = fila.cells[0].innerText.trim();
+            const nombre = fila.cells[1].innerText.trim();
+            
+            // La calificación vive dentro de un input, la sacamos de ahí
+            const inputCalif = fila.cells[2].querySelector('input');
+            const calif = inputCalif ? inputCalif.value : '';
+            
+            // Envolvemos el nombre en comillas por si tiene comas
+            csvContent += `${boleta},"${nombre}",${calif}\n`;
+        }
+    });
+
+    // Magia para descargar el archivo sin ir al backend
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Acta_${nombreExamen.replace(/ /g,"_")}.csv`);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
 function cargarTablaProfesoresAdmin() {
     const tbody = document.getElementById('tbody-profesores');
@@ -443,7 +532,6 @@ function cargarTablaProfesoresAdmin() {
             return;
         }
         data.data.forEach(p => {
-            // Visualización dinámica del estado
             let colorBadge = p.estado === 'Activo' ? 'success' : 'secondary';
             let btnIcono = p.estado === 'Activo' ? '<i class="bi bi-person-dash"></i>' : '<i class="bi bi-person-check"></i>';
             let btnColor = p.estado === 'Activo' ? 'outline-danger' : 'outline-success';
@@ -467,7 +555,6 @@ function cargarTablaProfesoresAdmin() {
                 </tr>`;
         });
 
-        // Evento Editar
         tbody.querySelectorAll('.btn-editar-profe').forEach(btn => {
             btn.onclick = function() {
                 document.getElementById('edit-prof-boleta-actual').value = this.dataset.boleta;
@@ -479,7 +566,6 @@ function cargarTablaProfesoresAdmin() {
             }
         });
 
-        // Evento Deshabilitar/Habilitar
         tbody.querySelectorAll('.btn-estado-profe').forEach(btn => {
             btn.onclick = function() {
                 let accion = this.dataset.estado === 'Activo' ? 'deshabilitar' : 'habilitar';
@@ -493,7 +579,7 @@ function cargarTablaProfesoresAdmin() {
             }
         });
 
-        aplicarFiltrosProfesor(); // Refrescar filtros si están activos
+        aplicarFiltrosProfesor(); 
     });
 }
 
@@ -502,7 +588,7 @@ function aplicarFiltrosProfesor() {
     const estado = document.getElementById('filtro-estado-profesor')?.value || 'Todos';
 
     document.querySelectorAll('#tbody-profesores tr').forEach(fila => {
-        if(fila.cells.length > 1) { // Evitar ocultar el mensaje de "No hay profesores"
+        if(fila.cells.length > 1) { 
             const contenido = fila.innerText.toLowerCase();
             const estadoFila = fila.getAttribute('data-estado');
             let coincideTexto = contenido.includes(texto);
