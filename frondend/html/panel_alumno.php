@@ -39,6 +39,10 @@ if ($rol_usuario !== 'alumno') {
     <main class="d-flex flex-nowrap min-vh-100">
         
         <div class="offcanvas-md offcanvas-start bg-body-tertiary shadow-sm d-flex flex-column flex-shrink-0 p-3" tabindex="-1" id="sidebarMenu" style="width: 280px; z-index: 1045;">
+            <div class="offcanvas-header d-md-none border-bottom mb-3">
+                <h5 class="offcanvas-title">Menú Principal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu"></button>
+            </div>
             <a href="#" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
                 <i class="bi bi-mortarboard-fill fs-2 text-primary me-2"></i>
                 <span class="fs-5 fw-bold">Portal Alumno</span>
@@ -95,6 +99,8 @@ if ($rol_usuario !== 'alumno') {
     </main>
 
     <script src="./../js/bootstrap.bundle.min.js"></script>
-    <script src="./../js/app.js?v=1000"></script>
+    <script src="./../js/alumno.js?v=1002"></script>
+    <script src="./../js/app.js?v=1002"></script>
+    <script src="./../js/chatboot.js?v=1002"></script>
 </body>
 </html>
