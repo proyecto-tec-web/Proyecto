@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 header('Content-Type: application/json; charset=utf-8');
-require_once './../config/db.php';
+require_once '../config/db.php';
 
 // Seguridad: solo alumnos con sesión activa
 if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'alumno') {
