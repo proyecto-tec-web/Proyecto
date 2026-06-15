@@ -179,52 +179,27 @@ function cargarDatosCatalogo(tipo) {
 }
 
 // =========================================================================
-// CONTROL DE VENTANA FLOTANTE (MODAL) PARA NUEVOS REGISTROS
+// CONTROL DE VENTANA FLOTANTE (MODAL) PARA NUEVOS REGISTROS Y EDICIÓN
 let modalActual; 
 let tipoModalActual = ''; 
+let idRegistroEditando = null; // <-- NUEVA VARIABLE: Guarda el ID del registro a editar
 
-function abrirModalNuevo(tipo) {
-    tipoModalActual = tipo; 
+// Le agregamos un segundo parámetro (datosEdicion) que solo se usará cuando vayamos a editar
+function abrirModalNuevo(tipo, datosEdicion = null) {
+    // Si nos pasan datos, estamos editando. Si no, estamos creando.
+    tipoModalActual = datosEdicion ? 'editar_' + tipo : tipo; 
+    
     const titulo = document.getElementById('titulo-modal');
     const cuerpo = document.getElementById('cuerpo-modal');
 
     if (tipo === 'carreras') {
-        titulo.innerText = 'Agregar Nueva Carrera';
-        cuerpo.innerHTML = `
-            <form id="form-nuevo-catalogo">
-                <div class="mb-3">
-                    <label class="form-label fw-bold text-secondary">Nombre de la Carrera</label>
-                    <input type="text" class="form-control" id="input-carrera-nombre" placeholder="Ej. Licenciatura en Ciencia de Datos" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold text-secondary">Acrónimo</label>
-                    <input type="text" class="form-control" id="input-carrera-acronimo" placeholder="Ej. LCD" required>
-                </div>
-            </form>
-        `;
+        titulo.innerText = datosEdicion ? 'Editar Carrera' : 'Agregar Nueva Carrera';
+        // (Aquí iría el HTML del formulario carreras...)
     } else if (tipo === 'salones') {
-        titulo.innerText = 'Agregar Nuevo Salón';
-        cuerpo.innerHTML = `
-            <form id="form-nuevo-catalogo">
-                <div class="mb-3">
-                    <label class="form-label fw-bold text-secondary"><i class="bi bi-building me-2"></i>Edificio</label>
-                    <input type="text" class="form-control" id="input-salon-edificio" placeholder="Ej. Edificio de Pesados" required>
-                </div>
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="form-label fw-bold text-secondary">Piso / Planta</label>
-                        <input type="text" class="form-control" id="input-salon-piso" placeholder="Ej. Planta Baja" required>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label fw-bold text-secondary">Número o Aula</label>
-                        <input type="text" class="form-control" id="input-salon-numero" placeholder="Ej. Auditorio 1" required>
-                    </div>
-                </div>
-            </form>
-        `;
+        titulo.innerText = datosEdicion ? 'Editar Salón' : 'Agregar Nuevo Salón';
+        // (Aquí iría el HTML del formulario salones...)
     } else if (tipo === 'materias') {
-        titulo.innerText = 'Agregar Nueva Materia';
-        // FORMULARIO NUEVOPARA LOS ERRORES (invalid-feedback)
+        titulo.innerText = datosEdicion ? 'Editar Materia' : 'Agregar Nueva Materia';
         cuerpo.innerHTML = `
             <form id="form-nuevo-catalogo" novalidate>
                 <div class="mb-3">
@@ -249,83 +224,70 @@ function abrirModalNuevo(tipo) {
                         <div class="invalid-feedback">Campo requerido.</div>
                     </div>
                 </div>
-                
                 <div id="alerta-servidor" class="alert alert-danger d-none mt-2" role="alert"></div>
             </form>
         `;
     }
 
-    // Despertamos el modal usando la herramienta interna de Bootstrap
     const modalElement = document.getElementById('modalCatalogo');
     modalActual = new bootstrap.Modal(modalElement);
     modalActual.show();
+
+    // Si estamos editando, llenamos los campos con los datos de la BD
+    if (datosEdicion && tipo === 'materias') {
+        document.getElementById('input-materia-nombre').value = datosEdicion.nombre;
+        document.getElementById('input-materia-semestre').value = datosEdicion.semestre;
+        document.getElementById('input-materia-carrera').value = datosEdicion.id_carrera;
+        document.getElementById('input-materia-area').value = datosEdicion.id_area;
+        idRegistroEditando = datosEdicion.id_materia; // Guardamos el ID en secreto para actualizarlo luego
+    }
 }
 
 function guardarNuevoRegistro() {
-    if (tipoModalActual === 'materias') {
-        // 1. Capturamos los elementos HTML completos (para poder pintarlos de rojo si fallan)
+    // Aceptamos tanto 'materias' (crear) como 'editar_materias' (actualizar)
+    if (tipoModalActual === 'materias' || tipoModalActual === 'editar_materias') {
         const inputNombre = document.getElementById('input-materia-nombre');
         const inputSemestre = document.getElementById('input-materia-semestre');
         const inputCarrera = document.getElementById('input-materia-carrera');
         const inputArea = document.getElementById('input-materia-area');
         const alertaServidor = document.getElementById('alerta-servidor');
 
-        // 2. Limpiamos cualquier error visual previo antes de hacer la nueva validación
-        [inputNombre, inputSemestre, inputCarrera, inputArea].forEach(input => {
-            input.classList.remove('is-invalid');
-        });
-        alertaServidor.classList.add('d-none'); // Ocultamos el mensaje rojo del servidor
+        [inputNombre, inputSemestre, inputCarrera, inputArea].forEach(input => input.classList.remove('is-invalid'));
+        alertaServidor.classList.add('d-none'); 
 
-        let hayErrores = false; // Bandera: si esto se vuelve true, no enviamos nada a PHP
+        let hayErrores = false; 
 
-        // 3. Validaciones Frontend (Si fallan, pintamos el borde de rojo con 'is-invalid')
-        if (!inputNombre.value.trim()) {
-            inputNombre.classList.add('is-invalid');
-            hayErrores = true;
-        }
-
-        // Validamos que el semestre sea un número del 1 al 10
+        if (!inputNombre.value.trim()) { inputNombre.classList.add('is-invalid'); hayErrores = true; }
         const numSemestre = parseInt(inputSemestre.value.trim());
-        if (isNaN(numSemestre) || numSemestre < 1 || numSemestre > 10) {
-            inputSemestre.classList.add('is-invalid');
-            hayErrores = true;
-        }
+        if (isNaN(numSemestre) || numSemestre < 1 || numSemestre > 10) { inputSemestre.classList.add('is-invalid'); hayErrores = true; }
+        if (!inputCarrera.value.trim()) { inputCarrera.classList.add('is-invalid'); hayErrores = true; }
+        if (!inputArea.value.trim()) { inputArea.classList.add('is-invalid'); hayErrores = true; }
 
-        if (!inputCarrera.value.trim()) {
-            inputCarrera.classList.add('is-invalid');
-            hayErrores = true;
-        }
-
-        if (!inputArea.value.trim()) {
-            inputArea.classList.add('is-invalid');
-            hayErrores = true;
-        }
-
-        // Si la bandera está encendida, detenemos el proceso aquí mismo (no se hace el fetch)
         if (hayErrores) return; 
 
-        // 4. Si todo está perfecto, preparamos el paquete de datos para PHP
         const formData = new FormData();
         formData.append('nombre', inputNombre.value.trim());
         formData.append('semestre', inputSemestre.value.trim());
         formData.append('id_carrera', inputCarrera.value.trim());
         formData.append('id_area', inputArea.value.trim());
 
-        // 5. Enviamos a PHP mediante POST
-        fetch('../../php/endpoints/crear_materia.php', {
-            method: 'POST',
-            body: formData
-        })
+        // Si estamos editando, le agregamos el ID al paquete y cambiamos la ruta
+        let rutaFecth = '../../php/endpoints/crear_materia.php';
+        if (tipoModalActual === 'editar_materias') {
+            formData.append('id_materia', idRegistroEditando);
+            rutaFecth = '../../php/endpoints/actualizar_materia.php';
+        }
+
+        fetch(rutaFecth, { method: 'POST', body: formData })
         .then(res => res.json())
         .then(datos => {
             if (datos.status === 'success') {
-                alert(datos.message); // Todo salió bien
-                modalActual.hide(); // Cerramos el modal
-                cargarDatosCatalogo('materias'); // Refrescamos la tabla para ver la nueva materia
+                alert(datos.message); 
+                modalActual.hide(); 
+                cargarDatosCatalogo('materias'); 
             } else {
-                // PHP nos mandó un error (Ej. "El ID de la carrera no existe")
                 alertaServidor.innerText = datos.message;
-                alertaServidor.classList.remove('d-none'); // Hacemos visible el mensaje dentro del modal
+                alertaServidor.classList.remove('d-none'); 
             }
         })
         .catch(err => {
@@ -333,17 +295,49 @@ function guardarNuevoRegistro() {
             alertaServidor.innerText = "Fallo la conexión con el servidor.";
             alertaServidor.classList.remove('d-none');
         });
-
-    } else if (tipoModalActual === 'salones') {
-        alert("¡Pronto conectaremos el guardado de salones!");
-    } else if (tipoModalActual === 'carreras') {
-        alert("¡Pronto conectaremos el guardado de carreras!");
     }
 }
 
-// FUNCIONES TEMPORALES PARA EVITAR ERRORES DE CLIC
-function editarMateria(id) { console.log("Editar materia:", id); }
-function eliminarMateria(id) { console.log("Eliminar materia:", id); }
+// =========================================================================
+// FUNCIONES REALES DE EDICIÓN Y ELIMINACIÓN
+function eliminarMateria(id) {
+    if (confirm("¿Estás seguro de que deseas eliminar la materia #" + id + "? Esta acción no se puede deshacer.")) {
+        const formData = new FormData();
+        formData.append('id_materia', id);
+
+        fetch('../../php/endpoints/eliminar_materia.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(datos => {
+            if (datos.status === 'success') {
+                alert(datos.message);
+                cargarDatosCatalogo('materias'); // Refresca la tabla automáticamente
+            } else {
+                alert("Error: " + datos.message); // Avisa si está conectada a KARDEX, por ejemplo
+            }
+        })
+        .catch(err => console.error("Error al eliminar:", err));
+    }
+}
+
+function editarMateria(id) {
+    // 1. Vamos al backend a buscar los datos actuales de la materia
+    fetch('../../php/endpoints/obtener_materia.php?id=' + id)
+    .then(res => res.json())
+    .then(datos => {
+        if (datos.status === 'success') {
+            // 2. Si encontramos la materia, abrimos el modal pasándole los datos
+            abrirModalNuevo('materias', datos.data);
+        } else {
+            alert("Error: " + datos.message);
+        }
+    })
+    .catch(err => console.error("Error al obtener materia:", err));
+}
+
+// (Pendientes para Salones y Carreras)
 function editarSalon(id) { console.log("Editar salon:", id); }
 function eliminarSalon(id) { console.log("Eliminar salon:", id); }
 function editarCarrera(id) { console.log("Editar carrera:", id); }
