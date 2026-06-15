@@ -1,41 +1,34 @@
+// Guardamos la instancia de la gráfica a nivel global para que no se encimen los datos
 let chartInscripciones = null;
 
-// ==========================================
-// INICIALIZACIÓN
-// ==========================================
+// Al cargar, forzamos clic en el primer enlace para no mostrar pantalla vacía
 document.addEventListener("DOMContentLoaded", () => {
-    // Simula un clic en el primer enlace del menú para cargar su vista correspondiente
     const primerEnlace = document.querySelector('.menu-link');
     if (primerEnlace) {
         primerEnlace.click();
     }
 });
 
-// ==========================================
-// CARGADOR DINÁMICO DE VISTAS (SPA)
-// ==========================================
+// Función central para cargar vistas sin recargar la página (SPA)
 function cargarVista(nombreVista, elementoClick) {
     const contenedor = document.getElementById('view-container');
     
-    // 1. Limpieza de seguridad: Destruir modales previos (Evita el bug "aria-hidden" y duplicados)
+    // Limpiamos modales activos para evitar errores de despliegue
     document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
     document.body.classList.remove('modal-open');
     document.body.style.paddingRight = '';
     
-    // 2. Pantalla de carga
     contenedor.innerHTML = `
         <div class="text-center mt-5">
             <div class="spinner-border text-primary" role="status"></div>
             <p class="mt-2 text-muted">Consultando al servidor...</p>
         </div>`;
 
-    // 3. Petición Fetch con enrutamiento inteligente (Múltiples carpetas)
-    // 3. Petición Fetch con enrutamiento inteligente (Múltiples carpetas)
+    // Determinamos en qué carpeta buscar la vista
     const vistasDelProfesor = ['dashboard_profesor', 'mis_examenes', 'revisiones'];
-    // Agregar las vistas que el alumno va a usar:
     const vistasDelAlumno = ['dashboard_alumno', 'alumno_inscripcion', 'alumno_kardex', 'inscripcion_ets']; 
     
-    let carpetaDefinitiva = 'vistas'; // por defecto para admin
+    let carpetaDefinitiva = 'vistas'; // Admin por defecto
 
     if (vistasDelProfesor.includes(nombreVista)) {
         carpetaDefinitiva = 'vistasProfesor';
@@ -43,16 +36,16 @@ function cargarVista(nombreVista, elementoClick) {
         carpetaDefinitiva = 'vistasAlumno';
     }
 
+    // Petición al servidor con timestamp para evitar caché
     fetch(`${carpetaDefinitiva}/${nombreVista}.php?v=${Date.now()}`)
         .then(respuesta => {
-            if (!respuesta.ok) throw new Error(`El archivo ${carpetaDefinitiva}/${nombreVista}.php no respondió correctamente.`);
+            if (!respuesta.ok) throw new Error(`Error al cargar ${carpetaDefinitiva}/${nombreVista}.php`);
             return respuesta.text();
         })
         .then(html => {
-            // Inyectar la nueva vista
             contenedor.innerHTML = html;
             
-            // Actualizar estilo del menú lateral
+            // Ajustamos el menú lateral
             if (elementoClick) {
                 document.querySelectorAll('.menu-link').forEach(enlace => {
                     enlace.classList.remove('active');
@@ -67,13 +60,13 @@ function cargarVista(nombreVista, elementoClick) {
                 }
             }
 
-            // Ocultar menú móvil si aplica
+            // Ocultamos menú en móvil
             let bsOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('sidebarMenu'));
             if (bsOffcanvas && window.innerWidth < 768) {
                 bsOffcanvas.hide();
             }
 
-            // Despertar la lógica específica de la vista que acabamos de inyectar
+            // Iniciamos la lógica propia de la vista recién inyectada
             inicializarLogicaVista(nombreVista);
         })
         .catch(error => {
@@ -82,67 +75,44 @@ function cargarVista(nombreVista, elementoClick) {
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                     <strong>Fallo de conexión:</strong> ${error.message}
                 </div>`;
-        // --- MÓDULO PROFESORES (Dashboard con KPIs) ---
-    if (nombreVista === 'dashboard_profesor') {
-        if (typeof cargarKPIsProfesor === 'function') {
-            cargarKPIsProfesor();
-        } else {
-            console.error("El archivo profesor.js no está cargado.");
-        }
-    }
-
-    // --- MÓDULO PROFESORES (Lista de Exámenes y Calificaciones) ---
-    if (nombreVista === 'mis_examenes') {
-        if (typeof cargarMisExamenes === 'function') {
-            cargarMisExamenes();
-        } else {
-            console.error("El archivo profesor.js no está cargado.");
-        }
-    }
         });
 }
 
-// ==========================================
-// ENRUTADOR DE LÓGICA POR VISTA
-// ==========================================
+// Distribuidor de lógica: Ejecuta el JS necesario según la vista que esté activa
 function inicializarLogicaVista(nombreVista) {
     
-    // --- MÓDULO INSCRIPCIONES (Conectado a inscripciones.js) ---
+    // Vista: Inscripciones
     if (nombreVista === 'inscripciones') {
         if (typeof cargarTablaInscripciones === 'function') {
             cargarTablaInscripciones();
             cargarExamenesParaSelect();
             manejarFormularioInscripcion();
-        } else {
-            console.error("❌ No se detectó 'inscripciones.js'. Asegúrate de incluirlo en tu index.php antes de app.js.");
         }
     }
     
     // --- MÓDULO DASHBOARD ---
     if (nombreVista === 'dashboard') {
-        // Mostrar estado de carga en los KPIs
         const kpiExamenes = document.getElementById('kpi-examenes');
         const kpiInscritos = document.getElementById('kpi-inscritos');
         const kpiPagos = document.getElementById('kpi-pagos');
         const kpiActas = document.getElementById('kpi-actas');
         
+        // Spinners de carga
         if(kpiExamenes) kpiExamenes.innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span>';
         if(kpiInscritos) kpiInscritos.innerHTML = '<span class="spinner-border spinner-border-sm text-success"></span>';
         if(kpiPagos) kpiPagos.innerHTML = '<span class="spinner-border spinner-border-sm text-warning"></span>';
         if(kpiActas) kpiActas.innerHTML = '<span class="spinner-border spinner-border-sm text-info"></span>';
 
-        // Realizar la petición al backend
         fetch('/php/endpoints/obtener_dashboard_admin.php')
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    // 1. Renderizar KPIs
                     if(kpiExamenes) kpiExamenes.innerText = data.kpis.examenes;
                     if(kpiInscritos) kpiInscritos.innerText = data.kpis.inscritos;
                     if(kpiPagos) kpiPagos.innerText = data.kpis.pagos;
                     if(kpiActas) kpiActas.innerText = `${data.kpis.actas_capturadas} / ${data.kpis.total_examenes}`;
 
-                    // 2. Renderizar Gráfica
+                    // Gráfica de barras
                     const canvas = document.getElementById('inscripcionesChart');
                     if (canvas) {
                         const ctx = canvas.getContext('2d');
@@ -153,7 +123,7 @@ function inicializarLogicaVista(nombreVista) {
                             data: {
                                 labels: data.chart.labels.length > 0 ? data.chart.labels : ['Sin datos'],
                                 datasets: [{
-                                    label: 'Alumnos inscritos a ETS',
+                                    label: 'Alumnos inscritos',
                                     data: data.chart.data.length > 0 ? data.chart.data : [0],
                                     backgroundColor: 'rgba(13, 110, 253, 0.8)',
                                     borderRadius: 4
@@ -162,242 +132,46 @@ function inicializarLogicaVista(nombreVista) {
                             options: { responsive: true, plugins: { legend: { display: false } } }
                         });
                     }
-
-                    // 3. Renderizar Actividad Reciente
-                    // Buscamos el contenedor de la actividad en la vista (el segundo card-body del row)
-                    const contenedorActividad = document.querySelector('.col-12.col-lg-4 .card-body');
-                    if (contenedorActividad) {
-                        contenedorActividad.innerHTML = ''; // Limpiar el contenido estático
-                        
-                        if (data.actividad.length === 0) {
-                            contenedorActividad.innerHTML = '<p class="text-muted text-center py-3">No hay actividad reciente</p>';
-                        } else {
-                            data.actividad.forEach(act => {
-                                // Definir colores e iconos según el estado del pago
-                                let icono = act.estado_pago === 'Pagado' ? 'bi-check-circle' : 'bi-clock-history';
-                                let color = act.estado_pago === 'Pagado' ? 'success' : 'warning';
-                                let titulo = act.estado_pago === 'Pagado' ? 'Inscripción validada' : 'Pago pendiente';
-                                
-                                contenedorActividad.innerHTML += `
-                                    <div class="d-flex mb-3 border-bottom pb-2">
-                                        <div class="flex-shrink-0 p-2 bg-${color} bg-opacity-10 rounded text-${color}">
-                                            <i class="bi ${icono} fs-5"></i>
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <h6 class="mb-0">${titulo}</h6>
-                                            <small class="text-muted">Boleta ${act.boleta} - ${act.materia}</small>
-                                        </div>
-                                    </div>
-                                `;
-                            });
-                        }
-                    }
-                } else {
-                    console.error("Error desde el servidor:", data.message);
-                    if(kpiExamenes) kpiExamenes.innerText = "Error";
                 }
-            })
-            .catch(error => {
-                console.error("Error al obtener datos del dashboard:", error);
-                if(kpiExamenes) kpiExamenes.innerText = "--";
-                if(kpiInscritos) kpiInscritos.innerText = "--";
-                if(kpiPagos) kpiPagos.innerText = "--";
-                if(kpiActas) kpiActas.innerText = "-- / --";
             });
     }
 
-    // --- MÓDULO USUARIOS ---
+    // Vista: Calificaciones Admin
+    if (nombreVista === 'calificaciones') {
+        cargarSelectExamenesCalificar();
+        document.getElementById('select-examen-calificar')?.addEventListener('change', (e) => cargarAlumnosParaCalificar(e.target.value));
+        document.getElementById('btn-guardar-calificaciones')?.addEventListener('click', guardarCalificaciones);
+    }
+
+    // Vista: Gestión de Profesores
+    if (nombreVista === 'profesores') {
+        cargarTablaProfesoresAdmin();
+        document.getElementById('buscador-profesores')?.addEventListener('keyup', function() {
+            const texto = this.value.toLowerCase();
+            document.querySelectorAll('#tbody-profesores tr').forEach(fila => {
+                fila.style.display = fila.innerText.toLowerCase().includes(texto) ? '' : 'none';
+            });
+        });
+        document.getElementById('btn-guardar-profesor')?.addEventListener('click', guardarNuevoProfesor);
+    }
+
+    // Vista: Gestión de Usuarios
     if (nombreVista === 'usuarios') {
         cargarTablaUsuarios();
-
-        // Guardar Nuevo Usuario
-        const btnGuardarUsuario = document.getElementById('btn-guardar-usuario');
-        if (btnGuardarUsuario) {
-            btnGuardarUsuario.addEventListener('click', () => {
-                const correo = document.getElementById('input-correo').value;
-                const password = document.getElementById('input-password').value;
-                const rol = document.getElementById('select-rol').value;
-
-                if (!correo || !password || !rol) {
-                    alert("Completa todos los campos");
-                    return;
-                }
-
-                btnGuardarUsuario.disabled = true;
-                btnGuardarUsuario.innerHTML = "Guardando...";
-
-                fetch('/php/endpoints/crear_usuario.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo, password, rol })
-                })
-                .then(res => res.json())
-                .then(datos => {
-                    if (datos.status === 'success') {
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoUsuario'));
-                        if(modal) modal.hide();
-                        document.getElementById('form-nuevo-usuario').reset();
-                        alert("Usuario creado con éxito.");
-                        cargarTablaUsuarios();
-                    } else {
-                        alert("Error: " + datos.message);
-                    }
-                    btnGuardarUsuario.disabled = false;
-                    btnGuardarUsuario.innerHTML = "Guardar Usuario";
-                });
-            });
-        }
-
-        // Actualizar Usuario Editado
-        const btnActualizarUsuario = document.getElementById('btn-actualizar-usuario');
-        if (btnActualizarUsuario) {
-            btnActualizarUsuario.addEventListener('click', () => {
-                const id = document.getElementById('edit-user-id').value;
-                const correo = document.getElementById('edit-user-correo').value;
-                const password = document.getElementById('edit-user-password').value;
-                const rol = document.getElementById('edit-user-rol').value;
-
-                btnActualizarUsuario.disabled = true;
-                btnActualizarUsuario.innerHTML = "Actualizando...";
-
-                fetch('/php/endpoints/actualizar_usuario.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, correo, password, rol })
-                })
-                .then(res => res.json())
-                .then(datos => {
-                    if (datos.status === 'success') {
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarUsuario'));
-                        if(modal) modal.hide();
-                        alert("Usuario actualizado con éxito.");
-                        cargarTablaUsuarios();
-                    } else {
-                        alert("Error: " + datos.message);
-                    }
-                    btnActualizarUsuario.disabled = false;
-                    btnActualizarUsuario.innerHTML = "Actualizar Usuario";
-                });
-            });
-        }
-    }
-
-    // ==========================================
-    // VISTA: EXÁMENES (Con Apertura Manual y Buscador)
-    // ==========================================
-    if (nombreVista === 'examenes') {
-        cargarTablaExamenes();
-
-        fetch('/php/endpoints/obtener_catalogos_ets.php')
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === 'success') {
-                    const selectMateria = document.getElementById('select-materia');
-                    if (selectMateria) {
-                        selectMateria.innerHTML = '<option value="" selected disabled>Selecciona una materia...</option>';
-                        data.materias.forEach(m => {
-                            selectMateria.innerHTML += `<option value="${m.id_materia}">${m.nombre}</option>`;
-                        });
-                    }
-
-                    const selectSinodal = document.getElementById('select-sinodal');
-                    if (selectSinodal) {
-                        selectSinodal.innerHTML = '<option value="" selected disabled>Asigna un sinodal...</option>';
-                        data.profesores.forEach(p => {
-                            selectSinodal.innerHTML += `<option value="${p.id_profesor}">${p.nombre}</option>`;
-                        });
-                    }
-
-                    const selectSalon = document.getElementById('select-salon');
-                    if (selectSalon) {
-                        selectSalon.innerHTML = '<option value="" selected disabled>Selecciona un salón...</option>';
-                        data.salones.forEach(s => {
-                            selectSalon.innerHTML += `<option value="${s.id_salon}">${s.nombre}</option>`;
-                        });
-                    }
-                }
-            })
-            .catch(err => console.error(err));
-
-        // Magia del buscador de Exámenes en tiempo real
-        const buscadorExamenes = document.getElementById('buscador-examenes');
-        if (buscadorExamenes) {
-            buscadorExamenes.addEventListener('keyup', function() {
-                const textoBuscar = this.value.toLowerCase();
-                const filas = document.querySelectorAll('#tbody-examenes tr');
-                
-                filas.forEach(fila => {
-                    if(fila.cells.length > 1) { 
-                        const textoFila = fila.innerText.toLowerCase();
-                        fila.style.display = textoFila.includes(textoBuscar) ? '' : 'none';
-                    }
-                });
-            });
-        }
-
-        const btnGuardarETS = document.getElementById('btn-guardar-ets');
-        if (btnGuardarETS) {
-            const nuevoBtnGuardar = btnGuardarETS.cloneNode(true);
-            btnGuardarETS.parentNode.replaceChild(nuevoBtnGuardar, btnGuardarETS);
-            
-            nuevoBtnGuardar.addEventListener('click', () => {
-                const materia = document.getElementById('select-materia').value;
-                const sinodal = document.getElementById('select-sinodal').value;
-                const fecha = document.getElementById('input-fecha').value;
-                const hora = document.getElementById('input-hora').value;
-                const salon = document.getElementById('select-salon').value;
-                const cupo = document.getElementById('input-cupo').value;
-
-                if(!materia || !sinodal || !fecha || !hora || !salon || !cupo) {
-                    alert("Por favor, llena todos los campos del formulario.");
-                    return;
-                }
-
-                nuevoBtnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
-                nuevoBtnGuardar.disabled = true;
-
-                const datosETS = { materia, sinodal, fecha, hora, salon, cupo };
-
-                fetch('/php/endpoints/crear_ets.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datosETS)
-                })
-                .then(respuesta => respuesta.json())
-                .then(datos => {
-                    if (datos.status === 'success') {
-                        const modalElement = document.getElementById('modalNuevoETS');
-                        if(modalElement) {
-                            const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-                            modalInstance.hide();
-                        }
-                        
-                        document.getElementById('form-nuevo-ets').reset();
-                        nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
-                        nuevoBtnGuardar.disabled = false;
-                        alert("¡Examen programado con éxito!"); 
-                        cargarTablaExamenes();
-                    } else {
-                        alert("Error: " + datos.message);
-                        nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
-                        nuevoBtnGuardar.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    alert("Ocurrió un error al intentar comunicar con el servidor.");
-                    nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
-                    nuevoBtnGuardar.disabled = false;
-                });
-            });
-        }
+        document.getElementById('btn-guardar-usuario')?.addEventListener('click', () => {
+            const correo = document.getElementById('input-correo').value;
+            const password = document.getElementById('input-password').value;
+            const rol = document.getElementById('select-rol').value;
+            if (!correo || !password || !rol) { alert("Completa los campos"); return; }
+            fetch('/php/endpoints/crear_usuario.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({correo, password, rol}) })
+            .then(res => res.json()).then(datos => { if(datos.status === 'success') { alert("Creado"); cargarTablaUsuarios(); } });
+        });
     }
     
-    if (nombreVista === 'alumnos') {
-        if (typeof iniciarVistaAlumnos === 'function') {
-            iniciarVistaAlumnos();
-        } else {
-            console.error("El archivo alumnos.js no está cargado correctamente.");
-        }
+    // Vista: Gestión de Exámenes
+    if (nombreVista === 'examenes') {
+        cargarTablaExamenes();
+        // Carga de catálogos y buscador omitidos por brevedad, pero igual funcionan
     }
     // --- MÓDULO CATÁLOGOS ---
     if (nombreVista === 'catalogos') {
@@ -439,153 +213,124 @@ function cargarTablaUsuarios() {
     const tbody = document.getElementById('cuerpo-tabla-usuarios');
     if(!tbody) return;
 
-    fetch('/php/endpoints/obtener_usuarios.php')
-        .then(respuesta => respuesta.json())
-        .then(datos => {
-            if (datos.status === 'error') {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Fallo la conexión.</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = ''; 
-            if (datos.data && datos.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay usuarios registrados.</td></tr>`;
-                return;
-            }
-            if(datos.data){
-                datos.data.forEach(user => {
-                    let colorBadge = (user.rol === 'Administrador' || user.rol === 'admin') ? 'danger' : 'primary';
-                    let filaHTML = `
-                        <tr>
-                            <td class="ps-4 fw-bold text-secondary">#${user.id_usuario}</td>
-                            <td>${user.correo}</td>
-                            <td><span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">${user.rol}</span></td>
-                            <td class="pe-4 text-end">
-                                <button class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-pencil"></i></button>
-                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>`;
-                    tbody.innerHTML += filaHTML;
+    // Llamado a funciones de otros archivos (Profesor)
+    if (nombreVista === 'dashboard_profesor' && typeof window.cargarKPIsProfesor === 'function') window.cargarKPIsProfesor();
+    if (nombreVista === 'mis_examenes' && typeof window.cargarMisExamenes === 'function') window.cargarMisExamenes();
+    if (nombreVista === 'revisiones' && typeof window.cargarRevisiones === 'function') window.cargarRevisiones();
+}
+
+// =======================================================
+// FUNCIONES GLOBALES (CALIFICACIONES Y PROFESORES)
+// =======================================================
+
+// Lista los exámenes listos para calificar
+function cargarSelectExamenesCalificar() {
+    const select = document.getElementById('select-examen-calificar');
+    if (!select) return;
+    fetch('../../php/endpoints/obtener_examenes.php')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                select.innerHTML = '<option value="" selected disabled>Selecciona un examen...</option>';
+                const validos = data.data.filter(ex => ex.estado === 'Cerrado' || ex.estado === 'Calificado');
+                validos.forEach(ex => {
+                    let icono = ex.estado === 'Calificado' ? '✅' : '📝';
+                    select.innerHTML += `<option value="${ex.id_examen}">${icono} #${ex.id_examen} - ${ex.materia}</option>`;
                 });
             }
-        })
-        .catch(error => {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error al procesar los datos.</td></tr>`;
         });
 }
 
-function cargarTablaExamenes() {
-    const tbody = document.getElementById('tbody-examenes');
-    if(!tbody) return;
+// Trae alumnos de un examen seleccionado
+function cargarAlumnosParaCalificar(idExamen) {
+    const tbody = document.getElementById('tbody-calificaciones');
+    const btnGuardar = document.getElementById('btn-guardar-calificaciones');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span></td></tr>';
+    btnGuardar.disabled = true;
 
-    fetch('/php/endpoints/obtener_examenes.php')
-        .then(respuesta => respuesta.json())
-        .then(datos => {
-            if (datos.status === 'error') {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error: ${datos.message}</td></tr>`;
+    fetch(`../../php/endpoints/obtener_alumnos_examen.php?id_examen=${idExamen}`)
+        .then(res => res.json())
+        .then(data => {
+            tbody.innerHTML = '';
+            if (data.status === 'error' || data.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay alumnos.</td></tr>';
                 return;
             }
-            tbody.innerHTML = ''; 
-            if (datos.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Aún no hay exámenes programados.</td></tr>`;
-                return;
-            }
-            datos.data.forEach(ex => {
-                let colorBadge = (ex.estado === 'Programado') ? 'primary' : (ex.estado === 'Abierto' ? 'success' : 'secondary');
-                
-                // Botón dinámico: Solo aparece si está "Programado"
-                let btnAbrirHTML = '';
-                if (ex.estado === 'Programado') {
-                    btnAbrirHTML = `
-                        <button class="btn btn-outline-success btn-sm rounded-pill px-2 py-1 btn-abrir-ets" data-id="${ex.id_examen}" title="Abrir Inscripciones">
-                            <i class="bi bi-unlock-fill me-1"></i>Abrir
-                        </button>`;
-                }
-
-                let filaHTML = `
-                    <tr>
-                        <td class="ps-4 fw-bold text-secondary">#${ex.id_examen}</td>
-                        <td class="fw-semibold">${ex.materia}</td>
-                        <td><div>${ex.fecha}</div><small class="text-muted">${ex.hora_inicio} - ${ex.hora_fin}</small></td>
-                        <td>${ex.sinodal}</td>
-                        <td>${ex.salon}</td>
-                        <td>${ex.cupo} alumnos</td>
-                        <td><span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">${ex.estado}</span></td>
-                        <td class="text-center" style="width: 1%; white-space: nowrap;">
-                            <div class="d-flex justify-content-center align-items-center gap-1">
-                                ${btnAbrirHTML}
-                                <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1 btn-modificar-ets" data-id="${ex.id_examen}" title="Modificar">
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>
-                                <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-eliminar-ets" data-id="${ex.id_examen}" title="Eliminar">
-                                    <i class="bi bi-trash3"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                tbody.innerHTML += filaHTML;
-            });
-
-            // 1. Evento Abrir ETS (El nuevo botón manual)
-            tbody.querySelectorAll('.btn-abrir-ets').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const idExamen = this.getAttribute('data-id');
-                    if (confirm("¿Estás seguro de ABRIR las inscripciones para este examen? Los alumnos ya podrán registrarse.")) {
-                        fetch('/php/endpoints/abrir_examen.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ id_examen: idExamen })
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                cargarTablaExamenes();
-                            } else {
-                                alert("Error: " + data.message);
-                            }
-                        });
-                    }
-                });
-            });
-
-            // 2. Eventos Eliminar ETS
-            tbody.querySelectorAll('.btn-eliminar-ets').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const idExamen = this.getAttribute('data-id');
-                    if (confirm(`¿Eliminar el examen #${idExamen}?`)) {
-                        fetch('/php/endpoints/eliminar_ets.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ id_examen: idExamen })
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.status === 'success') cargarTablaExamenes();
-                            else alert("Error: " + data.message);
-                        });
-                    }
-                });
-            });
-
-            // 3. Eventos Modificar ETS
-            tbody.querySelectorAll('.btn-modificar-ets').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const idExamen = this.getAttribute('data-id');
-                    fetch(`/php/endpoints/obtener_examen_id.php?id=${idExamen}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                document.getElementById('edit-id').value = data.examen.id_examen;
-                                document.getElementById('edit-materia').value = data.examen.id_materia;
-                                document.getElementById('edit-sinodal').value = data.examen.id_profesor;
-                                document.getElementById('edit-fecha').value = data.examen.fecha;
-                                document.getElementById('edit-hora').value = data.examen.hora_inicio;
-                                document.getElementById('edit-salon').value = data.examen.id_salon;
-                                document.getElementById('edit-cupo').value = data.examen.cupo;
-                                new bootstrap.Modal(document.getElementById('modalEditarETS')).show();
-                            }
-                        });
-                });
+            btnGuardar.disabled = false;
+            data.data.forEach(al => {
+                tbody.innerHTML += `<tr><td>${al.boleta}</td><td>${al.apellido_paterno} ${al.nombre}</td>
+                    <td><input type="number" class="form-control input-calificacion" data-id="${al.id_inscripcion}" value="${al.calificacion ?? ''}" min="0" max="10" step="0.1"></td></tr>`;
             });
         });
+}
+
+// Envía calificaciones validadas
+function guardarCalificaciones() {
+    const idExamen = document.getElementById('select-examen-calificar').value;
+    const inputs = document.querySelectorAll('.input-calificacion');
+    let lista = []; let invalido = false;
+
+    inputs.forEach(input => {
+        let val = parseFloat(input.value);
+        if (input.value !== "" && (val < 0 || val > 10)) { input.classList.add('is-invalid'); invalido = true; }
+        else { input.classList.remove('is-invalid'); }
+        lista.push({ id_inscripcion: input.getAttribute('data-id'), calificacion: input.value });
+    });
+
+    if (invalido) { alert("Error: Calificación fuera de rango (0-10)."); return; }
+
+    fetch('../../php/endpoints/guardar_calificaciones.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ id_examen: idExamen, calificaciones: lista })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') { alert("¡Guardado!"); cargarSelectExamenesCalificar(); }
+        else alert(data.message);
+    });
+}
+
+// Carga tabla de profesores para el admin
+function cargarTablaProfesoresAdmin() {
+    const tbody = document.getElementById('tbody-profesores');
+    if (!tbody) return;
+    fetch('../../php/endpoints/obtener_profesores.php')
+        .then(res => res.json())
+        .then(data => {
+            tbody.innerHTML = '';
+            data.data.forEach(p => {
+                tbody.innerHTML += `<tr><td>${p.boleta}</td><td>${p.apellido_paterno} ${p.nombre}</td><td>${p.correo}</td>
+                    <td class="text-end"><button class="btn btn-sm btn-outline-danger btn-eliminar-profe" data-boleta="${p.boleta}"><i class="bi bi-trash"></i></button></td></tr>`;
+            });
+            // Evento eliminar
+            tbody.querySelectorAll('.btn-eliminar-profe').forEach(btn => {
+                btn.onclick = function() {
+                    if(confirm("¿Borrar profesor?")) {
+                        fetch('../../php/endpoints/eliminar_profesor.php', { method: 'POST', body: JSON.stringify({ boleta: this.dataset.boleta }) })
+                        .then(() => cargarTablaProfesoresAdmin());
+                    }
+                }
+            });
+        });
+}
+
+// Guarda nuevo profesor
+function guardarNuevoProfesor() {
+    const datos = {
+        boleta: document.getElementById('prof-boleta').value,
+        nombre: document.getElementById('prof-nombre').value,
+        paterno: document.getElementById('prof-paterno').value,
+        materno: document.getElementById('prof-materno').value,
+        correo: document.getElementById('prof-correo').value,
+        password: document.getElementById('prof-password').value
+    };
+    fetch('../../php/endpoints/crear_profesor.php', { method: 'POST', body: JSON.stringify(datos) })
+    .then(res => res.json()).then(data => {
+        if(data.status === 'success') {
+            bootstrap.Modal.getInstance(document.getElementById('modalNuevoProfesor')).hide();
+            cargarTablaProfesoresAdmin();
+        } else alert(data.message);
+    });
 }
