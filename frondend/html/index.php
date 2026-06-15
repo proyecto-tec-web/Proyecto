@@ -126,6 +126,6 @@ if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
     <script src="./../js/app.js?v=1000"></script>
     <script src="./../js/inscripciones.js?v=1000"></script>
     <script src="./../js/alumnos.js?v=1000"></script>
-    <script src="./../js/catalogos.js?v=1000"></script>
+    <script src="./../js/catalogos.js?v=1001"></script>
 </body>
 </html>
