@@ -2,6 +2,16 @@
 session_start();
 require_once '../config/db.php';
 
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    echo json_encode(["status" => "error", "message" => "Acceso no autorizado."]);
+    exit();
+}
+
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 $datos = json_decode(file_get_contents("php://input"), true);
 
 if (isset($datos['id_usuario'])) {
@@ -20,4 +30,6 @@ if (isset($datos['id_usuario'])) {
         echo json_encode(["status" => "error", "message" => "Fallo en BD: " . $e->getMessage()]);
     }
 }
+
+$conexion = null;
 ?>

@@ -7,6 +7,15 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/seguridad_admin.php';
 require_once __DIR__ . '/../config/db.php';
 
+if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'admin' )) {
+    echo json_encode(["status" => "error", "message" => "Acceso denegado."]);
+    exit();
+}
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 $data = json_decode(file_get_contents("php://input"), true);
 
 // Validamos que lleguen todos los datos
@@ -18,17 +27,15 @@ if (empty($data['boleta']) || empty($data['nombre']) || empty($data['paterno']) 
 try {
     $conexion->beginTransaction();
 
-    // 1. Crear el usuario primero
+    //Crear el usuario primero
     $sqlUsuario = "INSERT INTO usuario (correo, contrasena_hash, rol, estado) VALUES (?, ?, 'profesor', 'Activo')";
     $stmtUsuario = $conexion->prepare($sqlUsuario);
-    // NOTA: Como en tu setup.sql usas contraseñas planas ('profe123'), lo dejamos así. 
-    // En un entorno real idealmente se usa password_hash().
+
     $stmtUsuario->execute([$data['correo'], $data['password']]);
     
-    // Obtenemos el ID que la base de datos le acaba de asignar a ese usuario
     $id_usuario_nuevo = $conexion->lastInsertId();
 
-    // 2. Crear al profesor enlazado a ese usuario
+    //Crear al profesor enlazado a ese usuario
     $sqlProfesor = "INSERT INTO profesor (nombre, apellido_paterno, apellido_materno, boleta, id_usuario) VALUES (?, ?, ?, ?, ?)";
     $stmtProfesor = $conexion->prepare($sqlProfesor);
     $stmtProfesor->execute([
@@ -44,7 +51,6 @@ try {
 
 } catch (PDOException $e) {
     $conexion->rollBack();
-    // Validar si el error es por correo duplicado o boleta duplicada (Código 23000 de MySQL)
     if ($e->getCode() == 23000) {
         echo json_encode(['status' => 'error', 'message' => 'El correo o la boleta ya están registrados en el sistema.']);
     } else {

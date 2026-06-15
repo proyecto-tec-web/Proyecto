@@ -1,7 +1,5 @@
 <?php
 session_start();
-
-// 1. Aquí corregimos la hora para que sea la real local
 date_default_timezone_set('America/Mexico_City');
 
 require_once '../config/db.php';

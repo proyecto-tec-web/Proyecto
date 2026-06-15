@@ -7,6 +7,11 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/seguridad_admin.php';
 require_once __DIR__ . '/../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 $data = json_decode(file_get_contents("php://input"), true);
 $boleta = $data['boleta'] ?? null;
 
@@ -16,7 +21,6 @@ if (!$boleta) {
 }
 
 try {
-    // 1. Buscamos el id_usuario asociado al profesor
     $stmtFind = $conexion->prepare("SELECT id_usuario FROM profesor WHERE boleta = ?");
     $stmtFind->execute([$boleta]);
     $profesor = $stmtFind->fetch(PDO::FETCH_ASSOC);
@@ -28,12 +32,10 @@ try {
 
     $id_usuario = $profesor['id_usuario'];
 
-    // 2. Revisamos cuál es su estado actual
     $stmtStatus = $conexion->prepare("SELECT estado FROM usuario WHERE id_usuario = ?");
     $stmtStatus->execute([$id_usuario]);
     $user = $stmtStatus->fetch(PDO::FETCH_ASSOC);
 
-    // 3. Alternamos el estado
     $nuevo_estado = ($user['estado'] === 'Activo') ? 'Inactivo' : 'Activo';
     
     $stmtUpdate = $conexion->prepare("UPDATE usuario SET estado = ? WHERE id_usuario = ?");
@@ -46,4 +48,5 @@ try {
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => 'Error de base de datos: ' . $e->getMessage()]);
 }
+$conexion = null;
 ?>

@@ -4,6 +4,16 @@ require_once './../config/db.php';
 
 $input = json_decode(file_get_contents('php://input'), true);
 
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    echo json_encode(["status" => "error", "message" => "Acceso no autorizado."]);
+    exit();
+}
+
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 if (empty($input['id_inscripcion'])) {
     echo json_encode(['status' => 'error', 'message' => 'ID de inscripción no proporcionado.']);
     exit;
@@ -12,7 +22,6 @@ if (empty($input['id_inscripcion'])) {
 $id_inscripcion = intval($input['id_inscripcion']);
 
 try {
-    // 1. Averiguar a qué examen pertenece esta inscripción ANTES de borrarla
     $sqlBuscar = "SELECT id_examen FROM inscripcion_examen WHERE id_inscripcion = :id";
     $stmtBuscar = $conexion->prepare($sqlBuscar);
     $stmtBuscar->execute([':id' => $id_inscripcion]);
@@ -24,29 +33,21 @@ try {
     }
 
     $id_examen = $inscripcion['id_examen'];
-
-    // ==========================================
-    // INICIA LA TRANSACCIÓN SEGURA
-    // ==========================================
     $conexion->beginTransaction();
 
-    // 2. Eliminar la inscripción (Liberar el asiento)
     $sqlDelete = "DELETE FROM inscripcion_examen WHERE id_inscripcion = :id";
     $stmtDelete = $conexion->prepare($sqlDelete);
     $stmtDelete->execute([':id' => $id_inscripcion]);
 
-    // 3. Devolverle el lugar al cupo del examen (+1)
     $sqlUpdateCupo = "UPDATE examen SET cupo = cupo + 1 WHERE id_examen = :id_examen";
     $stmtUpdate = $conexion->prepare($sqlUpdateCupo);
     $stmtUpdate->execute([':id_examen' => $id_examen]);
 
-    // 4. Confirmar los cambios en la base de datos
     $conexion->commit();
 
     echo json_encode(['status' => 'success']);
 
 } catch (PDOException $e) {
-    // Si algo sale mal, deshacemos cualquier cambio
     if ($conexion->inTransaction()) {
         $conexion->rollBack();
     }

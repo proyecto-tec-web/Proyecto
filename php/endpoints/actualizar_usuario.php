@@ -2,6 +2,15 @@
 session_start();
 require_once '../config/db.php';
 
+if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'admin' )) {
+    echo json_encode(["status" => "error", "message" => "Acceso denegado."]);
+    exit();
+}
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 $datos = json_decode(file_get_contents("php://input"), true);
 if ($datos) {
     try {
@@ -19,5 +28,7 @@ if ($datos) {
     } catch (PDOException $e) {
         echo json_encode(["status" => "error", "message" => $e->getMessage()]);
     }
+
 }
+$conexion = null;
 ?>

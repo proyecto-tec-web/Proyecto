@@ -7,6 +7,16 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/seguridad_admin.php';
 require_once __DIR__ . '/../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(['status' => 'error', 'message' => 'No hay conexión a la base de datos.']);
+    exit;
+}
+
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    echo json_encode(["status" => "error", "message" => "Acceso no autorizado."]);
+    exit();
+}
+
 $data = json_decode(file_get_contents("php://input"), true);
 
 if (empty($data['boleta_actual']) || empty($data['boleta_nueva']) || empty($data['nombre']) || empty($data['paterno']) || empty($data['materno'])) {
@@ -28,11 +38,11 @@ try {
     echo json_encode(['status' => 'success', 'message' => 'Datos del profesor actualizados correctamente.']);
 
 } catch (PDOException $e) {
-    // Si intenta poner una boleta que ya la tiene otro maestro
     if ($e->getCode() == 23000) {
         echo json_encode(['status' => 'error', 'message' => 'Error: La nueva boleta ya está registrada a otro profesor.']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Error de base de datos: ' . $e->getMessage()]);
     }
 }
+$conexion = null;
 ?>
