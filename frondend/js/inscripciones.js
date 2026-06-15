@@ -20,9 +20,10 @@ function cargarTablaInscripciones() {
             }
 
             datos.data.forEach(ins => {
-                let colorBadge = 'warning'; 
-                if (ins.estado === 'Aprobado') colorBadge = 'success'; 
-                if (ins.estado === 'Rechazado') colorBadge = 'danger'; 
+                // CORRECCIÓN DE COLORES: Adaptado a los estados reales de la Base de Datos
+                let colorBadge = 'warning'; // Amarillo por defecto ('Pendiente')
+                if (ins.estado === 'Aprobado' || ins.estado === 'Pagado') colorBadge = 'success'; // Verde
+                if (ins.estado === 'Rechazado') colorBadge = 'danger'; // Rojo
                 
                 let filaHTML = `
                     <tr>
@@ -36,7 +37,7 @@ function cargarTablaInscripciones() {
                             </span>
                         </td>
                         <td class="pe-4 text-end">
-                            <button class="btn btn-sm btn-outline-success me-1" onclick="cambiarEstadoPago(${ins.id_inscripcion}, 'Aprobado')" title="Aprobar Pago">
+                            <button class="btn btn-sm btn-outline-success me-1" onclick="cambiarEstadoPago(${ins.id_inscripcion}, 'Pagado')" title="Aprobar Pago">
                                 <i class="bi bi-check-lg"></i>
                             </button>
                             <button class="btn btn-sm btn-outline-danger me-1" onclick="cambiarEstadoPago(${ins.id_inscripcion}, 'Rechazado')" title="Rechazar Pago">
@@ -55,17 +56,14 @@ function cargarTablaInscripciones() {
         });
 }
 
-//DETECTAR EL MOMENTO EXACTO EN QUE SE ABRE EL MODAL ACTIVO
+// DETECTAR EL MOMENTO EXACTO EN QUE SE ABRE EL MODAL ACTIVO
 document.addEventListener('show.bs.modal', function (event) {
-    // Verificamos que el modal que se está abriendo sea el de inscripciones
     if (event.target.id === 'modalInscribirAlumno') {
         const modalVisible = event.target;
-        // Buscamos el select ÚNICAMENTE dentro del modal que se está abriendo
         const select = modalVisible.querySelector('#select-examen-inscripcion');
         
         if (!select) return;
 
-        // Limpieza con método nativo seguro
         select.options.length = 0;
         select.add(new Option('Cargando exámenes disponibles...', '', true, true));
         select.options[0].disabled = true;
@@ -73,7 +71,7 @@ document.addEventListener('show.bs.modal', function (event) {
         fetch('/php/endpoints/obtener_examenes_select.php')
             .then(res => res.json())
             .then(datos => {
-                select.options.length = 0; // Vaciamos el mensaje de carga
+                select.options.length = 0; 
 
                 if (datos.status === 'success') {
                     if (datos.data.length === 0) {
@@ -83,7 +81,6 @@ document.addEventListener('show.bs.modal', function (event) {
                         select.add(new Option('Selecciona el examen...', '', true, true));
                         select.options[0].disabled = true;
 
-                        // Insertamos las opciones en el modal visible de la pantalla
                         datos.data.forEach(ex => {
                             const texto = `${ex.materia} (Fecha: ${ex.fecha})`;
                             select.add(new Option(texto, ex.id_examen));
@@ -102,7 +99,6 @@ document.addEventListener('show.bs.modal', function (event) {
     }
 });
 
-// Funciones de compatibilidad vacías para que tu app.js no tire error al llamarlas
 function cargarExamenesParaSelect() {}
 function manejarFormularioInscripcion() {}
 
@@ -138,7 +134,6 @@ document.addEventListener('submit', function(e) {
             if (datos.status === 'success') {
                 alert("¡Alumno inscrito correctamente!");
                 
-                // Cerramos el modal activo donde se hizo click
                 const modalElement = formActual.closest('.modal');
                 const modalInstance = bootstrap.Modal.getInstance(modalElement);
                 if (modalInstance) {
@@ -183,15 +178,12 @@ function eliminarInscripcionAlumno(idInscripcion) {
 
 // FUNCIÓN PARA APROBAR / RECHAZAR PAGOS
 window.cambiarEstadoPago = function(idInscripcion, nuevoEstado) {
-    // Definimos la palabra para la alerta según el botón que presionen
-    let accion = nuevoEstado === 'Aprobado' ? 'aprobar' : 'rechazar';
+    let accion = nuevoEstado === 'Pagado' ? 'aprobar' : 'rechazar';
     
-    // Pedimos confirmación para evitar clics por accidente
     if (!confirm(`¿Estás seguro de que deseas ${accion} el pago de la inscripción #${idInscripcion}?`)) {
         return;
     }
 
-    // Enviamos los datos al nuevo archivo PHP
     fetch('/php/endpoints/actualizar_estado_pago.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -203,13 +195,13 @@ window.cambiarEstadoPago = function(idInscripcion, nuevoEstado) {
     .then(res => res.json())
     .then(datos => {
         if (datos.status === 'success') {
-            // Si todo salió bien, recargamos la tabla para que cambie el color del badge
             cargarTablaInscripciones();
+            if (nuevoEstado === 'Rechazado') {
+                alert("Pago rechazado. Esta boleta sigue manteniendo su cupo hasta que la borres.");
+            }
         } else {
             alert("Error: " + datos.message);
-        }if (nuevoEstado === 'Rechazado') {
-                alert("Esta boleta sigue manteniendo su cupo hasta que la borre.");
-            }
+        }
     })
     .catch(err => {
         console.error("Fallo de red:", err);
@@ -224,11 +216,9 @@ document.addEventListener('keyup', function(e) {
         const filas = document.querySelectorAll('#tbody-inscripciones tr');
 
         filas.forEach(fila => {
-            // Asumimos que la boleta está en la segunda columna (índice 1)
             const columnaBoleta = fila.cells[1]; 
             if (columnaBoleta) {
                 const boleta = columnaBoleta.textContent.toLowerCase();
-                // Si la boleta incluye lo que escribimos, se muestra; si no, se oculta
                 fila.style.display = boleta.includes(textoBusqueda) ? '' : 'none';
             }
         });
@@ -239,7 +229,6 @@ document.addEventListener('keyup', function(e) {
 window.exportarCSV = function() {
     let csv = [];
     
-    // 1. Extraer los encabezados de la tabla (Ignoramos la última columna "Acciones")
     let headers = [];
     let celdasEncabezado = document.querySelectorAll('.table thead th');
     for (let i = 0; i < celdasEncabezado.length - 1; i++) {
@@ -247,33 +236,25 @@ window.exportarCSV = function() {
     }
     csv.push(headers.join(','));
 
-    // 2. Extraer las filas de la tabla
     let filas = document.querySelectorAll('#tbody-inscripciones tr');
     
     filas.forEach(fila => {
-        // Solo exportamos las filas que NO están ocultas por el buscador
         if (fila.style.display !== 'none' && fila.cells.length > 1) {
             let datosFila = [];
-            
-            // Recorremos las celdas (ignorando la última de botones)
             for (let i = 0; i < fila.cells.length - 1; i++) {
-                // Limpiamos el texto (quitamos comas para que no rompan el formato CSV)
                 let textoCelda = fila.cells[i].innerText.replace(/,/g, '').trim();
-                datosFila.push(`"${textoCelda}"`); // Envolvemos en comillas por seguridad
+                datosFila.push(`"${textoCelda}"`); 
             }
             csv.push(datosFila.join(','));
         }
     });
 
-    // 3. Crear el archivo descargable con soporte para Acentos 
     let csvString = "\uFEFF" + csv.join('\n');
     let blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     
-    // 4. Crear un enlace invisible y simular un clic para forzar la descarga
     let link = document.createElement("a");
     let url = URL.createObjectURL(blob);
     
-    // Nombre del archivo con la fecha de hoy
     let fechaHoy = new Date().toISOString().split('T')[0];
     link.setAttribute("href", url);
     link.setAttribute("download", `Inscripciones_ETS_${fechaHoy}.csv`);
