@@ -55,6 +55,29 @@ function inicializarLogicaVista(nombreVista) {
             cargarTablaInscripciones(); cargarExamenesParaSelect(); manejarFormularioInscripcion();
         }
     }
+    if (nombreVista === 'alumno_inscripcion' || nombreVista === 'inscripcion_ets') {
+        if (typeof iniciarVistaInscripcionETS === 'function') {
+            iniciarVistaInscripcionETS();
+        } else {
+            console.error("❌ No se detectó 'alumno.js'. Asegúrate de incluirlo en panel_alumno.php.");
+        }
+    }
+
+    if (nombreVista === 'alumno_kardex') {
+        if (typeof iniciarVistaKardex === 'function') {
+            iniciarVistaKardex();
+        } else {
+            console.error("❌ No se detectó 'alumno.js'. Asegúrate de incluirlo en panel_alumno.php.");
+        }
+    }
+
+    if (nombreVista === 'alumnos') { 
+        if (typeof iniciarVistaAlumnos === 'function') {
+            iniciarVistaAlumnos();
+        } else {
+            console.error("❌ El archivo alumnos.js no está cargado correctamente.");
+        }
+    }
     
     if (nombreVista === 'dashboard') {
         const kpiExamenes = document.getElementById('kpi-examenes');
