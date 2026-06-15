@@ -59,7 +59,8 @@ try {
     // 4. Si pasó las reglas, iniciamos el guardado
     $conexion->beginTransaction();
 
-    $sql = "UPDATE inscripcion_examen SET calificacion = ? WHERE id_inscripcion = ?";
+    // SEGURIDAD AÑADIDA: Validamos que la inscripción corresponda al examen actual (Protección IDOR)
+    $sql = "UPDATE inscripcion_examen SET calificacion = ? WHERE id_inscripcion = ? AND id_examen = ?";
     $stmt = $conexion->prepare($sql);
 
     foreach ($calificaciones as $item) {
@@ -74,10 +75,10 @@ try {
                 exit;
             }
             
-            $stmt->execute([$cal, $item['id_inscripcion']]);
+            // Pasamos la calificación, el ID de inscripción y el ID del examen
+            $stmt->execute([$cal, $item['id_inscripcion'], $id_examen]);
         }
     } 
-    // ¡Aquí quitamos la llave extra que tenías!
 
     // 5. Cambiamos el estado del examen a Calificado
     $sqlActualizarExamen = "UPDATE examen SET estado = 'Calificado' WHERE id_examen = ?";

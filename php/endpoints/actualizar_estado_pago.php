@@ -2,6 +2,11 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once './../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(['status' => 'error', 'message' => 'No hay conexión a la base de datos.']);
+    exit;
+}
+
 // Leer los datos que nos manda JavaScript
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -13,8 +18,7 @@ if (empty($input['id_inscripcion']) || empty($input['estado'])) {
 $id_inscripcion = intval($input['id_inscripcion']);
 $estado = trim($input['estado']);
 
-// Medida de seguridad: Validar que el estado sea correcto
-if ($estado !== 'Aprobado' && $estado !== 'Rechazado' && $estado !== 'Pendiente') {
+if ($estado !== 'Pagado' && $estado !== 'Rechazado' && $estado !== 'Pendiente') {
     echo json_encode(['status' => 'error', 'message' => 'Estado de pago no válido.']);
     exit;
 }
