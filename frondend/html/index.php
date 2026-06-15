@@ -26,7 +26,6 @@ if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sistema ETS · Panel de Administración</title>
     <link href="./../css/bootstrap.min.css" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 0 Q65 30 65 55 L35 55 Q45 20 50 0 Z' fill='%230284c7'/><path d='M15 55 L0 75 L30 70 Z' fill='%230284c7'/><path d='M85 55 L100 75 L70 70 Z' fill='%230284c7'/><ellipse cx='50' cy='60' rx='35' ry='35' fill='%230ea5e9'/><ellipse cx='50' cy='75' rx='25' ry='15' fill='%23ffffff'/><circle cx='32' cy='50' r='5' fill='%230f172a'/><circle cx='68' cy='50' r='5' fill='%230f172a'/><path d='M30 70 Q50 90 70 70 Z' fill='%230f172a'/><path d='M32 70 L40 82 L50 70 L60 82 L68 70 Z' fill='%23ffffff'/></svg>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body { overflow: hidden; background-color: #f4f6f9; }
@@ -102,7 +101,7 @@ if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
             </footer>
         </div>
     </main>
-    <<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="./../js/app.js?v=1000"></script>
     <script src="./../js/inscripciones.js?v=1000"></script>
