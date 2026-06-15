@@ -59,7 +59,7 @@ if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
                 <li><a class="nav-link link-body-emphasis menu-link" onclick="cargarVista('alumnos', this)"><i class="bi bi-people me-2"></i> Alumnos y Kardex</a></li>
                 <li><a class="nav-link link-body-emphasis menu-link" onclick="cargarVista('profesores', this)"><i class="bi bi-person-badge me-2"></i> Profesores / Sinodales</a></li>
                 <hr>
-                <li><a class="nav-link link-body-emphasis menu-link" onclick="cargarVista('configuracion', this)"><i class="bi bi-gear me-2"></i> Catálogos</a></li>
+                <li><a class="nav-link link-body-emphasis menu-link" onclick="cargarVista('catalogos', this)"><i class="bi bi-gear me-2"></i> Catálogos</a></li>
                 <li><a class="nav-link link-body-emphasis menu-link" onclick="cargarVista('usuarios', this)"><i class="bi bi-shield-lock me-2"></i> Usuarios y Accesos</a></li>
             </ul>
             
@@ -107,7 +107,6 @@ if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
     <script src="./../js/app.js?v=1000"></script>
     <script src="./../js/inscripciones.js?v=1000"></script>
     <script src="./../js/alumnos.js?v=1000"></script>
-</body>
-</html>
+    <script src="./../js/catalogos.js?v=1000"></script>
 </body>
 </html>

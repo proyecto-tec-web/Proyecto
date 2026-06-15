@@ -119,7 +119,6 @@ function inicializarLogicaVista(nombreVista) {
     }
     
     // --- MÓDULO DASHBOARD ---
-    // --- MÓDULO DASHBOARD ---
     if (nombreVista === 'dashboard') {
         // Mostrar estado de carga en los KPIs
         const kpiExamenes = document.getElementById('kpi-examenes');
@@ -398,6 +397,14 @@ function inicializarLogicaVista(nombreVista) {
             iniciarVistaAlumnos();
         } else {
             console.error("El archivo alumnos.js no está cargado correctamente.");
+        }
+    }
+    // --- MÓDULO CATÁLOGOS ---
+    if (nombreVista === 'catalogos') {
+        if (typeof iniciarVistaCatalogos === 'function') {
+            iniciarVistaCatalogos();
+        } else {
+            console.error("El archivo catalogos.js no está cargado. Revisa tu index.php");
         }
     }
     // --- MÓDULO PROFESORES (Dashboard con KPIs) ---
