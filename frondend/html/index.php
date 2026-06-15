@@ -103,24 +103,24 @@ if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
             </footer>
         </div>
     </main>
-    //para catalogos, "nuevo+"
-        <div class="modal fade" id="modalCatalogo" tabindex="-1" aria-labelledby="modalCatalogoLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow">
-                    <div class="modal-header text-bg-primary">
-                        <h5 class="modal-title fw-bold" id="modalCatalogoLabel"><i class="bi bi-plus-circle me-2"></i><span id="titulo-modal">Nuevo Registro</span></h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+
+    <div class="modal fade" id="modalCatalogo" tabindex="-1" aria-labelledby="modalCatalogoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header text-bg-primary">
+                    <h5 class="modal-title fw-bold" id="modalCatalogoLabel"><i class="bi bi-plus-circle me-2"></i><span id="titulo-modal">Nuevo Registro</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="cuerpo-modal">
                     </div>
-                    <div class="modal-body" id="cuerpo-modal">
-                        </div>
-                    <div class="modal-footer bg-light">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary fw-bold" onclick="guardarNuevoRegistro()"><i class="bi bi-floppy me-2"></i>Guardar Datos</button>
-                    </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary fw-bold" onclick="guardarNuevoRegistro()"><i class="bi bi-floppy me-2"></i>Guardar Datos</button>
                 </div>
             </div>
         </div>
-        
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="./../js/app.js?v=1000"></script>
