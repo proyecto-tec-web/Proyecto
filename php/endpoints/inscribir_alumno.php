@@ -9,11 +9,15 @@ if (empty($input['boleta']) || empty($input['id_examen'])) {
     exit;
 }
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 $boleta = trim($input['boleta']);
 $id_examen = intval($input['id_examen']);
 
 try {
-    // 1. Obtener id_alumno y su situacion_academica a través de su boleta
     $sqlBusqueda = "SELECT id_alumno, situacion_academica FROM alumno WHERE boleta = :boleta";
     $stmtBusqueda = $conexion->prepare($sqlBusqueda);
     $stmtBusqueda->execute([':boleta' => $boleta]);
@@ -24,9 +28,6 @@ try {
         exit;
     }
 
-    // ========================================================================
-    // NUEVA REGLA 1: Bloquear alumnos Regulares
-    // ========================================================================
     if (strtolower(trim($alumno['situacion_academica'])) !== 'irregular') {
         echo json_encode(['status' => 'error', 'message' => 'Inscripción denegada. El alumno es "Regular". Solo los alumnos irregulares pueden presentar ETS.']);
         exit;
@@ -34,13 +35,11 @@ try {
     
     $id_alumno = $alumno['id_alumno'];
 
-    // ========================================================================
-    // NUEVA REGLA 2: Revisar Kardex (Que tenga la materia cursada y reprobada)
-    // ========================================================================
+
     $sqlKardex = "SELECT k.calificacion 
-                  FROM kardex k 
-                  JOIN examen e ON k.id_materia = e.id_materia 
-                  WHERE k.id_alumno = :id_alumno AND e.id_examen = :id_examen";
+                FROM kardex k 
+                JOIN examen e ON k.id_materia = e.id_materia 
+                WHERE k.id_alumno = :id_alumno AND e.id_examen = :id_examen";
     
     $stmtKardex = $conexion->prepare($sqlKardex);
     $stmtKardex->execute([':id_alumno' => $id_alumno, ':id_examen' => $id_examen]);
@@ -51,13 +50,11 @@ try {
         exit;
     }
 
-    // En el IPN se aprueba con 6.0 o más
     if (floatval($resultadoKardex['calificacion']) >= 6.0) {
         echo json_encode(['status' => 'error', 'message' => 'Inscripción denegada. El alumno ya tiene esta materia Aprobada con ' . $resultadoKardex['calificacion']]);
         exit;
     }
 
-    // 2. Comprobar si el alumno ya se inscribió a este examen para no duplicar
     $sqlValidar = "SELECT id_inscripcion FROM inscripcion_examen WHERE id_alumno = :id_alumno AND id_examen = :id_examen";
     $stmtValidar = $conexion->prepare($sqlValidar);
     $stmtValidar->execute([':id_alumno' => $id_alumno, ':id_examen' => $id_examen]);
@@ -67,7 +64,6 @@ try {
         exit;
     }
 
-    // 3. Verificar si todavía hay cupo disponible y si está "Abierto"
     $sqlCupo = "SELECT cupo FROM examen WHERE id_examen = :id_examen AND estado = 'Abierto'";
     $stmtCupo = $conexion->prepare($sqlCupo);
     $stmtCupo->execute([':id_examen' => $id_examen]);
@@ -78,26 +74,21 @@ try {
         exit;
     }
 
-    // actualizaciones 
     $conexion->beginTransaction();
 
-    // 4. Insertar la inscripción
     $sqlInsert = "INSERT INTO inscripcion_examen (estado_pago, id_alumno, id_examen) VALUES ('Pendiente', :id_alumno, :id_examen)";
     $stmtInsert = $conexion->prepare($sqlInsert);
     $stmtInsert->execute([':id_alumno' => $id_alumno, ':id_examen' => $id_examen]);
 
-    // 5. Restar 1 al cupo del examen
     $sqlUpdateCupo = "UPDATE examen SET cupo = cupo - 1 WHERE id_examen = :id_examen";
     $stmtUpdate = $conexion->prepare($sqlUpdateCupo);
     $stmtUpdate->execute([':id_examen' => $id_examen]);
 
-    // Confirmar los cambios si todo salió bien
     $conexion->commit();
 
     echo json_encode(['status' => 'success']);
 
 } catch (PDOException $e) {
-    // Si algo falla, cancelamos la inscripción y no restamos el cupo
     if ($conexion->inTransaction()) {
         $conexion->rollBack();
     }

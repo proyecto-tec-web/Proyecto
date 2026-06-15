@@ -69,8 +69,6 @@ if ($rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
                     <strong>Admin Escolar</strong>
                 </a>
                 <ul class="dropdown-menu text-small shadow">
-                    <li><a class="dropdown-item" href="#">Mi Perfil</a></li>
-                    <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item text-danger" href="./../../php/endpoints/logout.php">Cerrar sesión</a></li>
                 </ul>
             </div>

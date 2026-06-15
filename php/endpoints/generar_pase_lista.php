@@ -2,7 +2,11 @@
 session_start();
 require_once '../config/db.php';
 
-// Validamos que sea un profesor y que nos envíen el ID del examen
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 if (!isset($_SESSION['id_usuario']) || !isset($_GET['id_examen'])) {
     die("Acceso denegado o faltan parámetros.");
 }
@@ -10,7 +14,6 @@ if (!isset($_SESSION['id_usuario']) || !isset($_GET['id_examen'])) {
 $id_examen = (int)$_GET['id_examen'];
 
 try {
-    // 1. Obtener la información general del examen
     $stmtExamen = $conexion->prepare("
         SELECT e.id_examen, m.nombre as materia, e.fecha, e.hora_inicio, 
                CONCAT(s.edificio, ' - ', s.piso, ' (', s.numero, ')') as salon, 
@@ -26,7 +29,6 @@ try {
 
     if (!$examen) die("Examen no encontrado.");
 
-    // 2. Obtener a los alumnos con pago 'Aprobado' ordenados por apellido
     $stmtAlumnos = $conexion->prepare("
         SELECT a.boleta, CONCAT(a.apellido_paterno, ' ', a.apellido_materno, ' ', a.nombre) as nombre_completo
         FROM inscripcion_examen ie
@@ -48,7 +50,6 @@ try {
     <title>Pase de Lista - <?php echo htmlspecialchars($examen['materia']); ?></title>
     <link rel="icon" href="/frondend/html/tiburon.png">
     <style>
-        /* Estilos diseñados específicamente para verse bien al imprimir */
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 14px; color: #000; }
         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .header h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
@@ -66,7 +67,6 @@ try {
         .footer { margin-top: 60px; text-align: center; }
         .firma-profesor { width: 300px; border-bottom: 1px solid #000; margin: 0 auto 10px; }
         
-        /* Esta regla oculta botones y quita márgenes cuando se imprime en papel */
             @media print {
             @page { margin: 1cm; }
             .ocultar-al-imprimir { display: none !important; }
@@ -130,7 +130,7 @@ try {
                         <td style="text-align: center;"><?php echo $contador++; ?></td>
                         <td style="text-align: center; font-family: monospace; font-size: 15px;"><?php echo htmlspecialchars($alumno['boleta']); ?></td>
                         <td><?php echo htmlspecialchars($alumno['nombre_completo']); ?></td>
-                        <td></td> <!-- Celda vacía para la firma -->
+                        <td></td>
                     </tr>
                 <?php endforeach; ?>
             <?php else: ?>
@@ -147,29 +147,24 @@ try {
     </div>
 
     <script>
-        // Dispara la ventana de impresión automáticamente en cuanto cargue la página
         window.onload = function() {
             setTimeout(() => { window.print(); }, 500);
         }
 
-        // Lógica para descargar el PDF directo sin abrir cuadro de impresión
         function descargarPDFDirecto() {
-            // Ocultamos temporalmente los botones para que no salgan en el PDF generado
             const botones = document.querySelector('.ocultar-al-imprimir');
             botones.style.display = 'none';
 
-            const elemento = document.body; // Tomamos todo el cuerpo del documento
+            const elemento = document.body;
             const opciones = {
                 margin:       1,
                 filename:     'Pase_Lista_<?php echo $id_examen; ?>.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 }, // Mejora la calidad del texto
+                html2canvas:  { scale: 2 },
                 jsPDF:        { unit: 'cm', format: 'letter', orientation: 'portrait' }
             };
 
-            // Ejecuta la conversión y descarga
             html2pdf().set(opciones).from(elemento).save().then(() => {
-                // Volvemos a mostrar los botones en la pantalla una vez que terminó la descarga
                 botones.style.style = 'flex';
                 botones.style.display = 'flex';
             });
