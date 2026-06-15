@@ -15,7 +15,7 @@ function cargarETSDisponibles() {
             </td>
         </tr>`;
 
-    fetch('/php/endpoints/obtener_ets_disponibles.php')
+    fetch('../../php/endpoints/obtener_ets_disponibles.php')
         .then(res => res.json())
         .then(datos => {
             if (datos.status !== 'success') {
@@ -88,7 +88,7 @@ function inscribirAlumnoETS(boton) {
     boton.disabled = true;
     boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Inscribiendo...';
 
-    fetch('/php/endpoints/inscribir.php', {
+    fetch('../../php/endpoints/inscribir.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_examen: idExamen })
@@ -160,7 +160,7 @@ function cargarMiKardex() {
             </td>
         </tr>`;
 
-    fetch('/php/endpoints/obtener_mi_kardex.php')
+    fetch('../../php/endpoints/obtener_mi_kardex.php')
         .then(res => res.json())
         .then(datos => {
             if (datos.status !== 'success') {
@@ -229,4 +229,122 @@ function iniciarVistaKardex() {
     inicializarFiltrosKardex();
     // Nota: el botón "Imprimir Kardex" (#btn-imprimir-kardex) queda deshabilitado
     // a propósito; su diseño está pendiente de definirse.
+}
+// =================================================================
+// MÓDULO ALUMNO: MI KARDEX (LÓGICA FALTANTE)
+// =================================================================
+function iniciarVistaKardex() {
+    // 1. Capturamos los botones usando sus clases
+    const btnTodas = document.querySelector('.btn-group .btn-outline-secondary');
+    const btnAprobadas = document.querySelector('.btn-group .btn-outline-success');
+    const btnReprobadas = document.querySelector('.btn-group .btn-outline-danger');
+    const btnImprimir = document.querySelector('.bi-printer').closest('button');
+    
+    // 2. Capturamos todas las filas de la tabla
+    const filas = document.querySelectorAll('.table tbody tr');
+
+    // 3. Función maestra para filtrar
+    function filtrarKardex(tipo, botonClickeado) {
+        // Le quitamos el sombreado gris (active) a todos los botones
+        [btnTodas, btnAprobadas, btnReprobadas].forEach(btn => btn.classList.remove('active'));
+        // Se lo ponemos solo al que presionaste
+        botonClickeado.classList.add('active');
+
+        // Revisamos fila por fila
+        filas.forEach(fila => {
+            // Sacamos el texto de la última columna (Aprobada o Reprobada)
+            const estadoMateria = fila.cells[4].innerText.trim().toLowerCase();
+            
+            if (tipo === 'todas') {
+                fila.style.display = ''; // Mostrar todo
+            } else if (tipo === 'aprobadas' && estadoMateria === 'aprobada') {
+                fila.style.display = ''; // Mostrar solo aprobadas
+            } else if (tipo === 'reprobadas' && estadoMateria === 'reprobada') {
+                fila.style.display = ''; // Mostrar solo reprobadas
+            } else {
+                fila.style.display = 'none'; // Ocultar las demás
+            }
+        });
+    }
+
+    // 4. Conectamos los clics a los botones
+    if (btnTodas) btnTodas.addEventListener('click', () => filtrarKardex('todas', btnTodas));
+    if (btnAprobadas) btnAprobadas.addEventListener('click', () => filtrarKardex('aprobadas', btnAprobadas));
+    if (btnReprobadas) btnReprobadas.addEventListener('click', () => filtrarKardex('reprobadas', btnReprobadas));
+
+    // 5. Botón de Imprimir
+    if (btnImprimir) {
+        btnImprimir.addEventListener('click', () => {
+            window.print();
+        });
+    }
+}
+// =================================================================
+// MÓDULO ALUMNO: INSCRIBIR ETS (LÓGICA FALTANTE)
+// =================================================================
+function iniciarVistaInscripcionETS() {
+    // 1. Lógica del Buscador y Botón Filtrar
+    const inputBuscador = document.querySelector('input[placeholder="Buscar por materia o profesor..."]');
+    const btnFiltrar = document.querySelector('.btn-primary'); // Asumiendo que "Filtrar" es el botón azul
+    const filasExamenes = document.querySelectorAll('table tbody tr');
+
+    function filtrarTablaExamenes() {
+        if (!inputBuscador) return;
+        
+        const textoBusqueda = inputBuscador.value.toLowerCase();
+
+        filasExamenes.forEach(fila => {
+            // Buscamos en la columna de Materia (índice 0) y Profesor (índice 2)
+            const materia = fila.cells[0].innerText.toLowerCase();
+            const profesor = fila.cells[2].innerText.toLowerCase();
+
+            // Si el texto coincide con la materia o el profesor, mostramos la fila
+            if (materia.includes(textoBusqueda) || profesor.includes(textoBusqueda)) {
+                fila.style.display = '';
+            } else {
+                fila.style.display = 'none';
+            }
+        });
+    }
+
+    // El buscador se activa tanto al escribir como al presionar el botón
+    if (inputBuscador) {
+        inputBuscador.addEventListener('keyup', filtrarTablaExamenes);
+    }
+    if (btnFiltrar) {
+        btnFiltrar.addEventListener('click', (e) => {
+            e.preventDefault(); // Evita que la página se recargue
+            filtrarTablaExamenes();
+        });
+    }
+
+    // 2. Lógica de los botones "Inscribirme"
+    const botonesInscribir = document.querySelectorAll('table tbody .btn-success'); // Asumiendo que son los verdes
+
+    botonesInscribir.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Sacamos los datos de la fila a la que pertenece el botón
+            const fila = this.closest('tr');
+            const materia = fila.cells[0].innerText.trim();
+            const fecha = fila.cells[1].innerText.trim();
+
+            // Preguntamos al usuario si está seguro
+            if (confirm(`¿Estás seguro de que deseas inscribirte al ETS de ${materia} programado para el ${fecha}?`)) {
+                
+                // Cambiamos el estado del botón a "Cargando"
+                const botonOriginal = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Procesando...';
+
+                // Simulamos una petición al servidor (esto se conectará al PHP real después)
+                setTimeout(() => {
+                    alert(`¡Éxito! Has quedado inscrito en el ETS de ${materia}.`);
+                    
+                    // Cambiamos el botón para que ya no se pueda presionar de nuevo
+                    this.className = 'btn btn-secondary btn-sm disabled';
+                    this.innerText = 'Inscrito';
+                }, 800); // Tarda menos de un segundo en responder
+            }
+        });
+    });
 }
