@@ -1,8 +1,9 @@
+<?php require_once '../../../php/endpoints/seguridad_admin.php'; ?>
+
 <div class="container-fluid px-4 py-3">
-    <div class="alert alert-info d-flex align-items-center mb-4 border-0 shadow-sm">
-        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
-        <div>Selecciona un catálogo para gestionar su información en la base de datos.</div>
-    </div>
+    <div class="alert alert-info border-0 shadow-sm rounded-3">
+    <i class="bi bi-info-circle me-2"></i><strong>Selecciona un catálogo para gestionar su información en la base de datos.</strong>...
+</div>
 
     <div class="row g-4 mb-4">
         <div class="col-md-4">
