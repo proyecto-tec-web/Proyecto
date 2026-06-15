@@ -1,42 +1,25 @@
-// Guardamos la instancia de la gráfica a nivel global para que no se encimen los datos
 let chartInscripciones = null;
 
-// Al cargar, forzamos clic en el primer enlace para no mostrar pantalla vacía
 document.addEventListener("DOMContentLoaded", () => {
     const primerEnlace = document.querySelector('.menu-link');
-    if (primerEnlace) {
-        primerEnlace.click();
-    }
+    if (primerEnlace) primerEnlace.click();
 });
 
-// Función central para cargar vistas sin recargar la página (SPA)
 function cargarVista(nombreVista, elementoClick) {
     const contenedor = document.getElementById('view-container');
-    
-    // Limpiamos modales activos para evitar errores de despliegue
     document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
     document.body.classList.remove('modal-open');
     document.body.style.paddingRight = '';
     
-    contenedor.innerHTML = `
-        <div class="text-center mt-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-2 text-muted">Consultando al servidor...</p>
-        </div>`;
+    contenedor.innerHTML = `<div class="text-center mt-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Consultando al servidor...</p></div>`;
 
-    // Determinamos en qué carpeta buscar la vista
     const vistasDelProfesor = ['dashboard_profesor', 'mis_examenes', 'revisiones'];
     const vistasDelAlumno = ['dashboard_alumno', 'alumno_inscripcion', 'alumno_kardex', 'inscripcion_ets']; 
-    
-    let carpetaDefinitiva = 'vistas'; // Admin por defecto
+    let carpetaDefinitiva = 'vistas'; 
 
-    if (vistasDelProfesor.includes(nombreVista)) {
-        carpetaDefinitiva = 'vistasProfesor';
-    } else if (vistasDelAlumno.includes(nombreVista)) {
-        carpetaDefinitiva = 'vistasAlumno';
-    }
+    if (vistasDelProfesor.includes(nombreVista)) carpetaDefinitiva = 'vistasProfesor';
+    else if (vistasDelAlumno.includes(nombreVista)) carpetaDefinitiva = 'vistasAlumno';
 
-    // Petición al servidor con timestamp para evitar caché
     fetch(`${carpetaDefinitiva}/${nombreVista}.php?v=${Date.now()}`)
         .then(respuesta => {
             if (!respuesta.ok) throw new Error(`Error al cargar ${carpetaDefinitiva}/${nombreVista}.php`);
@@ -44,8 +27,6 @@ function cargarVista(nombreVista, elementoClick) {
         })
         .then(html => {
             contenedor.innerHTML = html;
-            
-            // Ajustamos el menú lateral
             if (elementoClick) {
                 document.querySelectorAll('.menu-link').forEach(enlace => {
                     enlace.classList.remove('active');
@@ -53,44 +34,28 @@ function cargarVista(nombreVista, elementoClick) {
                 });
                 elementoClick.classList.add('active');
                 elementoClick.classList.remove('link-body-emphasis');
-                
                 const tituloSeccion = document.getElementById('titulo-seccion');
-                if (tituloSeccion) {
-                    tituloSeccion.innerText = elementoClick.innerText.trim();
-                }
+                if (tituloSeccion) tituloSeccion.innerText = elementoClick.innerText.trim();
             }
 
-            // Ocultamos menú en móvil
             let bsOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('sidebarMenu'));
-            if (bsOffcanvas && window.innerWidth < 768) {
-                bsOffcanvas.hide();
-            }
+            if (bsOffcanvas && window.innerWidth < 768) bsOffcanvas.hide();
 
-            // Iniciamos la lógica propia de la vista recién inyectada
             inicializarLogicaVista(nombreVista);
         })
         .catch(error => {
-            contenedor.innerHTML = `
-                <div class="alert alert-danger shadow-sm border-0 border-start border-danger border-4 rounded-3">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <strong>Fallo de conexión:</strong> ${error.message}
-                </div>`;
+            contenedor.innerHTML = `<div class="alert alert-danger shadow-sm border-0 border-start border-danger border-4 rounded-3"><i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Fallo de conexión:</strong> ${error.message}</div>`;
         });
 }
 
-// Distribuidor de lógica: Ejecuta el JS necesario según la vista que esté activa
 function inicializarLogicaVista(nombreVista) {
     
-    // --- INSCRIPCIONES ---
     if (nombreVista === 'inscripciones') {
         if (typeof cargarTablaInscripciones === 'function') {
-            cargarTablaInscripciones();
-            cargarExamenesParaSelect();
-            manejarFormularioInscripcion();
+            cargarTablaInscripciones(); cargarExamenesParaSelect(); manejarFormularioInscripcion();
         }
     }
     
-    // --- DASHBOARD ADMIN ---
     if (nombreVista === 'dashboard') {
         const kpiExamenes = document.getElementById('kpi-examenes');
         const kpiInscritos = document.getElementById('kpi-inscritos');
@@ -143,39 +108,28 @@ function inicializarLogicaVista(nombreVista) {
             });
     }
 
-    // --- CALIFICACIONES ---
     if (nombreVista === 'calificaciones') {
         cargarSelectExamenesCalificar();
         document.getElementById('select-examen-calificar')?.addEventListener('change', (e) => cargarAlumnosParaCalificar(e.target.value));
         document.getElementById('btn-guardar-calificaciones')?.addEventListener('click', guardarCalificaciones);
     }
 
-    // --- PROFESORES ---
+    // --- MÓDULO PROFESORES REPOTENCIADO ---
     if (nombreVista === 'profesores') {
         cargarTablaProfesoresAdmin();
-        document.getElementById('buscador-profesores')?.addEventListener('keyup', function() {
-            const texto = this.value.toLowerCase();
-            document.querySelectorAll('#tbody-profesores tr').forEach(fila => {
-                fila.style.display = fila.innerText.toLowerCase().includes(texto) ? '' : 'none';
-            });
-        });
+        document.getElementById('buscador-profesores')?.addEventListener('keyup', aplicarFiltrosProfesor);
+        document.getElementById('filtro-estado-profesor')?.addEventListener('change', aplicarFiltrosProfesor);
         document.getElementById('btn-guardar-profesor')?.addEventListener('click', guardarNuevoProfesor);
+        document.getElementById('btn-actualizar-profesor')?.addEventListener('click', actualizarProfesor);
     }
 
-    // --- CATÁLOGOS (AQUÍ ESTÁ LA CORRECCIÓN) ---
     if (nombreVista === 'catalogos') {
-        if (typeof iniciarVistaCatalogos === 'function') {
-            iniciarVistaCatalogos();
-        } else {
-            console.error("Falta incluir catalogos.js en index.php");
-        }
+        if (typeof iniciarVistaCatalogos === 'function') iniciarVistaCatalogos();
     }
 
-    // --- USUARIOS ---
     if (nombreVista === 'usuarios') {
         cargarTablaUsuarios();
 
-        // CREAR USUARIO
         const btnGuardarUsuario = document.getElementById('btn-guardar-usuario');
         if (btnGuardarUsuario) {
             btnGuardarUsuario.addEventListener('click', () => {
@@ -184,33 +138,22 @@ function inicializarLogicaVista(nombreVista) {
                 const rol = document.getElementById('select-rol').value;
 
                 if (!correo || !password || !rol) { alert("Completa todos los campos"); return; }
+                btnGuardarUsuario.disabled = true; btnGuardarUsuario.innerHTML = "Guardando...";
 
-                btnGuardarUsuario.disabled = true;
-                btnGuardarUsuario.innerHTML = "Guardando...";
-
-                fetch('../../php/endpoints/crear_usuario.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo, password, rol })
-                })
-                .then(res => res.json())
-                .then(datos => {
+                fetch('../../php/endpoints/crear_usuario.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ correo, password, rol }) })
+                .then(res => res.json()).then(datos => {
                     if (datos.status === 'success') {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoUsuario'));
                         if(modal) modal.hide();
                         document.getElementById('form-nuevo-usuario').reset();
                         alert("Usuario creado con éxito.");
                         cargarTablaUsuarios();
-                    } else {
-                        alert("Error: " + datos.message);
-                    }
-                    btnGuardarUsuario.disabled = false;
-                    btnGuardarUsuario.innerHTML = "Guardar Usuario";
+                    } else { alert("Error: " + datos.message); }
+                    btnGuardarUsuario.disabled = false; btnGuardarUsuario.innerHTML = "Guardar Usuario";
                 });
             });
         }
 
-        // ACTUALIZAR USUARIO
         const btnActualizarUsuario = document.getElementById('btn-actualizar-usuario');
         if (btnActualizarUsuario) {
             btnActualizarUsuario.addEventListener('click', () => {
@@ -219,59 +162,45 @@ function inicializarLogicaVista(nombreVista) {
                 const password = document.getElementById('edit-user-password').value;
                 const rol = document.getElementById('edit-user-rol').value;
 
-                btnActualizarUsuario.disabled = true;
-                btnActualizarUsuario.innerHTML = "Actualizando...";
+                btnActualizarUsuario.disabled = true; btnActualizarUsuario.innerHTML = "Actualizando...";
 
-                fetch('../../php/endpoints/actualizar_usuario.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, correo, password, rol })
-                })
-                .then(res => res.json())
-                .then(datos => {
+                fetch('../../php/endpoints/actualizar_usuario.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, correo, password, rol }) })
+                .then(res => res.json()).then(datos => {
                     if (datos.status === 'success') {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarUsuario'));
                         if(modal) modal.hide();
                         alert("Usuario actualizado con éxito.");
                         cargarTablaUsuarios();
-                    } else {
-                        alert("Error: " + datos.message);
-                    }
-                    btnActualizarUsuario.disabled = false;
-                    btnActualizarUsuario.innerHTML = "Actualizar Usuario";
+                    } else { alert("Error: " + datos.message); }
+                    btnActualizarUsuario.disabled = false; btnActualizarUsuario.innerHTML = "Actualizar Usuario";
                 });
             });
         }
     }
     
-    // --- EXÁMENES ---
     if (nombreVista === 'examenes') {
         cargarTablaExamenes();
 
         fetch('../../php/endpoints/obtener_catalogos_ets.php')
-            .then(res => res.json())
-            .then(data => {
+            .then(res => res.json()).then(data => {
                 if(data.status === 'success') {
                     const selectMateria = document.getElementById('select-materia');
                     if (selectMateria) {
                         selectMateria.innerHTML = '<option value="" selected disabled>Selecciona una materia...</option>';
                         data.materias.forEach(m => { selectMateria.innerHTML += `<option value="${m.id_materia}">${m.nombre}</option>`; });
                     }
-
                     const selectSinodal = document.getElementById('select-sinodal');
                     if (selectSinodal) {
                         selectSinodal.innerHTML = '<option value="" selected disabled>Asigna un sinodal...</option>';
                         data.profesores.forEach(p => { selectSinodal.innerHTML += `<option value="${p.id_profesor}">${p.nombre}</option>`; });
                     }
-
                     const selectSalon = document.getElementById('select-salon');
                     if (selectSalon) {
                         selectSalon.innerHTML = '<option value="" selected disabled>Selecciona un salón...</option>';
                         data.salones.forEach(s => { selectSalon.innerHTML += `<option value="${s.id_salon}">${s.nombre}</option>`; });
                     }
                 }
-            })
-            .catch(err => console.error(err));
+            }).catch(err => console.error(err));
 
         const buscadorExamenes = document.getElementById('buscador-examenes');
         if (buscadorExamenes) {
@@ -279,9 +208,7 @@ function inicializarLogicaVista(nombreVista) {
                 const textoBuscar = this.value.toLowerCase();
                 const filas = document.querySelectorAll('#tbody-examenes tr');
                 filas.forEach(fila => {
-                    if(fila.cells.length > 1) { 
-                        fila.style.display = fila.innerText.toLowerCase().includes(textoBuscar) ? '' : 'none';
-                    }
+                    if(fila.cells.length > 1) fila.style.display = fila.innerText.toLowerCase().includes(textoBuscar) ? '' : 'none';
                 });
             });
         }
@@ -304,13 +231,8 @@ function inicializarLogicaVista(nombreVista) {
                 nuevoBtnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
                 nuevoBtnGuardar.disabled = true;
 
-                fetch('../../php/endpoints/crear_ets.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ materia, sinodal, fecha, hora, salon, cupo })
-                })
-                .then(res => res.json())
-                .then(datos => {
+                fetch('../../php/endpoints/crear_ets.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ materia, sinodal, fecha, hora, salon, cupo }) })
+                .then(res => res.json()).then(datos => {
                     if (datos.status === 'success') {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoETS'));
                         if(modal) modal.hide();
@@ -318,23 +240,15 @@ function inicializarLogicaVista(nombreVista) {
                         alert("¡Examen programado con éxito!"); 
                         cargarTablaExamenes();
                     } else { alert("Error: " + datos.message); }
-                    nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
-                    nuevoBtnGuardar.disabled = false;
+                    nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen'; nuevoBtnGuardar.disabled = false;
                 }).catch(error => {
-                    alert("Error de conexión.");
-                    nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
-                    nuevoBtnGuardar.disabled = false;
+                    alert("Error de conexión."); nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen'; nuevoBtnGuardar.disabled = false;
                 });
             });
         }
     }
 
-    // --- ALUMNOS ---
-    if (nombreVista === 'alumnos') {
-        if (typeof iniciarVistaAlumnos === 'function') iniciarVistaAlumnos();
-    }
-
-    // --- PROFESORES (OTROS ARCHIVOS) ---
+    if (nombreVista === 'alumnos') { if (typeof iniciarVistaAlumnos === 'function') iniciarVistaAlumnos(); }
     if (nombreVista === 'dashboard_profesor' && typeof window.cargarKPIsProfesor === 'function') window.cargarKPIsProfesor();
     if (nombreVista === 'mis_examenes' && typeof window.cargarMisExamenes === 'function') window.cargarMisExamenes();
     if (nombreVista === 'revisiones' && typeof window.cargarRevisiones === 'function') window.cargarRevisiones();
@@ -352,19 +266,12 @@ function cargarTablaUsuarios() {
     fetch('../../php/endpoints/obtener_usuarios.php')
         .then(respuesta => respuesta.json())
         .then(datos => {
-            if (datos.status === 'error') {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error al cargar.</td></tr>`;
-                return;
-            }
+            if (datos.status === 'error') { tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error al cargar.</td></tr>`; return; }
             tbody.innerHTML = ''; 
-            if (datos.data && datos.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay usuarios.</td></tr>`;
-                return;
-            }
+            if (datos.data && datos.data.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay usuarios.</td></tr>`; return; }
             if(datos.data){
                 datos.data.forEach(user => {
                     let colorBadge = (user.rol === 'Administrador' || user.rol === 'admin') ? 'danger' : 'primary';
-                    
                     let filaHTML = `
                         <tr>
                             <td class="ps-4 fw-bold text-secondary">#${user.id_usuario}</td>
@@ -391,16 +298,8 @@ function cargarTablaUsuarios() {
                     btn.addEventListener('click', function() {
                         const id = this.getAttribute('data-id');
                         if (confirm('¿Eliminar este usuario definitivamente?')) {
-                            fetch('../../php/endpoints/eliminar_usuario.php', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ id_usuario: id })
-                            })
-                            .then(res => res.json())
-                            .then(data => {
-                                if(data.status === 'success') { cargarTablaUsuarios(); }
-                                else { alert("Error: " + data.message); }
-                            });
+                            fetch('../../php/endpoints/eliminar_usuario.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_usuario: id }) })
+                            .then(res => res.json()).then(data => { if(data.status === 'success') { cargarTablaUsuarios(); } else { alert("Error: " + data.message); } });
                         }
                     });
                 });
@@ -417,10 +316,7 @@ function cargarTablaExamenes() {
         .then(respuesta => respuesta.json())
         .then(datos => {
             tbody.innerHTML = ''; 
-            if (datos.status === 'error' || datos.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Aún no hay exámenes.</td></tr>`;
-                return;
-            }
+            if (datos.status === 'error' || datos.data.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Aún no hay exámenes.</td></tr>`; return; }
             datos.data.forEach(ex => {
                 let colorBadge = (ex.estado === 'Programado') ? 'primary' : (ex.estado === 'Abierto' ? 'success' : 'secondary');
                 let btnAbrirHTML = ex.estado === 'Programado' ? `<button class="btn btn-outline-success btn-sm rounded-pill px-2 py-1 btn-abrir-ets" data-id="${ex.id_examen}" title="Abrir Inscripciones"><i class="bi bi-unlock-fill me-1"></i>Abrir</button>` : '';
@@ -533,30 +429,86 @@ function guardarCalificaciones() {
     .then(res => res.json()).then(data => { if (data.status === 'success') { alert("¡Guardado!"); cargarSelectExamenesCalificar(); } else alert(data.message); });
 }
 
+// ----------------------------------------------------------------------
+// FUNCIONES DE PROFESORES
+// ----------------------------------------------------------------------
+
 function cargarTablaProfesoresAdmin() {
     const tbody = document.getElementById('tbody-profesores');
     if (!tbody) return;
     fetch('../../php/endpoints/obtener_profesores.php').then(res => res.json()).then(data => {
         tbody.innerHTML = '';
         if (data.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No hay profesores registrados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No hay profesores registrados.</td></tr>';
             return;
         }
         data.data.forEach(p => {
-            tbody.innerHTML += `<tr><td class="ps-4 fw-bold text-secondary">${p.boleta}</td><td>${p.apellido_paterno} ${p.apellido_materno} ${p.nombre}</td><td>${p.correo}</td>
-                <td class="pe-4 text-end"><button class="btn btn-sm btn-outline-danger btn-eliminar-profe" data-boleta="${p.boleta}"><i class="bi bi-trash"></i></button></td></tr>`;
+            // Visualización dinámica del estado
+            let colorBadge = p.estado === 'Activo' ? 'success' : 'secondary';
+            let btnIcono = p.estado === 'Activo' ? '<i class="bi bi-person-dash"></i>' : '<i class="bi bi-person-check"></i>';
+            let btnColor = p.estado === 'Activo' ? 'outline-danger' : 'outline-success';
+            let btnTitle = p.estado === 'Activo' ? 'Deshabilitar' : 'Habilitar';
+
+            tbody.innerHTML += `
+                <tr data-estado="${p.estado}">
+                    <td class="ps-4 fw-bold text-secondary">${p.boleta}</td>
+                    <td>${p.apellido_paterno} ${p.apellido_materno} ${p.nombre}</td>
+                    <td>${p.correo}</td>
+                    <td><span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">${p.estado}</span></td>
+                    <td class="pe-4 text-end">
+                        <button class="btn btn-sm btn-outline-primary btn-editar-profe me-1" 
+                            data-boleta="${p.boleta}" data-nombre="${p.nombre}" data-paterno="${p.apellido_paterno}" data-materno="${p.apellido_materno}" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-${btnColor} btn-estado-profe" data-boleta="${p.boleta}" data-estado="${p.estado}" title="${btnTitle}">
+                            ${btnIcono}
+                        </button>
+                    </td>
+                </tr>`;
         });
-        tbody.querySelectorAll('.btn-eliminar-profe').forEach(btn => {
+
+        // Evento Editar
+        tbody.querySelectorAll('.btn-editar-profe').forEach(btn => {
             btn.onclick = function() {
-                if(confirm("¿Estás seguro de eliminar este profesor? Se borrará también su cuenta.")) {
+                document.getElementById('edit-prof-boleta-actual').value = this.dataset.boleta;
+                document.getElementById('edit-prof-boleta').value = this.dataset.boleta;
+                document.getElementById('edit-prof-nombre').value = this.dataset.nombre;
+                document.getElementById('edit-prof-paterno').value = this.dataset.paterno;
+                document.getElementById('edit-prof-materno').value = this.dataset.materno;
+                new bootstrap.Modal(document.getElementById('modalEditarProfesor')).show();
+            }
+        });
+
+        // Evento Deshabilitar/Habilitar
+        tbody.querySelectorAll('.btn-estado-profe').forEach(btn => {
+            btn.onclick = function() {
+                let accion = this.dataset.estado === 'Activo' ? 'deshabilitar' : 'habilitar';
+                if(confirm(`¿Estás seguro de ${accion} a este profesor?`)) {
                     fetch('../../php/endpoints/eliminar_profesor.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ boleta: this.dataset.boleta }) })
                     .then(res => res.json()).then(data => {
-                        if(data.status === 'success') cargarTablaProfesoresAdmin();
-                        else alert("❌ " + data.message);
+                        if(data.status === 'success') { cargarTablaProfesoresAdmin(); }
+                        else { alert("❌ " + data.message); }
                     });
                 }
             }
         });
+
+        aplicarFiltrosProfesor(); // Refrescar filtros si están activos
+    });
+}
+
+function aplicarFiltrosProfesor() {
+    const texto = document.getElementById('buscador-profesores')?.value.toLowerCase() || '';
+    const estado = document.getElementById('filtro-estado-profesor')?.value || 'Todos';
+
+    document.querySelectorAll('#tbody-profesores tr').forEach(fila => {
+        if(fila.cells.length > 1) { // Evitar ocultar el mensaje de "No hay profesores"
+            const contenido = fila.innerText.toLowerCase();
+            const estadoFila = fila.getAttribute('data-estado');
+            let coincideTexto = contenido.includes(texto);
+            let coincideEstado = (estado === 'Todos') || (estado === estadoFila);
+            fila.style.display = (coincideTexto && coincideEstado) ? '' : 'none';
+        }
     });
 }
 
@@ -566,13 +518,47 @@ function guardarNuevoProfesor() {
         paterno: document.getElementById('prof-paterno').value, materno: document.getElementById('prof-materno').value,
         correo: document.getElementById('prof-correo').value, password: document.getElementById('prof-password').value
     };
+    if (!datos.boleta || !datos.nombre || !datos.paterno || !datos.materno || !datos.correo || !datos.password) { alert("Llena todos los campos."); return; }
+
+    const btn = document.getElementById('btn-guardar-profesor');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
     fetch('../../php/endpoints/crear_profesor.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos) })
     .then(res => res.json()).then(data => {
+        btn.disabled = false; btn.innerHTML = 'Guardar Profesor';
         if(data.status === 'success') { 
             const mod = bootstrap.Modal.getInstance(document.getElementById('modalNuevoProfesor'));
             if(mod) mod.hide();
             cargarTablaProfesoresAdmin(); 
             document.getElementById('form-nuevo-profesor').reset();
         } else alert(data.message);
+    });
+}
+
+function actualizarProfesor() {
+    const datos = {
+        boleta_actual: document.getElementById('edit-prof-boleta-actual').value,
+        boleta_nueva: document.getElementById('edit-prof-boleta').value.trim(),
+        nombre: document.getElementById('edit-prof-nombre').value.trim(),
+        paterno: document.getElementById('edit-prof-paterno').value.trim(),
+        materno: document.getElementById('edit-prof-materno').value.trim()
+    };
+
+    if (!datos.boleta_nueva || !datos.nombre || !datos.paterno || !datos.materno) { alert("Llena todos los campos."); return; }
+
+    const btn = document.getElementById('btn-actualizar-profesor');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    fetch('../../php/endpoints/actualizar_profesor.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos) })
+    .then(res => res.json()).then(data => {
+        btn.disabled = false; btn.innerHTML = 'Actualizar Profesor';
+        if (data.status === 'success') {
+            const mod = bootstrap.Modal.getInstance(document.getElementById('modalEditarProfesor'));
+            if(mod) mod.hide();
+            cargarTablaProfesoresAdmin();
+            alert("✅ " + data.message);
+        } else {
+            alert("❌ " + data.message);
+        }
     });
 }

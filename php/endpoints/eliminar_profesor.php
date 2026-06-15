@@ -16,40 +16,34 @@ if (!$boleta) {
 }
 
 try {
-    // 1. Buscamos el id_usuario asociado a este profesor antes de borrarlo
+    // 1. Buscamos el id_usuario asociado al profesor
     $stmtFind = $conexion->prepare("SELECT id_usuario FROM profesor WHERE boleta = ?");
     $stmtFind->execute([$boleta]);
     $profesor = $stmtFind->fetch(PDO::FETCH_ASSOC);
 
     if (!$profesor) {
-        echo json_encode(['status' => 'error', 'message' => 'El profesor no existe en la base de datos.']);
+        echo json_encode(['status' => 'error', 'message' => 'El profesor no existe.']);
         exit;
     }
 
     $id_usuario = $profesor['id_usuario'];
 
-    $conexion->beginTransaction();
+    // 2. Revisamos cuál es su estado actual
+    $stmtStatus = $conexion->prepare("SELECT estado FROM usuario WHERE id_usuario = ?");
+    $stmtStatus->execute([$id_usuario]);
+    $user = $stmtStatus->fetch(PDO::FETCH_ASSOC);
 
-    // 2. Borramos al profesor (por restricciones de llave foránea, debe ser primero el hijo)
-    $stmtProf = $conexion->prepare("DELETE FROM profesor WHERE boleta = ?");
-    $stmtProf->execute([$boleta]);
+    // 3. Alternamos el estado
+    $nuevo_estado = ($user['estado'] === 'Activo') ? 'Inactivo' : 'Activo';
+    
+    $stmtUpdate = $conexion->prepare("UPDATE usuario SET estado = ? WHERE id_usuario = ?");
+    $stmtUpdate->execute([$nuevo_estado, $id_usuario]);
 
-    // 3. Borramos su cuenta de usuario (el padre)
-    if ($id_usuario) {
-        $stmtUser = $conexion->prepare("DELETE FROM usuario WHERE id_usuario = ?");
-        $stmtUser->execute([$id_usuario]);
-    }
+    $mensaje = ($nuevo_estado === 'Inactivo') ? 'Profesor deshabilitado con éxito.' : 'Profesor habilitado nuevamente.';
 
-    $conexion->commit();
-    echo json_encode(['status' => 'success', 'message' => 'Profesor y su cuenta de acceso eliminados correctamente.']);
+    echo json_encode(['status' => 'success', 'message' => $mensaje]);
 
 } catch (PDOException $e) {
-    $conexion->rollBack();
-    // Error 23000 de PDO = Violación de restricción de llave foránea (Integridad referencial)
-    if ($e->getCode() == '23000') {
-        echo json_encode(['status' => 'error', 'message' => 'No se puede eliminar: El profesor ya tiene exámenes asignados o historial en el sistema.']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Error de base de datos: ' . $e->getMessage()]);
-    }
+    echo json_encode(['status' => 'error', 'message' => 'Error de base de datos: ' . $e->getMessage()]);
 }
 ?>

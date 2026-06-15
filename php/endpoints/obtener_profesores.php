@@ -7,8 +7,8 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../config/db.php';
 
 try {
-    // Unimos profesor con usuario para traer el correo
-    $sql = "SELECT p.id_profesor, p.boleta, p.nombre, p.apellido_paterno, p.apellido_materno, u.correo 
+    // Agregamos u.estado a la consulta
+    $sql = "SELECT p.id_profesor, p.boleta, p.nombre, p.apellido_paterno, p.apellido_materno, u.correo, u.estado 
             FROM profesor p
             JOIN usuario u ON p.id_usuario = u.id_usuario
             ORDER BY p.apellido_paterno ASC";
