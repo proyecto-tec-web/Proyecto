@@ -81,7 +81,7 @@ function cargarVista(nombreVista, elementoClick) {
 // Distribuidor de lógica: Ejecuta el JS necesario según la vista que esté activa
 function inicializarLogicaVista(nombreVista) {
     
-    // Vista: Inscripciones
+    // --- INSCRIPCIONES ---
     if (nombreVista === 'inscripciones') {
         if (typeof cargarTablaInscripciones === 'function') {
             cargarTablaInscripciones();
@@ -90,20 +90,19 @@ function inicializarLogicaVista(nombreVista) {
         }
     }
     
-    // --- MÓDULO DASHBOARD ---
+    // --- DASHBOARD ADMIN ---
     if (nombreVista === 'dashboard') {
         const kpiExamenes = document.getElementById('kpi-examenes');
         const kpiInscritos = document.getElementById('kpi-inscritos');
         const kpiPagos = document.getElementById('kpi-pagos');
         const kpiActas = document.getElementById('kpi-actas');
         
-        // Spinners de carga
         if(kpiExamenes) kpiExamenes.innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span>';
         if(kpiInscritos) kpiInscritos.innerHTML = '<span class="spinner-border spinner-border-sm text-success"></span>';
         if(kpiPagos) kpiPagos.innerHTML = '<span class="spinner-border spinner-border-sm text-warning"></span>';
         if(kpiActas) kpiActas.innerHTML = '<span class="spinner-border spinner-border-sm text-info"></span>';
 
-        fetch('/php/endpoints/obtener_dashboard_admin.php')
+        fetch('../../php/endpoints/obtener_dashboard_admin.php')
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
@@ -112,38 +111,46 @@ function inicializarLogicaVista(nombreVista) {
                     if(kpiPagos) kpiPagos.innerText = data.kpis.pagos;
                     if(kpiActas) kpiActas.innerText = `${data.kpis.actas_capturadas} / ${data.kpis.total_examenes}`;
 
-                    // Gráfica de barras
                     const canvas = document.getElementById('inscripcionesChart');
                     if (canvas) {
                         const ctx = canvas.getContext('2d');
                         if (chartInscripciones) chartInscripciones.destroy(); 
-                        
                         chartInscripciones = new Chart(ctx, {
                             type: 'bar',
                             data: {
                                 labels: data.chart.labels.length > 0 ? data.chart.labels : ['Sin datos'],
-                                datasets: [{
-                                    label: 'Alumnos inscritos',
-                                    data: data.chart.data.length > 0 ? data.chart.data : [0],
-                                    backgroundColor: 'rgba(13, 110, 253, 0.8)',
-                                    borderRadius: 4
-                                }]
+                                datasets: [{ label: 'Alumnos inscritos', data: data.chart.data.length > 0 ? data.chart.data : [0], backgroundColor: 'rgba(13, 110, 253, 0.8)', borderRadius: 4 }]
                             },
                             options: { responsive: true, plugins: { legend: { display: false } } }
                         });
+                    }
+                    
+                    const contenedorActividad = document.querySelector('.col-12.col-lg-4 .card-body');
+                    if (contenedorActividad) {
+                        contenedorActividad.innerHTML = ''; 
+                        if (data.actividad.length === 0) {
+                            contenedorActividad.innerHTML = '<p class="text-muted text-center py-3">No hay actividad reciente</p>';
+                        } else {
+                            data.actividad.forEach(act => {
+                                let icono = act.estado_pago === 'Pagado' ? 'bi-check-circle' : 'bi-clock-history';
+                                let color = act.estado_pago === 'Pagado' ? 'success' : 'warning';
+                                let titulo = act.estado_pago === 'Pagado' ? 'Inscripción validada' : 'Pago pendiente';
+                                contenedorActividad.innerHTML += `<div class="d-flex mb-3 border-bottom pb-2"><div class="flex-shrink-0 p-2 bg-${color} bg-opacity-10 rounded text-${color}"><i class="bi ${icono} fs-5"></i></div><div class="flex-grow-1 ms-3"><h6 class="mb-0">${titulo}</h6><small class="text-muted">Boleta ${act.boleta} - ${act.materia}</small></div></div>`;
+                            });
+                        }
                     }
                 }
             });
     }
 
-    // Vista: Calificaciones Admin
+    // --- CALIFICACIONES ---
     if (nombreVista === 'calificaciones') {
         cargarSelectExamenesCalificar();
         document.getElementById('select-examen-calificar')?.addEventListener('change', (e) => cargarAlumnosParaCalificar(e.target.value));
         document.getElementById('btn-guardar-calificaciones')?.addEventListener('click', guardarCalificaciones);
     }
 
-    // Vista: Gestión de Profesores
+    // --- PROFESORES ---
     if (nombreVista === 'profesores') {
         cargarTablaProfesoresAdmin();
         document.getElementById('buscador-profesores')?.addEventListener('keyup', function() {
@@ -155,93 +162,342 @@ function inicializarLogicaVista(nombreVista) {
         document.getElementById('btn-guardar-profesor')?.addEventListener('click', guardarNuevoProfesor);
     }
 
-    // Vista: Gestión de Usuarios
-    if (nombreVista === 'usuarios') {
-        cargarTablaUsuarios();
-        document.getElementById('btn-guardar-usuario')?.addEventListener('click', () => {
-            const correo = document.getElementById('input-correo').value;
-            const password = document.getElementById('input-password').value;
-            const rol = document.getElementById('select-rol').value;
-            if (!correo || !password || !rol) { alert("Completa los campos"); return; }
-            fetch('/php/endpoints/crear_usuario.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({correo, password, rol}) })
-            .then(res => res.json()).then(datos => { if(datos.status === 'success') { alert("Creado"); cargarTablaUsuarios(); } });
-        });
-    }
-    
-    // Vista: Gestión de Exámenes
-    if (nombreVista === 'examenes') {
-        cargarTablaExamenes();
-        // Carga de catálogos y buscador omitidos por brevedad, pero igual funcionan
-    }
-    // --- MÓDULO CATÁLOGOS ---
+    // --- CATÁLOGOS (AQUÍ ESTÁ LA CORRECCIÓN) ---
     if (nombreVista === 'catalogos') {
         if (typeof iniciarVistaCatalogos === 'function') {
             iniciarVistaCatalogos();
         } else {
-            console.error("El archivo catalogos.js no está cargado. Revisa tu index.php");
+            console.error("Falta incluir catalogos.js en index.php");
         }
     }
-    // --- MÓDULO PROFESORES (Dashboard con KPIs) ---
-    if (nombreVista === 'dashboard_profesor') {
-        if (typeof cargarKPIsProfesor === 'function') {
-            cargarKPIsProfesor();
-        } else {
-            console.error("El archivo profesor.js no está cargado.");
-        }
-    }
-    // --- MÓDULO PROFESORES (Lista de Exámenes y Calificaciones) ---
-    if (nombreVista === 'mis_examenes') {
-        console.log("Entrando a la vista de exámenes..."); // Pista visual
-        if (typeof cargarMisExamenes === 'function') {
-            cargarMisExamenes();
-        } else {
-            console.error("La función cargarMisExamenes no existe.");
-        }
-    }
-    // --- MÓDULO Peticiones de Revisión ---
-    if (nombreVista === 'revisiones') {
-        console.log("Entrando a la vista de revisiones..."); // <-- LÍNEA NUEVA
-        if (typeof cargarRevisiones === 'function') {
-            cargarRevisiones();
-        }
-    }
-}
-// ==========================================
-// FUNCIONES GENERALES DEL SISTEMA
-// ==========================================
-function cargarTablaUsuarios() {
-    const tbody = document.getElementById('cuerpo-tabla-usuarios');
-    if(!tbody) return;
 
-    // Llamado a funciones de otros archivos (Profesor)
+    // --- USUARIOS ---
+    if (nombreVista === 'usuarios') {
+        cargarTablaUsuarios();
+
+        // CREAR USUARIO
+        const btnGuardarUsuario = document.getElementById('btn-guardar-usuario');
+        if (btnGuardarUsuario) {
+            btnGuardarUsuario.addEventListener('click', () => {
+                const correo = document.getElementById('input-correo').value;
+                const password = document.getElementById('input-password').value;
+                const rol = document.getElementById('select-rol').value;
+
+                if (!correo || !password || !rol) { alert("Completa todos los campos"); return; }
+
+                btnGuardarUsuario.disabled = true;
+                btnGuardarUsuario.innerHTML = "Guardando...";
+
+                fetch('../../php/endpoints/crear_usuario.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo, password, rol })
+                })
+                .then(res => res.json())
+                .then(datos => {
+                    if (datos.status === 'success') {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoUsuario'));
+                        if(modal) modal.hide();
+                        document.getElementById('form-nuevo-usuario').reset();
+                        alert("Usuario creado con éxito.");
+                        cargarTablaUsuarios();
+                    } else {
+                        alert("Error: " + datos.message);
+                    }
+                    btnGuardarUsuario.disabled = false;
+                    btnGuardarUsuario.innerHTML = "Guardar Usuario";
+                });
+            });
+        }
+
+        // ACTUALIZAR USUARIO
+        const btnActualizarUsuario = document.getElementById('btn-actualizar-usuario');
+        if (btnActualizarUsuario) {
+            btnActualizarUsuario.addEventListener('click', () => {
+                const id = document.getElementById('edit-user-id').value;
+                const correo = document.getElementById('edit-user-correo').value;
+                const password = document.getElementById('edit-user-password').value;
+                const rol = document.getElementById('edit-user-rol').value;
+
+                btnActualizarUsuario.disabled = true;
+                btnActualizarUsuario.innerHTML = "Actualizando...";
+
+                fetch('../../php/endpoints/actualizar_usuario.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, correo, password, rol })
+                })
+                .then(res => res.json())
+                .then(datos => {
+                    if (datos.status === 'success') {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarUsuario'));
+                        if(modal) modal.hide();
+                        alert("Usuario actualizado con éxito.");
+                        cargarTablaUsuarios();
+                    } else {
+                        alert("Error: " + datos.message);
+                    }
+                    btnActualizarUsuario.disabled = false;
+                    btnActualizarUsuario.innerHTML = "Actualizar Usuario";
+                });
+            });
+        }
+    }
+    
+    // --- EXÁMENES ---
+    if (nombreVista === 'examenes') {
+        cargarTablaExamenes();
+
+        fetch('../../php/endpoints/obtener_catalogos_ets.php')
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    const selectMateria = document.getElementById('select-materia');
+                    if (selectMateria) {
+                        selectMateria.innerHTML = '<option value="" selected disabled>Selecciona una materia...</option>';
+                        data.materias.forEach(m => { selectMateria.innerHTML += `<option value="${m.id_materia}">${m.nombre}</option>`; });
+                    }
+
+                    const selectSinodal = document.getElementById('select-sinodal');
+                    if (selectSinodal) {
+                        selectSinodal.innerHTML = '<option value="" selected disabled>Asigna un sinodal...</option>';
+                        data.profesores.forEach(p => { selectSinodal.innerHTML += `<option value="${p.id_profesor}">${p.nombre}</option>`; });
+                    }
+
+                    const selectSalon = document.getElementById('select-salon');
+                    if (selectSalon) {
+                        selectSalon.innerHTML = '<option value="" selected disabled>Selecciona un salón...</option>';
+                        data.salones.forEach(s => { selectSalon.innerHTML += `<option value="${s.id_salon}">${s.nombre}</option>`; });
+                    }
+                }
+            })
+            .catch(err => console.error(err));
+
+        const buscadorExamenes = document.getElementById('buscador-examenes');
+        if (buscadorExamenes) {
+            buscadorExamenes.addEventListener('keyup', function() {
+                const textoBuscar = this.value.toLowerCase();
+                const filas = document.querySelectorAll('#tbody-examenes tr');
+                filas.forEach(fila => {
+                    if(fila.cells.length > 1) { 
+                        fila.style.display = fila.innerText.toLowerCase().includes(textoBuscar) ? '' : 'none';
+                    }
+                });
+            });
+        }
+
+        const btnGuardarETS = document.getElementById('btn-guardar-ets');
+        if (btnGuardarETS) {
+            const nuevoBtnGuardar = btnGuardarETS.cloneNode(true);
+            btnGuardarETS.parentNode.replaceChild(nuevoBtnGuardar, btnGuardarETS);
+            
+            nuevoBtnGuardar.addEventListener('click', () => {
+                const materia = document.getElementById('select-materia').value;
+                const sinodal = document.getElementById('select-sinodal').value;
+                const fecha = document.getElementById('input-fecha').value;
+                const hora = document.getElementById('input-hora').value;
+                const salon = document.getElementById('select-salon').value;
+                const cupo = document.getElementById('input-cupo').value;
+
+                if(!materia || !sinodal || !fecha || !hora || !salon || !cupo) { alert("Llena todos los campos."); return; }
+
+                nuevoBtnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+                nuevoBtnGuardar.disabled = true;
+
+                fetch('../../php/endpoints/crear_ets.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ materia, sinodal, fecha, hora, salon, cupo })
+                })
+                .then(res => res.json())
+                .then(datos => {
+                    if (datos.status === 'success') {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoETS'));
+                        if(modal) modal.hide();
+                        document.getElementById('form-nuevo-ets').reset();
+                        alert("¡Examen programado con éxito!"); 
+                        cargarTablaExamenes();
+                    } else { alert("Error: " + datos.message); }
+                    nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
+                    nuevoBtnGuardar.disabled = false;
+                }).catch(error => {
+                    alert("Error de conexión.");
+                    nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen';
+                    nuevoBtnGuardar.disabled = false;
+                });
+            });
+        }
+    }
+
+    // --- ALUMNOS ---
+    if (nombreVista === 'alumnos') {
+        if (typeof iniciarVistaAlumnos === 'function') iniciarVistaAlumnos();
+    }
+
+    // --- PROFESORES (OTROS ARCHIVOS) ---
     if (nombreVista === 'dashboard_profesor' && typeof window.cargarKPIsProfesor === 'function') window.cargarKPIsProfesor();
     if (nombreVista === 'mis_examenes' && typeof window.cargarMisExamenes === 'function') window.cargarMisExamenes();
     if (nombreVista === 'revisiones' && typeof window.cargarRevisiones === 'function') window.cargarRevisiones();
 }
 
+
 // =======================================================
-// FUNCIONES GLOBALES (CALIFICACIONES Y PROFESORES)
+// FUNCIONES GLOBALES 
 // =======================================================
 
-// Lista los exámenes listos para calificar
-function cargarSelectExamenesCalificar() {
-    const select = document.getElementById('select-examen-calificar');
-    if (!select) return;
-    fetch('../../php/endpoints/obtener_examenes.php')
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                select.innerHTML = '<option value="" selected disabled>Selecciona un examen...</option>';
-                const validos = data.data.filter(ex => ex.estado === 'Cerrado' || ex.estado === 'Calificado');
-                validos.forEach(ex => {
-                    let icono = ex.estado === 'Calificado' ? '✅' : '📝';
-                    select.innerHTML += `<option value="${ex.id_examen}">${icono} #${ex.id_examen} - ${ex.materia}</option>`;
+function cargarTablaUsuarios() {
+    const tbody = document.getElementById('cuerpo-tabla-usuarios');
+    if(!tbody) return;
+
+    fetch('../../php/endpoints/obtener_usuarios.php')
+        .then(respuesta => respuesta.json())
+        .then(datos => {
+            if (datos.status === 'error') {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error al cargar.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = ''; 
+            if (datos.data && datos.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay usuarios.</td></tr>`;
+                return;
+            }
+            if(datos.data){
+                datos.data.forEach(user => {
+                    let colorBadge = (user.rol === 'Administrador' || user.rol === 'admin') ? 'danger' : 'primary';
+                    
+                    let filaHTML = `
+                        <tr>
+                            <td class="ps-4 fw-bold text-secondary">#${user.id_usuario}</td>
+                            <td>${user.correo}</td>
+                            <td><span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">${user.rol}</span></td>
+                            <td class="pe-4 text-end">
+                                <button class="btn btn-sm btn-outline-secondary me-1 btn-editar-usuario" data-id="${user.id_usuario}" data-correo="${user.correo}" data-rol="${user.rol}"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-danger btn-eliminar-usuario" data-id="${user.id_usuario}"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>`;
+                    tbody.innerHTML += filaHTML;
+                });
+
+                tbody.querySelectorAll('.btn-editar-usuario').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.getElementById('edit-user-id').value = this.getAttribute('data-id');
+                        document.getElementById('edit-user-correo').value = this.getAttribute('data-correo');
+                        document.getElementById('edit-user-rol').value = this.getAttribute('data-rol');
+                        new bootstrap.Modal(document.getElementById('modalEditarUsuario')).show();
+                    });
+                });
+
+                tbody.querySelectorAll('.btn-eliminar-usuario').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+                        if (confirm('¿Eliminar este usuario definitivamente?')) {
+                            fetch('../../php/endpoints/eliminar_usuario.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id_usuario: id })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if(data.status === 'success') { cargarTablaUsuarios(); }
+                                else { alert("Error: " + data.message); }
+                            });
+                        }
+                    });
                 });
             }
+        })
+        .catch(() => { tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error de conexión.</td></tr>`; });
+}
+
+function cargarTablaExamenes() {
+    const tbody = document.getElementById('tbody-examenes');
+    if(!tbody) return;
+
+    fetch('../../php/endpoints/obtener_examenes.php')
+        .then(respuesta => respuesta.json())
+        .then(datos => {
+            tbody.innerHTML = ''; 
+            if (datos.status === 'error' || datos.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Aún no hay exámenes.</td></tr>`;
+                return;
+            }
+            datos.data.forEach(ex => {
+                let colorBadge = (ex.estado === 'Programado') ? 'primary' : (ex.estado === 'Abierto' ? 'success' : 'secondary');
+                let btnAbrirHTML = ex.estado === 'Programado' ? `<button class="btn btn-outline-success btn-sm rounded-pill px-2 py-1 btn-abrir-ets" data-id="${ex.id_examen}" title="Abrir Inscripciones"><i class="bi bi-unlock-fill me-1"></i>Abrir</button>` : '';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="ps-4 fw-bold text-secondary">#${ex.id_examen}</td>
+                        <td class="fw-semibold">${ex.materia}</td>
+                        <td><div>${ex.fecha}</div><small class="text-muted">${ex.hora_inicio} - ${ex.hora_fin}</small></td>
+                        <td>${ex.sinodal}</td>
+                        <td>${ex.salon}</td>
+                        <td>${ex.cupo} alumnos</td>
+                        <td><span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">${ex.estado}</span></td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center align-items-center gap-1">
+                                ${btnAbrirHTML}
+                                <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1 btn-modificar-ets" data-id="${ex.id_examen}"><i class="bi bi-pencil-square"></i></button>
+                                <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-eliminar-ets" data-id="${ex.id_examen}"><i class="bi bi-trash3"></i></button>
+                            </div>
+                        </td>
+                    </tr>`;
+            });
+
+            tbody.querySelectorAll('.btn-abrir-ets').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    if (confirm("¿ABRIR inscripciones para este examen?")) {
+                        fetch('../../php/endpoints/abrir_examen.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_examen: id }) })
+                        .then(res => res.json()).then(data => { if(data.status==='success') cargarTablaExamenes(); else alert("Error: "+data.message); });
+                    }
+                });
+            });
+
+            tbody.querySelectorAll('.btn-eliminar-ets').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    if (confirm(`¿Eliminar examen #${id}?`)) {
+                        fetch('../../php/endpoints/eliminar_ets.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_examen: id }) })
+                        .then(res => res.json()).then(data => { if(data.status==='success') cargarTablaExamenes(); else alert(data.message); });
+                    }
+                });
+            });
+
+            tbody.querySelectorAll('.btn-modificar-ets').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    fetch(`../../php/endpoints/obtener_examen_id.php?id=${id}`)
+                        .then(res => res.json()).then(data => {
+                            if (data.status === 'success') {
+                                document.getElementById('edit-id').value = data.examen.id_examen;
+                                document.getElementById('edit-materia').value = data.examen.id_materia;
+                                document.getElementById('edit-sinodal').value = data.examen.id_profesor;
+                                document.getElementById('edit-fecha').value = data.examen.fecha;
+                                document.getElementById('edit-hora').value = data.examen.hora_inicio;
+                                document.getElementById('edit-salon').value = data.examen.id_salon;
+                                document.getElementById('edit-cupo').value = data.examen.cupo;
+                                new bootstrap.Modal(document.getElementById('modalEditarETS')).show();
+                            }
+                        });
+                });
+            });
         });
 }
 
-// Trae alumnos de un examen seleccionado
+function cargarSelectExamenesCalificar() {
+    const select = document.getElementById('select-examen-calificar');
+    if (!select) return;
+    fetch('../../php/endpoints/obtener_examenes.php').then(res => res.json()).then(data => {
+        if (data.status === 'success') {
+            select.innerHTML = '<option value="" selected disabled>Selecciona un examen...</option>';
+            data.data.filter(ex => ex.estado === 'Cerrado' || ex.estado === 'Calificado').forEach(ex => {
+                select.innerHTML += `<option value="${ex.id_examen}">${ex.estado === 'Calificado' ? '✅' : '📝'} #${ex.id_examen} - ${ex.materia}</option>`;
+            });
+        }
+    });
+}
+
 function cargarAlumnosParaCalificar(idExamen) {
     const tbody = document.getElementById('tbody-calificaciones');
     const btnGuardar = document.getElementById('btn-guardar-calificaciones');
@@ -249,23 +505,17 @@ function cargarAlumnosParaCalificar(idExamen) {
     tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span></td></tr>';
     btnGuardar.disabled = true;
 
-    fetch(`../../php/endpoints/obtener_alumnos_examen.php?id_examen=${idExamen}`)
-        .then(res => res.json())
-        .then(data => {
-            tbody.innerHTML = '';
-            if (data.status === 'error' || data.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay alumnos.</td></tr>';
-                return;
-            }
-            btnGuardar.disabled = false;
-            data.data.forEach(al => {
-                tbody.innerHTML += `<tr><td>${al.boleta}</td><td>${al.apellido_paterno} ${al.nombre}</td>
-                    <td><input type="number" class="form-control input-calificacion" data-id="${al.id_inscripcion}" value="${al.calificacion ?? ''}" min="0" max="10" step="0.1"></td></tr>`;
-            });
+    fetch(`../../php/endpoints/obtener_alumnos_examen.php?id_examen=${idExamen}`).then(res => res.json()).then(data => {
+        tbody.innerHTML = '';
+        if (data.status === 'error' || data.data.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay alumnos.</td></tr>'; return; }
+        btnGuardar.disabled = false;
+        data.data.forEach(al => {
+            tbody.innerHTML += `<tr><td class="ps-4 fw-bold text-secondary">${al.boleta}</td><td>${al.apellido_paterno} ${al.nombre}</td>
+                <td class="pe-4"><input type="number" class="form-control input-calificacion" data-id="${al.id_inscripcion}" value="${al.calificacion ?? ''}" min="0" max="10" step="0.1"></td></tr>`;
         });
+    });
 }
 
-// Envía calificaciones validadas
 function guardarCalificaciones() {
     const idExamen = document.getElementById('select-examen-calificar').value;
     const inputs = document.querySelectorAll('.input-calificacion');
@@ -279,58 +529,50 @@ function guardarCalificaciones() {
     });
 
     if (invalido) { alert("Error: Calificación fuera de rango (0-10)."); return; }
-
-    fetch('../../php/endpoints/guardar_calificaciones.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ id_examen: idExamen, calificaciones: lista })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === 'success') { alert("¡Guardado!"); cargarSelectExamenesCalificar(); }
-        else alert(data.message);
-    });
+    fetch('../../php/endpoints/guardar_calificaciones.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_examen: idExamen, calificaciones: lista }) })
+    .then(res => res.json()).then(data => { if (data.status === 'success') { alert("¡Guardado!"); cargarSelectExamenesCalificar(); } else alert(data.message); });
 }
 
-// Carga tabla de profesores para el admin
 function cargarTablaProfesoresAdmin() {
     const tbody = document.getElementById('tbody-profesores');
     if (!tbody) return;
-    fetch('../../php/endpoints/obtener_profesores.php')
-        .then(res => res.json())
-        .then(data => {
-            tbody.innerHTML = '';
-            data.data.forEach(p => {
-                tbody.innerHTML += `<tr><td>${p.boleta}</td><td>${p.apellido_paterno} ${p.nombre}</td><td>${p.correo}</td>
-                    <td class="text-end"><button class="btn btn-sm btn-outline-danger btn-eliminar-profe" data-boleta="${p.boleta}"><i class="bi bi-trash"></i></button></td></tr>`;
-            });
-            // Evento eliminar
-            tbody.querySelectorAll('.btn-eliminar-profe').forEach(btn => {
-                btn.onclick = function() {
-                    if(confirm("¿Borrar profesor?")) {
-                        fetch('../../php/endpoints/eliminar_profesor.php', { method: 'POST', body: JSON.stringify({ boleta: this.dataset.boleta }) })
-                        .then(() => cargarTablaProfesoresAdmin());
-                    }
-                }
-            });
+    fetch('../../php/endpoints/obtener_profesores.php').then(res => res.json()).then(data => {
+        tbody.innerHTML = '';
+        if (data.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No hay profesores registrados.</td></tr>';
+            return;
+        }
+        data.data.forEach(p => {
+            tbody.innerHTML += `<tr><td class="ps-4 fw-bold text-secondary">${p.boleta}</td><td>${p.apellido_paterno} ${p.apellido_materno} ${p.nombre}</td><td>${p.correo}</td>
+                <td class="pe-4 text-end"><button class="btn btn-sm btn-outline-danger btn-eliminar-profe" data-boleta="${p.boleta}"><i class="bi bi-trash"></i></button></td></tr>`;
         });
+        tbody.querySelectorAll('.btn-eliminar-profe').forEach(btn => {
+            btn.onclick = function() {
+                if(confirm("¿Estás seguro de eliminar este profesor? Se borrará también su cuenta.")) {
+                    fetch('../../php/endpoints/eliminar_profesor.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ boleta: this.dataset.boleta }) })
+                    .then(res => res.json()).then(data => {
+                        if(data.status === 'success') cargarTablaProfesoresAdmin();
+                        else alert("❌ " + data.message);
+                    });
+                }
+            }
+        });
+    });
 }
 
-// Guarda nuevo profesor
 function guardarNuevoProfesor() {
     const datos = {
-        boleta: document.getElementById('prof-boleta').value,
-        nombre: document.getElementById('prof-nombre').value,
-        paterno: document.getElementById('prof-paterno').value,
-        materno: document.getElementById('prof-materno').value,
-        correo: document.getElementById('prof-correo').value,
-        password: document.getElementById('prof-password').value
+        boleta: document.getElementById('prof-boleta').value, nombre: document.getElementById('prof-nombre').value,
+        paterno: document.getElementById('prof-paterno').value, materno: document.getElementById('prof-materno').value,
+        correo: document.getElementById('prof-correo').value, password: document.getElementById('prof-password').value
     };
-    fetch('../../php/endpoints/crear_profesor.php', { method: 'POST', body: JSON.stringify(datos) })
+    fetch('../../php/endpoints/crear_profesor.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos) })
     .then(res => res.json()).then(data => {
-        if(data.status === 'success') {
-            bootstrap.Modal.getInstance(document.getElementById('modalNuevoProfesor')).hide();
-            cargarTablaProfesoresAdmin();
+        if(data.status === 'success') { 
+            const mod = bootstrap.Modal.getInstance(document.getElementById('modalNuevoProfesor'));
+            if(mod) mod.hide();
+            cargarTablaProfesoresAdmin(); 
+            document.getElementById('form-nuevo-profesor').reset();
         } else alert(data.message);
     });
 }
