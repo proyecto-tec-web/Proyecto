@@ -2,14 +2,17 @@
 session_start();
 require_once '../config/db.php';
 
-// Validar que sea profesor o sinodal
-if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'profesor' && strtolower(trim($_SESSION['usuario_rol'])) !== 'sinodal')) {
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
+if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'profesor')) {
     echo json_encode(["status" => "error", "message" => "Acceso denegado. Solo profesores."]);
     exit();
 }
 
 try {
-    // 1. Encontrar quién es el profesor actual
     $stmtProf = $conexion->prepare("SELECT id_profesor FROM profesor WHERE id_usuario = ?");
     $stmtProf->execute([$_SESSION['id_usuario']]);
     $profesor = $stmtProf->fetch(PDO::FETCH_ASSOC);
@@ -21,7 +24,6 @@ try {
     
     $id_profesor = $profesor['id_profesor'];
 
-    // 2. Traer SOLO los exámenes que le tocan a este profesor
     $sql = "SELECT 
                 e.id_examen,
                 m.nombre AS materia,
@@ -34,7 +36,7 @@ try {
             INNER JOIN materia m ON e.id_materia = m.id_materia
             INNER JOIN salon s ON e.id_salon = s.id_salon
             WHERE e.id_profesor = ?
-            ORDER BY e.estado ASC, e.fecha ASC"; // Ordena los activos primero
+            ORDER BY e.estado ASC, e.fecha ASC";
             
     $stmt = $conexion->prepare($sql);
     $stmt->execute([$id_profesor]);
@@ -45,4 +47,5 @@ try {
 } catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => "Error de BD: " . $e->getMessage()]);
 }
+$conexion = null;
 ?>

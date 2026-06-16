@@ -6,8 +6,12 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 try {
-    // Agregamos u.estado a la consulta
     $sql = "SELECT p.id_profesor, p.boleta, p.nombre, p.apellido_paterno, p.apellido_materno, u.correo, u.estado 
             FROM profesor p
             JOIN usuario u ON p.id_usuario = u.id_usuario
@@ -20,4 +24,5 @@ try {
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => 'Error BD: ' . $e->getMessage()]);
 }
+$conexion = null;   
 ?>

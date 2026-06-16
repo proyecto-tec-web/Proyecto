@@ -2,6 +2,11 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once './../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 $sql = "SELECT e.id_examen, e.fecha, m.nombre AS materia 
         FROM examen e 
         INNER JOIN materia m ON e.id_materia = m.id_materia 

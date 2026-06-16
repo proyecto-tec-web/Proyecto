@@ -39,26 +39,22 @@ try {
         exit;
     }
 
-    if ($estado_actual === 'Calificado' && $rol_usuario !== 'admin' && $rol_usuario !== 'administrador') {
+    if ($estado_actual === 'Calificado' && $rol_usuario !== 'admin') {
         echo json_encode(['status' => 'error', 'message' => 'Acceso Denegado: El acta ya fue cerrada. Solo un Administrador puede modificar calificaciones.']);
         exit;
     }
 
-    // Inicia la transacción. Si algo falla, nada se guarda.
     $conexion->beginTransaction();
 
-    // 1. Preparar la actualización en la tabla de inscripciones
     $sql = "UPDATE inscripcion_examen SET calificacion = ? WHERE id_inscripcion = ? AND id_examen = ?";
     $stmt = $conexion->prepare($sql);
 
-    // 2. Preparar la consulta para obtener los datos necesarios para el Kardex
     $sqlInfo = "SELECT ie.id_alumno, e.id_materia 
                 FROM inscripcion_examen ie
                 INNER JOIN examen e ON ie.id_examen = e.id_examen 
                 WHERE ie.id_inscripcion = ?";
     $stmtInfo = $conexion->prepare($sqlInfo);
 
-    // 3. Preparar la inserción/actualización en el Kardex oficial
     $sqlKardex = "INSERT INTO kardex (id_alumno, id_materia, calificacion) 
                   VALUES (?, ?, ?) 
                   ON DUPLICATE KEY UPDATE calificacion = ?";
@@ -74,31 +70,25 @@ try {
                 exit;
             }
             
-            // Guardar calificación en la inscripción al examen
             $stmt->execute([$cal, $item['id_inscripcion'], $id_examen]);
 
-            // Obtener el id_alumno e id_materia de esta inscripción específica
             $stmtInfo->execute([$item['id_inscripcion']]);
             $info = $stmtInfo->fetch(PDO::FETCH_ASSOC);
 
             if ($info) {
-                // Sincronizar con el Kardex
                 $stmtKardex->execute([$info['id_alumno'], $info['id_materia'], $cal, $cal]);
             }
         }
     } 
 
-    // Actualizar el estado global del examen a 'Calificado'
     $sqlActualizarExamen = "UPDATE examen SET estado = 'Calificado' WHERE id_examen = ?";
     $stmtActualizarExamen = $conexion->prepare($sqlActualizarExamen);
     $stmtActualizarExamen->execute([$id_examen]);
 
-    // Confirmar todos los cambios
     $conexion->commit();
     echo json_encode(['status' => 'success', 'message' => 'Calificaciones guardadas y Kardex actualizado exitosamente.']);
 
 } catch (PDOException $e) {
-    // Si hay un error, revertir todos los INSERT y UPDATE
     $conexion->rollBack();
     echo json_encode(['status' => 'error', 'message' => 'Error de base de datos: ' . $e->getMessage()]);
 }

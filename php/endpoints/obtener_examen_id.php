@@ -2,6 +2,11 @@
 session_start();
 require_once '../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 if (!isset($_GET['id'])) {
     echo json_encode(["status" => "error", "message" => "Falta el ID"]);
     exit();
@@ -20,4 +25,5 @@ try {
 } catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }
+$conexion = null;
 ?>

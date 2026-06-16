@@ -2,18 +2,17 @@
 session_start();
 require_once '../config/db.php';
 
-if (!isset($_SESSION['id_usuario']) || $_SESSION['usuario_rol'] !== 'admin') {
-    echo json_encode(["status" => "error", "message" => "Acceso no autorizado."]);
-    exit();
-}
-
 if (!isset($conexion) || !($conexion instanceof PDO)) {
     echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
     exit;
 }
 
+if (!isset($_SESSION['id_usuario']) || $_SESSION['usuario_rol'] !== 'admin') {
+    echo json_encode(["status" => "error", "message" => "Acceso no autorizado."]);
+    exit();
+}
+
 try {
-    // Usamos CASE para extraer exactamente de la tabla correcta según el rol del usuario
     $sql = "SELECT u.id_usuario, u.correo, u.rol, 
                    CASE 
                        WHEN u.rol = 'alumno' THEN a.boleta 

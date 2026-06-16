@@ -2,13 +2,17 @@
 session_start();
 require_once '../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 if (!isset($_SESSION['id_usuario'])) {
     echo json_encode(["status" => "error", "message" => "Sesión no válida"]);
     exit();
 }
 
 try {
-    // 1. Obtener el id_profesor asociado al id_usuario actual
     $stmtProf = $conexion->prepare("SELECT id_profesor FROM profesor WHERE id_usuario = ?");
     $stmtProf->execute([$_SESSION['id_usuario']]);
     $profesor = $stmtProf->fetch(PDO::FETCH_ASSOC);
@@ -20,7 +24,6 @@ try {
 
     $id_profesor = $profesor['id_profesor'];
 
-    // 2. Obtener los exámenes asignados a este profesor
     $sql = "SELECT 
                 e.id_examen,
                 m.nombre AS materia,
@@ -45,4 +48,5 @@ try {
 } catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => "Error de BD: " . $e->getMessage()]);
 }
+$conexion = null;   
 ?>

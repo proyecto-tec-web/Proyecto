@@ -2,13 +2,17 @@
 session_start();
 require_once '../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 if (!isset($_SESSION['id_usuario'])) {
     echo json_encode(["status" => "error", "message" => "Acceso denegado."]);
     exit();
 }
 
 try {
-    // Buscar el ID del profesor
     $stmtProf = $conexion->prepare("SELECT id_profesor FROM profesor WHERE id_usuario = ?");
     $stmtProf->execute([$_SESSION['id_usuario']]);
     $profesor = $stmtProf->fetch(PDO::FETCH_ASSOC);
@@ -19,13 +23,10 @@ try {
     }
     $id_profesor = $profesor['id_profesor'];
 
-    // KPI 1: Exámenes Asignados
     $stmtExamenes = $conexion->prepare("SELECT COUNT(*) as total FROM examen WHERE id_profesor = ?");
     $stmtExamenes->execute([$id_profesor]);
     $totalExamenes = $stmtExamenes->fetch(PDO::FETCH_ASSOC)['total'];
 
-    // KPI 2: Alumnos a Evaluar (CAMBIADO: Solo cuenta los que NO tienen calificación asignada aún)
-    // Esto hace que el número decrezca conforme vas calificando alumnos
     $stmtAlumnos = $conexion->prepare("
         SELECT COUNT(ie.id_inscripcion) as total 
         FROM inscripcion_examen ie 
@@ -35,7 +36,6 @@ try {
     $stmtAlumnos->execute([$id_profesor]);
     $totalAlumnos = $stmtAlumnos->fetch(PDO::FETCH_ASSOC)['total'];
 
-// KPI 3: Exámenes Calificados (Cuenta exámenes que ya tienen al menos una calificación asentada)
     $stmtCalificados = $conexion->prepare("
     SELECT COUNT(ie.id_inscripcion) as total 
     FROM inscripcion_examen ie 
@@ -45,7 +45,6 @@ try {
     $stmtCalificados->execute([$id_profesor]);
     $examenesCalificados = $stmtCalificados->fetch(PDO::FETCH_ASSOC)['total'];
 
-    // Enviamos los datos ordenados al JavaScript
     echo json_encode([
         "status" => "success",
         "data" => [
@@ -59,4 +58,5 @@ try {
 catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }
+$conexion = null;
 ?>

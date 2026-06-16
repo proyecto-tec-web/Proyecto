@@ -7,14 +7,17 @@ if (!isset($_SESSION['id_usuario'])) {
     exit();
 }
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 try {
-    // 1. Obtener el id_profesor asociado a esta sesión
     $stmtProf = $conexion->prepare("SELECT id_profesor FROM profesor WHERE id_usuario = ?");
     $stmtProf->execute([$_SESSION['id_usuario']]);
     $profesor = $stmtProf->fetch(PDO::FETCH_ASSOC);
     $id_profesor = $profesor['id_profesor'];
 
-    // 2. Traer las peticiones de revisión uniendo alumno, examen y materia
     $sql = "SELECT 
                 r.id_peticion,
                 r.id_inscripcion,
@@ -42,4 +45,6 @@ try {
 } catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => "Error de BD: " . $e->getMessage()]);
 }
+$conexion = null;
 ?>
+    

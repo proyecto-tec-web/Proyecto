@@ -2,7 +2,12 @@
 session_start();
 require_once '../config/db.php';
 
-if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'admin' && strtolower(trim($_SESSION['usuario_rol'])) !== 'administrador')) {
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
+if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'admin')) {
     echo json_encode(["status" => "error", "message" => "Acceso denegado."]);
     exit();
 }
@@ -33,4 +38,5 @@ try {
 } catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => "Error de BD: " . $e->getMessage()]);
 }
+$conexion = null;
 ?>

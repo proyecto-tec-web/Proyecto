@@ -50,7 +50,6 @@ if (!isset($conexion) || !is_object($conexion)) {
 
 
                 switch ($rol_normalizado) {
-                    case 'administrador':
                     case 'admin':
                         header("Location: ../../frondend/html/index.php");
                         break;
@@ -60,7 +59,6 @@ if (!isset($conexion) || !is_object($conexion)) {
                         break;
                         
                     case 'profesor':
-                    case 'sinodal':
                         header("Location: ../../frondend/html/panel_profesor.php");
                         break;
                         

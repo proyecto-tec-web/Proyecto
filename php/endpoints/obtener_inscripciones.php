@@ -2,6 +2,11 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once './../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 $sql = "SELECT i.id_inscripcion, a.boleta, CONCAT(a.nombre, ' ', a.apellido_paterno) AS alumno, 
                m.nombre AS materia, i.estado_pago AS estado 
         FROM inscripcion_examen i
@@ -17,4 +22,5 @@ try {
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
+$conexion = null;
 ?>

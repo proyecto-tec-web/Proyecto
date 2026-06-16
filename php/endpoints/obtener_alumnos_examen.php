@@ -2,6 +2,11 @@
 session_start();
 require_once '../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 $id_examen = $_GET['id_examen'] ?? null;
 
 if (!$id_examen) {
@@ -10,7 +15,6 @@ if (!$id_examen) {
 }
 
 try {
-    // Obtenemos a los alumnos cuya inscripción está Aprobada para este examen específico
     $sql = "SELECT ie.id_inscripcion, a.boleta, a.nombre, a.apellido_paterno, a.apellido_materno, ie.calificacion 
             FROM inscripcion_examen ie 
             JOIN alumno a ON ie.id_alumno = a.id_alumno 
@@ -25,4 +29,6 @@ try {
 } catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }
+
+$conexion = null;
 ?>

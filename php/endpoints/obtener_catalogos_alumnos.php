@@ -2,8 +2,12 @@
 session_start();
 require_once '../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 try {
-    // Traemos las carreras disponibles
     $stmt = $conexion->query("SELECT id_carrera, acronimo, nombre FROM carrera");
     $carreras = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -11,4 +15,5 @@ try {
 } catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }
+$conexion = null;
 ?>

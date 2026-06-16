@@ -2,6 +2,11 @@
 session_start();
 require_once '../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 if (isset($_GET['id'])) {
     try {
         $stmt = $conexion->prepare("SELECT id_usuario, correo, rol FROM usuario WHERE id_usuario = ?");
@@ -12,4 +17,5 @@ if (isset($_GET['id'])) {
         echo json_encode(["status" => "error", "message" => $e->getMessage()]);
     }
 }
+$conexion = null;
 ?>

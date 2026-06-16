@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $rol_valido = isset($_SESSION['usuario_rol']) ? strtolower(trim($_SESSION['usuario_rol'])) : '';
 
-if (!isset($_SESSION['id_usuario']) || ($rol_valido !== 'profesor' && $rol_valido !== 'sinodal')) {
+if (!isset($_SESSION['id_usuario']) || ($rol_valido !== 'profesor')) {
     
     echo "<script>window.location.href = '../../../php/endpoints/login.php';</script>";
     exit(); 

@@ -2,11 +2,15 @@
 session_start();
 require_once '../config/db.php';
 
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 if (isset($_GET['id'])) {
     try {
         $id_alumno = $_GET['id'];
 
-        // 1. Traer todas las calificaciones del alumno (cruzando kardex con materia)
         $sql = "SELECT m.semestre, m.nombre as materia, k.calificacion 
                 FROM kardex k
                 INNER JOIN materia m ON k.id_materia = m.id_materia
@@ -17,7 +21,6 @@ if (isset($_GET['id'])) {
         $stmt->execute([$id_alumno]);
         $materias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // 2. LA MAGIA: Contar reprobadas
         $reprobadas = 0;
         foreach ($materias as $mat) {
             if ($mat['calificacion'] < 6) {
@@ -25,10 +28,8 @@ if (isset($_GET['id'])) {
             }
         }
 
-        // 3. Definir Situación (Más de 3 reprobadas = Irregular)
         $nueva_situacion = ($reprobadas >= 3) ? 'Irregular' : 'Regular';
 
-        // 4. Actualizar al alumno en la BD automáticamente
         $update = $conexion->prepare("UPDATE alumno SET situacion_academica = ? WHERE id_alumno = ?");
         $update->execute([$nueva_situacion, $id_alumno]);
 
@@ -42,4 +43,5 @@ if (isset($_GET['id'])) {
         echo json_encode(["status" => "error", "message" => $e->getMessage()]);
     }
 }
+$conexion = null;
 ?>

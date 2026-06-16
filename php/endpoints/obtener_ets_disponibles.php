@@ -5,14 +5,17 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Content-Type: application/json; charset=utf-8');
 require_once '../config/db.php';
 
-// Seguridad: solo alumnos con sesión activa
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
+    exit;
+}
+
 if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'alumno') {
     echo json_encode(['status' => 'error', 'message' => 'Sesión no válida. Inicia sesión como alumno.']);
     exit;
 }
 
 try {
-    // Obtener el id_alumno ligado al usuario en sesión
     $stmtAlumno = $conexion->prepare("SELECT id_alumno FROM alumno WHERE id_usuario = :id_usuario");
     $stmtAlumno->execute([':id_usuario' => $_SESSION['id_usuario']]);
     $alumno = $stmtAlumno->fetch(PDO::FETCH_ASSOC);
