@@ -15,7 +15,7 @@ if (!isset($conexion) || !($conexion instanceof PDO)) {
 $id_examen = $_GET['id_examen'] ?? null;
 
 if (!$id_examen) die("ID no válido");
-$stmt = $conexion->prepare("SELECT m.nombre AS materia, al.boleta, al.nombre, ie.calificacion 
+$stmt = $conexion->prepare("SELECT m.nombre AS materia, al.boleta, al.nombre, al.apellido_paterno, al.apellido_materno, ie.calificacion 
                             FROM examen e 
                             JOIN materia m ON e.id_materia = m.id_materia
                             JOIN inscripcion_examen ie ON e.id_examen = ie.id_examen 
@@ -49,27 +49,27 @@ if (file_exists($real_path_escom)) {
 
 $html = "
 <style>
-    body { font-family: sans-serif; font-size: 14px; }
+body { font-family: sans-serif; font-size: 14px; position: relative; }
     
     /* Estilos para la cabecera con los logos */
     .cabecera { width: 100%; margin-bottom: 30px; border-collapse: collapse; }
     .cabecera td { border: none; padding: 0; vertical-align: middle; }
-    .logo { width: 70px; } /* Ajusta el tamaño de tus escudos aquí */
+    .logo { width: 70px; } 
     .titulo { text-align: center; }
-    .titulo h2 { margin: 0; font-size: 18px; color: #800020; /* Color guinda institucional */ }
-    .titulo h3 { margin: 5px 0; font-size: 16px; color: #0d6efd; /* Color azul ESCOM */ }
+    .titulo h2 { margin: 0; font-size: 18px; color: #800020; }
+    .titulo h3 { margin: 5px 0; font-size: 16px; color: #0d6efd; }
     .titulo h4 { margin: 0; font-size: 14px; font-weight: normal; }
     
     /* Estilos de la tabla de calificaciones */
     .tabla-datos { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    .tabla-datos th, .tabla-datos td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    .tabla-datos th { background-color: #f2f2f2; }
+    .tabla-datos th, .tabla-datos td { border: 1px solid #0d6efd; padding: 8px; text-align: left; }
+    .tabla-datos th { background-color: #71a4f0; }
 </style>
 
 <table class='cabecera'>
     <tr>
         <td style='width: 20%; text-align: left;'>
-            <img src='{$logo_ipn_base64}' width='80' alt='IPN'>
+            <img src='{$logo_ipn_base64}' width='70' alt='IPN'>
         </td>
         <td style='width: 60%;' class='titulo'>
             <h2>Instituto Politécnico Nacional</h2>
@@ -80,6 +80,7 @@ $html = "
             <img src='{$logo_escom_base64}' width='135' alt='ESCOM'>
         </td>
     </tr>
+
 </table>
 
 <p><b>Materia:</b> " . htmlspecialchars($datos[0]['materia']) . "</p>
@@ -91,7 +92,7 @@ foreach ($datos as $fila) {
     $cal = ($fila['calificacion'] !== null) ? $fila['calificacion'] : 'NP';
     $html .= "<tr>
                 <td>" . htmlspecialchars($fila['boleta']) . "</td>
-                <td>" . htmlspecialchars($fila['nombre']) . "</td>
+                <td>" . htmlspecialchars($fila['apellido_paterno']) . " " . htmlspecialchars($fila['apellido_materno']) . " " . htmlspecialchars($fila['nombre']) . "</td>
                 <td>" . htmlspecialchars($cal) . "</td>
               </tr>";
 }

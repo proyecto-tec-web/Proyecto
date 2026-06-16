@@ -2,7 +2,7 @@
 
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card shadow-sm border-0 rounded-4 bg-primary text-white">
+        <div class="card shadow-sm border-0 rounded-4 escom-blue">
             <div class="card-body p-4 p-md-5 d-flex align-items-center">
                 <i class="bi bi-person-workspace display-4 me-4 opacity-75"></i>
                 <div>
@@ -41,16 +41,24 @@
     </div>
 </div>
 <div class="row mt-4">
-    <div class="col-12 col-md-8 offset-md-2">
+    <div class="col-12">
         <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 text-center">
-                <h6 class="fw-bold text-secondary mb-3" style="font-family: 'Montserrat', sans-serif;">
-                    <i class="bi bi-pie-chart-fill me-2 text-primary"></i> Índice Global de Aprobación en ETS
-                </h6>
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="fw-bold text-secondary mb-0" style="font-family: 'Montserrat', sans-serif;">
+                        <i class="bi bi-bar-chart-fill me-2 text-primary"></i> Rendimiento por Materia
+                    </h6>
+                    <h5 class="fw-bold mb-0 text-dark border px-3 py-1 rounded bg-light">
+                        Promedio Global: <span id="promedioGlobalValor" class="text-primary">0.0</span>
+                    </h5>
+                </div>
                 
-                <div style="position: relative; height: 250px; width: 100%; display: flex; justify-content: center;">
+                <div style="position: relative; height: 300px; width: 100%;">
                     <canvas id="graficaRendimiento"></canvas>
                 </div>
+                
+                <div id="promediosPorMateria" class="d-flex justify-content-center flex-wrap gap-3 mt-4">
+                    </div>
                 
             </div>
         </div>

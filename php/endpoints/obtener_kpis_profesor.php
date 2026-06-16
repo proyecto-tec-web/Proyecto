@@ -35,11 +35,12 @@ try {
     $stmtAlumnos->execute([$id_profesor]);
     $totalAlumnos = $stmtAlumnos->fetch(PDO::FETCH_ASSOC)['total'];
 
-    // KPI 3: Exámenes Calificados (CAMBIADO: Cuenta los exámenes que ya pasaron a estado 'Calificado')
+// KPI 3: Exámenes Calificados (Cuenta exámenes que ya tienen al menos una calificación asentada)
     $stmtCalificados = $conexion->prepare("
-        SELECT COUNT(*) as total 
-        FROM examen 
-        WHERE id_profesor = ? AND estado = 'Calificado'
+    SELECT COUNT(ie.id_inscripcion) as total 
+    FROM inscripcion_examen ie 
+    INNER JOIN examen e ON ie.id_examen = e.id_examen 
+    WHERE e.id_profesor = ? AND ie.calificacion IS NOT NULL
     ");
     $stmtCalificados->execute([$id_profesor]);
     $examenesCalificados = $stmtCalificados->fetch(PDO::FETCH_ASSOC)['total'];
@@ -53,7 +54,9 @@ try {
             "examenes_calificados" => $examenesCalificados
         ]
     ]);
-} catch (PDOException $e) {
+} 
+    
+catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }
 ?>

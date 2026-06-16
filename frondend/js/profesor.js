@@ -63,6 +63,24 @@ function cargarMisExamenes() {
                     
                     let botonAccion = ''; 
                     let botonImprimir = '';
+                    let botonCalendar = ''; 
+
+                    // --- INICIO MAGIA GOOGLE CALENDAR ---
+                    let fechaLimpia = ex.fecha.replace(/-/g, ''); 
+                    let hrInicio = ex.hora_inicio.replace(/:/g, '').substring(0, 6); 
+                    let hrFin = ex.hora_fin.replace(/:/g, '').substring(0, 6);
+                    
+                    if(hrInicio.length === 4) hrInicio += '00';
+                    if(hrFin.length === 4) hrFin += '00';
+                    
+                    let datesCal = `${fechaLimpia}T${hrInicio}/${fechaLimpia}T${hrFin}`;
+                    let titleCal = encodeURIComponent(`Examen ETS: ${ex.materia}`);
+                    let descCal = encodeURIComponent(`Evaluación oficial a Título de Suficiencia.\nID Examen: #${ex.id_examen}`);
+                    let locCal = encodeURIComponent(ex.salon);
+                    let urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titleCal}&dates=${datesCal}&details=${descCal}&location=${locCal}`;
+
+                    botonCalendar = `<a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm rounded-pill px-3 ms-2 shadow-sm" title="Agendar en Google Calendar"><i class="bi bi-calendar-plus"></i></a>`;
+                    // --- FIN MAGIA GOOGLE CALENDAR ---
 
                     if (ex.estado === 'Abierto' || ex.estado === 'Cerrado' || ex.estado === 'Calificado') {
                         let textoBtn = '<i class="bi bi-list-check me-1"></i> Ver Lista';
@@ -78,7 +96,15 @@ function cargarMisExamenes() {
                         
                         let btnPrincipal = `<button class="btn ${claseBtn} btn-sm rounded-pill px-3" onclick="abrirModalCalificar(${ex.id_examen}, '${ex.materia}', '${ex.estado}')">${textoBtn}</button>`;
                         botonImprimir = `<button class="btn btn-outline-dark btn-sm rounded-pill px-3 ms-2 shadow-sm" onclick="imprimirPaseDeLista(${ex.id_examen})" title="Imprimir Pase de Lista Físico"><i class="bi bi-printer"></i></button>`;
-                        botonAccion = `<div class="d-flex justify-content-end align-items-center">${btnPrincipal} ${botonImprimir}</div>`;
+                        
+                        // ¡LA CORRECCIÓN ESTÁ AQUÍ! 
+                        // Si el examen ya está 'Calificado', quitamos el botón de Calendar
+                        let mostrarCalendar = (ex.estado === 'Calificado') ? '' : ` ${botonCalendar}`;
+                        
+                        botonAccion = `<div class="d-flex justify-content-end align-items-center">${btnPrincipal} ${botonImprimir}${mostrarCalendar}</div>`;
+                    
+                    } else if (ex.estado === 'Programado') {
+                        botonAccion = `<div class="d-flex justify-content-end align-items-center"><span class="text-muted small me-3 fw-bold">Próximamente</span> ${botonCalendar}</div>`;
                     } else {
                         botonAccion = `<small class="text-muted">Espera a que abra</small>`;
                     }
@@ -97,7 +123,7 @@ function cargarMisExamenes() {
                         </tr>
                     `;
 
-                    // Filtramos: Si está calificado va al historial, si no, a pendientes
+
                     if (ex.estado === 'Calificado') {
                         tbodyHistorial.innerHTML += filaHTML;
                         conteoHistorial++;
@@ -107,7 +133,7 @@ function cargarMisExamenes() {
                     }
                 });
 
-                // Mensajes por si las tablas están vacías
+                
                 if (conteoActivos === 0) {
                     tbodyActivos.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">No tienes exámenes pendientes.</td></tr>`;
                 }
@@ -356,12 +382,12 @@ window.abrirModalRevision = function(idPeticion, idInscripcion, alumnoInfo, cali
 window.imprimirPaseDeLista = function(idExamen) {
     window.open(`/php/endpoints/generar_pase_lista.php?id_examen=${idExamen}`, '_blank');
 };
-// Variable global para evitar que Chart.js se vuelva loco si recargamos la página muchas veces
+// Variable global para evitar que Chart.js se vuelva loco
 let miGraficaRendimiento = null;
 
 function pintarGraficaRendimiento() {
     const canvas = document.getElementById('graficaRendimiento');
-    if (!canvas) return; // Si estamos en otra vista que no es 'Inicio', ignoramos esto.
+    if (!canvas) return; 
 
     fetch('/php/endpoints/obtener_estadisticas_profesor.php')
         .then(res => res.json())
@@ -370,41 +396,101 @@ function pintarGraficaRendimiento() {
 
             const ctx = canvas.getContext('2d');
             
-            // Destruimos la gráfica anterior si existía para dibujar la nueva limpia
+            // Inyectamos el promedio global en el HTML
+            document.getElementById('promedioGlobalValor').textContent = datos.data.promedio_global;
+
+            // Preparamos los arreglos para la gráfica
+            const nombresMaterias = [];
+            const porcentajesAprobados = [];
+            const porcentajesReprobados = [];
+            const contenedorPromedios = document.getElementById('promediosPorMateria');
+            
+            contenedorPromedios.innerHTML = ''; // Limpiamos contenedor
+
+            // Si no hay materias calificadas aún
+            if (datos.data.materias.length === 0) {
+                nombresMaterias.push("Sin datos");
+                porcentajesAprobados.push(0);
+                porcentajesReprobados.push(0);
+                contenedorPromedios.innerHTML = `<span class="text-muted">Empieza a calificar exámenes para ver tus estadísticas.</span>`;
+            } else {
+                // Procesamos cada materia
+                datos.data.materias.forEach(mat => {
+                    nombresMaterias.push(mat.materia);
+                    
+                    // Calculamos el porcentaje
+                    let pctAprobado = 0;
+                    let pctReprobado = 0;
+                    if (mat.total_evaluados > 0) {
+                        pctAprobado = ((mat.aprobados / mat.total_evaluados) * 100).toFixed(1);
+                        pctReprobado = ((mat.reprobados / mat.total_evaluados) * 100).toFixed(1);
+                    }
+                    
+                    porcentajesAprobados.push(pctAprobado);
+                    porcentajesReprobados.push(pctReprobado);
+
+                    // Agregamos el badge de promedio debajo de la gráfica
+                    contenedorPromedios.innerHTML += `
+                        <span class="badge bg-white text-dark border shadow-sm px-3 py-2 fs-6">
+                            ${mat.materia}: <strong class="text-primary">${mat.promedio_materia}</strong>
+                        </span>
+                    `;
+                });
+            }
+
+            // Destruimos la gráfica anterior si existía
             if (miGraficaRendimiento) {
                 miGraficaRendimiento.destroy();
             }
 
-            // Si no tiene a nadie calificado aún, mostramos colores grises
-            let total = datos.data.aprobados + datos.data.reprobados;
-            let valores = total === 0 ? [1] : [datos.data.aprobados, datos.data.reprobados];
-            let colores = total === 0 ? ['#e9ecef'] : ['#198754', '#dc3545']; // Verde y Rojo Bootstrap
-            let etiquetas = total === 0 ? ['Sin datos aún'] : ['Aprobados (6.0 - 10)', 'Reprobados (0 - 5.9)'];
-
-            // Creamos la gráfica
+            // Creamos la nueva gráfica de barras
             miGraficaRendimiento = new Chart(ctx, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
-                    labels: etiquetas,
-                    datasets: [{
-                        data: valores,
-                        backgroundColor: colores,
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
+                    labels: nombresMaterias,
+                    datasets: [
+                        {
+                            label: '% Aprobados',
+                            data: porcentajesAprobados,
+                            backgroundColor: '#198754', // Verde Bootstrap
+                            borderRadius: 4
+                        },
+                        {
+                            label: '% Reprobados',
+                            data: porcentajesReprobados,
+                            backgroundColor: '#dc3545', // Rojo Bootstrap
+                            borderRadius: 4
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: '75%', // Hace que la dona sea más delgada y elegante
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100, // Fijamos la altura al 100%
+                            ticks: {
+                                callback: function(value) { return value + '%' }
+                            }
+                        }
+                    },
                     plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
+                            }
+                        },
                         legend: { position: 'bottom' }
                     }
                 }
             });
         })
         .catch(err => console.error("Error al cargar la gráfica:", err));
-}// ==========================================
+}
+// ==========================================
 // LÓGICA DE FIRMA Y GUARDADO FINAL
 // ==========================================
 

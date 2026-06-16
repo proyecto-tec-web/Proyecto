@@ -33,7 +33,7 @@ try {
         SELECT a.boleta, CONCAT(a.apellido_paterno, ' ', a.apellido_materno, ' ', a.nombre) as nombre_completo
         FROM inscripcion_examen ie
         INNER JOIN alumno a ON ie.id_alumno = a.id_alumno
-        WHERE ie.id_examen = ? AND ie.estado_pago = 'Aprobado'
+        WHERE ie.id_examen = ? AND ie.estado_pago = 'Pagado'
         ORDER BY a.apellido_paterno ASC
     ");
     $stmtAlumnos->execute([$id_examen]);

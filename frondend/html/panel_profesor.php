@@ -29,6 +29,15 @@ if ($hora >= 5 && $hora < 12) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
+    /* Fondo de pantalla para toda la aplicación */
+        body {
+        background-image: url('../img/fondo.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-color: #f8f9fa;
+    }
         body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; }
         .sidebar { background-color: #004ec2; color: white; }
         /* 1. Todos los enlaces inactivos (Color Blanco por defecto) */
@@ -102,6 +111,10 @@ if ($hora >= 5 && $hora < 12) {
             box-shadow: 0 6px 16px rgba(234, 67, 53, 0.6);
             color: white;
         }
+        .escom-blue { 
+        background-color: #004ec2 !important; 
+        color: #ffffff !important; 
+    }
     </style>
 </head>
 <body>
@@ -185,6 +198,9 @@ if ($hora >= 5 && $hora < 12) {
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-wrapper">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
                     <h1 class="h2 fw-bold" style="font-family: 'Montserrat', sans-serif;" id="titulo-seccion">¡Hola, <?php echo $saludo; ?>!</h1>
+                    <a href="https://www.ipn.mx/assets/files/website/docs/inicio/calendarioipn-escolarizada.pdf" target="_blank" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm fw-bold text-white" style="font-family: 'Montserrat', sans-serif; background-color: #004ec2">
+                        <i class="bi bi-calendar3 me-2 text-white"></i> Calendario Académico 2025-2026
+                    </a>
                 </div>
                 
                 <div id="view-container"></div>
@@ -192,7 +208,7 @@ if ($hora >= 5 && $hora < 12) {
                 
                 <footer class="mt-auto pt-4 pb-2 text-muted text-center text-md-start">
                     <div class="border-top pt-3">
-                        <p class="mb-0 small">&copy; 2026 <strong>Sistema de Gestión Escolar</strong>. Departamento de Control Escolar.</p>
+                        <p class="mb-0 small">&copy; 2026 <strong>Sistema de Gestión Escolar</strong>. Planta Docentes (2026).</p>
                     </div>
                 </footer>
             </main>
