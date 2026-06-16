@@ -14,7 +14,7 @@ try {
     $sql = "SELECT ie.id_inscripcion, a.boleta, a.nombre, a.apellido_paterno, a.apellido_materno, ie.calificacion 
             FROM inscripcion_examen ie 
             JOIN alumno a ON ie.id_alumno = a.id_alumno 
-            WHERE ie.id_examen = ? AND ie.estado_pago = 'Aprobado'
+            WHERE ie.id_examen = ? AND ie.estado_pago = 'Pagado'
             ORDER BY a.apellido_paterno ASC";
             
     $stmt = $conexion->prepare($sql);
