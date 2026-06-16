@@ -5,9 +5,13 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Content-Type: application/json; charset=utf-8');
 require_once '../config/db.php';
 
-// Seguridad: solo alumnos con sesión activa
 if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'alumno') {
     echo json_encode(['status' => 'error', 'message' => 'Sesión no válida. Inicia sesión como alumno.']);
+    exit;
+}
+
+if (!isset($conexion) || !($conexion instanceof PDO)) {
+    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
     exit;
 }
 
@@ -21,7 +25,6 @@ if (empty($input['id_examen'])) {
 $id_examen = intval($input['id_examen']);
 
 try {
-    // 1. Obtener al alumno ligado al usuario en sesión
     $sqlAlumno = "SELECT id_alumno, situacion_academica FROM alumno WHERE id_usuario = :id_usuario";
     $stmtAlumno = $conexion->prepare($sqlAlumno);
     $stmtAlumno->execute([':id_usuario' => $_SESSION['id_usuario']]);
@@ -34,13 +37,11 @@ try {
 
     $id_alumno = $alumno['id_alumno'];
 
-    // 2. Regla: solo alumnos irregulares pueden presentar ETS
     if (strtolower(trim($alumno['situacion_academica'])) !== 'irregular') {
         echo json_encode(['status' => 'error', 'message' => 'Inscripción denegada. Tu situación académica es "Regular". Solo los alumnos irregulares pueden presentar ETS.']);
         exit;
     }
 
-    // 3. Regla: la materia debe estar cursada y reprobada en el kardex
     $sqlKardex = "SELECT k.calificacion
                   FROM kardex k
                   JOIN examen e ON k.id_materia = e.id_materia
@@ -59,7 +60,6 @@ try {
         exit;
     }
 
-    // 4. Evitar inscripciones duplicadas
     $sqlValidar = "SELECT id_inscripcion FROM inscripcion_examen WHERE id_alumno = :id_alumno AND id_examen = :id_examen";
     $stmtValidar = $conexion->prepare($sqlValidar);
     $stmtValidar->execute([':id_alumno' => $id_alumno, ':id_examen' => $id_examen]);
@@ -69,7 +69,6 @@ try {
         exit;
     }
 
-    // 5. Verificar cupo disponible y que el examen esté "Abierto"
     $sqlCupo = "SELECT cupo FROM examen WHERE id_examen = :id_examen AND estado = 'Abierto'";
     $stmtCupo = $conexion->prepare($sqlCupo);
     $stmtCupo->execute([':id_examen' => $id_examen]);
@@ -80,7 +79,6 @@ try {
         exit;
     }
 
-    // 6. Registrar inscripción y descontar cupo (transacción)
     $conexion->beginTransaction();
 
     $sqlInsert = "INSERT INTO inscripcion_examen (estado_pago, id_alumno, id_examen) VALUES ('Pendiente', :id_alumno, :id_examen)";
