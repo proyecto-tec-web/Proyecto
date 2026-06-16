@@ -1,4 +1,9 @@
 <?php
+header('Content-Type: application/json');
+
+require_once __DIR__ . '/seguridad_admin.php'; 
+require_once __DIR__ . '/../config/db.php';
+
 // Validamos si la conexión a la base de datos existe y es válida antes de empezar
 if (!isset($conexion) || !$conexion) {
     echo json_encode(['status' => 'error', 'message' => 'No se pudo establecer la conexión a la base de datos']);
