@@ -50,6 +50,9 @@ function cargarTablaInscripciones() {
                     </tr>`;
                 tbody.innerHTML += filaHTML;
             });
+            
+            // Volver a aplicar filtros por si hay alguno activo al recargar la tabla
+            aplicarFiltrosInscripciones();
         })
         .catch(error => {
             tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Error de conexión al cargar la tabla.</td></tr>`;
@@ -209,19 +212,37 @@ window.cambiarEstadoPago = function(idInscripcion, nuevoEstado) {
     });
 };
 
-// BUSCADOR POR BOLETA
-document.addEventListener('keyup', function(e) {
-    if (e.target.id === 'buscar-boleta') {
-        const textoBusqueda = e.target.value.toLowerCase();
-        const filas = document.querySelectorAll('#tbody-inscripciones tr');
+// =======================================================================
+// NUEVO SISTEMA DE FILTROS (REEMPLAZA AL ANTIGUO BUSCADOR DE BOLETAS)
+// =======================================================================
+function aplicarFiltrosInscripciones() {
+    const texto = document.getElementById('buscador-inscripciones')?.value.toLowerCase() || '';
+    const estadoFiltro = document.getElementById('filtro-estado-pago')?.value.toLowerCase() || 'todos';
 
-        filas.forEach(fila => {
-            const columnaBoleta = fila.cells[1]; 
-            if (columnaBoleta) {
-                const boleta = columnaBoleta.textContent.toLowerCase();
-                fila.style.display = boleta.includes(textoBusqueda) ? '' : 'none';
-            }
-        });
+    const filas = document.querySelectorAll('#tbody-inscripciones tr');
+
+    filas.forEach(fila => {
+        if(fila.cells.length > 1) { 
+            const contenidoFila = fila.innerText.toLowerCase();
+            let coincideTexto = contenidoFila.includes(texto);
+            let coincideEstado = (estadoFiltro === 'todos') || contenidoFila.includes(estadoFiltro);
+            
+            fila.style.display = (coincideTexto && coincideEstado) ? '' : 'none';
+        }
+    });
+}
+
+// Escuchamos el buscador de texto
+document.addEventListener('keyup', function(e) {
+    if (e.target && e.target.id === 'buscador-inscripciones') {
+        aplicarFiltrosInscripciones();
+    }
+});
+
+// Escuchamos el select de estado de pago
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'filtro-estado-pago') {
+        aplicarFiltrosInscripciones();
     }
 });
 

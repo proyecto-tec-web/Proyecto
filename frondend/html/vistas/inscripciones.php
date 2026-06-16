@@ -6,21 +6,30 @@
 
 <div class="card shadow-sm border-0 rounded-3">
     
-<div class="card-header bg-white pt-4 pb-2 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="card-header bg-white pt-4 pb-2 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h5 class="card-title fw-bold mb-0">Pagos y Asignaciones</h5>
         
-        <div class="d-flex align-items-center gap-2">
-            <div class="input-group input-group-sm" style="width: 250px;">
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            
+            <div class="input-group input-group-sm" style="width: 200px;">
                 <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                <input type="text" id="buscar-boleta" class="form-control" placeholder="Buscar boleta..." maxlength="10" inputmode="numeric" pattern="[0-9]*">
+                <input type="text" id="buscador-inscripciones" class="form-control" placeholder="Buscar boleta o nombre..." maxlength="10">
             </div>
             
-            <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalInscribirAlumno">
+            <select id="filtro-estado-pago" class="form-select form-select-sm text-secondary" style="width: 150px;">
+                <option value="Todos">Todos los pagos</option>
+                <option value="Pagado">Pagado</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Rechazado">Rechazado</option>
+            </select>
+            
+            <button class="btn btn-primary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#modalInscribirAlumno">
                 <i class="bi bi-plus-circle"></i> Nueva Inscripción
             </button>
             <button class="btn btn-outline-primary btn-sm" onclick="exportarCSV()"><i class="bi bi-download"></i> Exportar Lista</button>
         </div>
     </div>
+    
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">

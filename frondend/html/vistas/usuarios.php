@@ -4,7 +4,7 @@
     <div class="col-12 col-md-8 mb-2 mb-md-0">
         <div class="alert alert-info border-0 shadow-sm rounded-3 d-flex align-items-center mb-0 h-100">
             <i class="bi bi-search me-3 fs-4"></i>
-            <input type="text" id="buscador-usuarios" class="form-control border-0 bg-transparent shadow-none" placeholder="Buscar por correo electrónico o ID...">
+            <input type="text" id="buscador-usuarios" class="form-control border-0 bg-transparent shadow-none" placeholder="Buscar por correo electrónico, boleta o nombre...">
         </div>
     </div>
     <div class="col-12 col-md-4">
@@ -30,13 +30,13 @@
                 <thead class="table-light">
                     <tr>
                         <th class="ps-4">ID</th>
-                        <th>Correo Electrónico</th>
+                        <th>Boleta / Identificador</th> <th>Nombre Completo</th>        <th>Correo Electrónico</th>
                         <th>Rol del Sistema</th>
                         <th class="pe-4 text-end">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="cuerpo-tabla-usuarios">
-                    <tr><td colspan="4" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm text-primary me-2"></span>Cargando usuarios...</td></tr>
+                    <tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm text-primary me-2"></span>Cargando usuarios...</td></tr>
                 </tbody>
             </table>
         </div>

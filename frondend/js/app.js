@@ -310,18 +310,24 @@ function cargarTablaUsuarios() {
     fetch('../../php/endpoints/obtener_usuarios.php')
         .then(respuesta => respuesta.json())
         .then(datos => {
-            if (datos.status === 'error') { tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error al cargar.</td></tr>`; return; }
+            // Se actualizó colspan a 6 por las nuevas columnas
+            if (datos.status === 'error') { tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar.</td></tr>`; return; }
             tbody.innerHTML = ''; 
-            if (datos.data && datos.data.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay usuarios.</td></tr>`; return; }
+            if (datos.data && datos.data.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No hay usuarios.</td></tr>`; return; }
+            
             if(datos.data){
                 datos.data.forEach(user => {
                     let colorBadge = (user.rol === 'Administrador' || user.rol === 'admin') ? 'danger' : (user.rol === 'profesor' ? 'success' : 'primary');
                     let rolNormalizado = user.rol.toLowerCase();
 
+                    // Mapeo seguro en caso de que sea una cuenta sin boleta o nombre (ej. administrador principal)
+                    let boletaMostrar = user.boleta ? user.boleta : '<span class="text-muted"><small>N/A</small></span>';
+                    let nombreMostrar = (user.nombre_persona && user.nombre_persona.trim() !== '') ? user.nombre_persona : '<span class="text-muted fst-italic"><small>Sin perfil asignado</small></span>';
+
                     let filaHTML = `
                         <tr data-rol="${rolNormalizado}">
                             <td class="ps-4 fw-bold text-secondary">#${user.id_usuario}</td>
-                            <td>${user.correo}</td>
+                            <td><strong>${boletaMostrar}</strong></td> <td>${nombreMostrar}</td>             <td>${user.correo}</td>
                             <td><span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">${user.rol}</span></td>
                             <td class="pe-4 text-end">
                                 <button class="btn btn-sm btn-outline-secondary me-1 btn-editar-usuario" data-id="${user.id_usuario}" data-correo="${user.correo}" data-rol="${user.rol}"><i class="bi bi-pencil"></i></button>
@@ -353,7 +359,7 @@ function cargarTablaUsuarios() {
                 aplicarFiltrosUsuario();
             }
         })
-        .catch(() => { tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error de conexión.</td></tr>`; });
+        .catch(() => { tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Error de conexión.</td></tr>`; });
 }
 
 function aplicarFiltrosUsuario() {
@@ -362,7 +368,9 @@ function aplicarFiltrosUsuario() {
 
     document.querySelectorAll('#cuerpo-tabla-usuarios tr').forEach(fila => {
         if(fila.cells.length > 1) { 
-            const contenido = fila.innerText.toLowerCase();
+            // Como las celdas nuevas son parte del "innerText" de la fila, 
+            // el buscador funcionará automáticamente sin tener que programarle nada extra
+            const contenido = fila.innerText.toLowerCase(); 
             const rolFila = fila.getAttribute('data-rol') || '';
             let coincideTexto = contenido.includes(texto);
             let coincideRol = (rolFiltro === 'todos') || (rolFila.includes(rolFiltro)) || (rolFiltro === 'admin' && rolFila.includes('administrador'));
@@ -460,12 +468,12 @@ function cargarSelectExamenesCalificar() {
 function cargarAlumnosParaCalificar(idExamen) {
     const tbody = document.getElementById('tbody-calificaciones');
     const btnGuardar = document.getElementById('btn-guardar-calificaciones');
-    const btnExportar = document.getElementById('btn-exportar-csv'); // Referencia al botón exportar
+    const btnExportar = document.getElementById('btn-exportar-csv'); 
     
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span></td></tr>';
     btnGuardar.disabled = true;
-    if(btnExportar) btnExportar.style.display = 'none'; // Lo ocultamos hasta ver si hay datos
+    if(btnExportar) btnExportar.style.display = 'none'; 
 
     fetch(`../../php/endpoints/obtener_alumnos_examen.php?id_examen=${idExamen}`).then(res => res.json()).then(data => {
         tbody.innerHTML = '';
@@ -474,7 +482,6 @@ function cargarAlumnosParaCalificar(idExamen) {
             return; 
         }
         
-        // Si hay datos, activamos los botones
         btnGuardar.disabled = false;
         if(btnExportar) btnExportar.style.display = 'inline-block';
 
@@ -502,12 +509,10 @@ function guardarCalificaciones() {
     .then(res => res.json()).then(data => { if (data.status === 'success') { alert("¡Guardado!"); cargarSelectExamenesCalificar(); } else alert(data.message); });
 }
 
-// --- NUEVA FUNCIÓN PARA EXPORTAR A CSV ---
 function exportarCalificacionesCSV() {
     const selector = document.getElementById('select-examen-calificar');
     const idExamen = selector.value;
     
-    // Sacamos el nombre del examen limpiando los emojis y caracteres raros
     const nombreExamen = selector.options[selector.selectedIndex].text.replace(/[^a-zA-Z0-9 -]/g, "").trim();
 
     const filas = document.querySelectorAll('#tbody-calificaciones tr');
@@ -516,7 +521,6 @@ function exportarCalificacionesCSV() {
         return;
     }
 
-    // Le agregamos el BOM (\uFEFF) para que Excel (que es medio especial) lea bien los acentos
     let csvContent = "\uFEFFBoleta,Nombre del Alumno,Calificacion\n";
 
     filas.forEach(fila => {
@@ -524,16 +528,13 @@ function exportarCalificacionesCSV() {
             const boleta = fila.cells[0].innerText.trim();
             const nombre = fila.cells[1].innerText.trim();
             
-            // La calificación vive dentro de un input, la sacamos de ahí
             const inputCalif = fila.cells[2].querySelector('input');
             const calif = inputCalif ? inputCalif.value : '';
             
-            // Envolvemos el nombre en comillas por si tiene comas
             csvContent += `${boleta},"${nombre}",${calif}\n`;
         }
     });
 
-    // Magia para descargar el archivo sin ir al backend
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
