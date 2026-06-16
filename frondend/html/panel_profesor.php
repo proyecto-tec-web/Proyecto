@@ -1,14 +1,12 @@
 <?php
 session_start();
-// Validar que sea profesor o sinodal (Protección de la página)
-if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'profesor' && strtolower(trim($_SESSION['usuario_rol'])) !== 'sinodal')) {
+if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'profesor') {
     header("Location: ../../php/endpoints/login.php");
     exit();
 }
 
-// Lógica para determinar el saludo según la hora local
 date_default_timezone_set('America/Mexico_City');
-$hora = (int)date('G'); // Hora en formato 24h (0-23)
+$hora = (int)date('G');
 $saludo = "buenas noches";
 if ($hora >= 5 && $hora < 12) {
     $saludo = "buenos días";

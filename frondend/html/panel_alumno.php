@@ -8,11 +8,10 @@ if (!isset($_SESSION['id_usuario'])) {
 
 $rol_usuario = strtolower(trim($_SESSION['usuario_rol']));
 
-// Validar que solo los alumnos entren aquí
 if ($rol_usuario !== 'alumno') {
-    if ($rol_usuario === 'admin' || $rol_usuario === 'administrador') {
+    if ($rol_usuario === 'admin') {
         header("Location: index.php");
-    } elseif ($rol_usuario === 'profesor' || $rol_usuario === 'sinodal') {
+    } elseif ($rol_usuario === 'profesor') {
         header("Location: panel_profesor.php");
     } else {
         header("Location: ./../../php/endpoints/login.php");
