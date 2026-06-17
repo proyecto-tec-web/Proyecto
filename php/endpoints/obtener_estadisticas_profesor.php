@@ -23,6 +23,7 @@ try {
     }
     $id_profesor = $profesor['id_profesor'];
 
+    // 1. OBTENEMOS LOS DATOS DE LA GRÁFICA POR MATERIA
     $stmtGrafica = $conexion->prepare("
         SELECT 
             m.nombre AS materia,
@@ -33,28 +34,33 @@ try {
         FROM examen e 
         JOIN materia m ON e.id_materia = m.id_materia
         JOIN inscripcion_examen ie ON e.id_examen = ie.id_examen 
-        WHERE e.id_profesor = ? AND ie.calificacion IS NOT NULL
+        WHERE e.id_profesor = ? 
+        AND ie.calificacion IS NOT NULL
+        -- AND e.tipo_examen = 'ETS' /* DESCOMENTA ESTA LÍNEA PARA OCULTAR LOS ORDINARIOS */
         GROUP BY m.id_materia, m.nombre
     ");
     $stmtGrafica->execute([$id_profesor]);
     $datosGrafica = $stmtGrafica->fetchAll(PDO::FETCH_ASSOC);
 
-    $stmtGlobal = $conexion->prepare("
-        SELECT ROUND(AVG(ie.calificacion), 2) AS promedio_global 
-        FROM examen e 
-        JOIN inscripcion_examen ie ON e.id_examen = ie.id_examen 
-        WHERE e.id_profesor = ? AND ie.calificacion IS NOT NULL
-    ");
-    $stmtGlobal->execute([$id_profesor]);
-    $promedioGlobal = $stmtGlobal->fetchColumn(); 
+    // 2. CALCULAMOS EL PROMEDIO GLOBAL SIMPLE DIRECTO EN PHP
+    $promedioGlobal = 0.0;
     
-    $promedioGlobal = $promedioGlobal ? $promedioGlobal : "0.0";
+    if (count($datosGrafica) > 0) {
+        $sumaPromedios = 0;
+        // Sumamos los promedios de cada materia (7.50 + 8.38)
+        foreach ($datosGrafica as $fila) {
+            $sumaPromedios += $fila['promedio_materia'];
+        }
+        // Dividimos entre la cantidad de materias (2)
+        $promedioGlobal = round($sumaPromedios / count($datosGrafica), 2);
+    }
 
     echo json_encode([
         "status" => "success",
         "data" => [
             "materias" => $datosGrafica,
-            "promedio_global" => $promedioGlobal
+            // Aseguramos que siempre tenga 2 decimales (ej. 7.94)
+            "promedio_global" => number_format($promedioGlobal, 2) 
         ]
     ]);
 
