@@ -4,15 +4,20 @@
 
 function cargarKPIsProfesor() {
     console.log("¡La función cargarKPIsProfesor sí se está ejecutando!"); // Pista 1
-    // --- NUEVO: Saludo Dinámico al regresar a la vista ---
+    
+    // --- NUEVO: Saludo Dinámico Personalizado al regresar a la vista ---
     setTimeout(() => {
         const tituloEl = document.getElementById('titulo-seccion');
         if (tituloEl) {
+            const nombre = tituloEl.getAttribute('data-nombre') || 'Profesor';
             const hora = new Date().getHours();
+            
             let saludo = "buenas noches";
             if (hora >= 5 && hora < 12) saludo = "buenos días";
             else if (hora >= 12 && hora < 19) saludo = "buenas tardes";
-            tituloEl.innerText = `¡Hola, ${saludo}!`;
+            
+            // Construimos: ¡Bienvenido, Nombre! Buenos días.
+            tituloEl.innerText = `¡Bienvenido, Profesor ${nombre}! ${saludo.charAt(0).toUpperCase() + saludo.slice(1)}.`;
         }
     }, 50); // El retraso de 50ms asegura que se ejecute después del enrutador de app.js
 
@@ -34,7 +39,7 @@ function cargarKPIsProfesor() {
             }
             pintarGraficaRendimiento(); // Pintamos la gráfica aquí para asegurarnos de que los datos ya estén cargados
         }).catch(err => console.error("Error de conexión:", err));
-    }
+}
 
 function cargarMisExamenes() {
     const tbodyActivos = document.getElementById('tbody-examenes-activos');
@@ -654,37 +659,45 @@ window.exportarActaCSV = function() {
 // BUSCADOR EN TIEMPO REAL PARA EXÁMENES
 // ==========================================
 function filtrarExamenes() {
-    // 1. Obtenemos lo que el usuario escribió y lo pasamos a minúsculas
-    const input = document.getElementById("buscadorExamenes");
-    const filtro = input.value.toLowerCase();
+    // 1. Buscamos todas las barras de búsqueda en la vista
+    const buscadores = document.querySelectorAll("#buscadorExamenes");
+    let filtro = "";
+
+    // 2. Revisamos cuál de las barras está visible en la pantalla actual
+    buscadores.forEach(input => {
+        // offsetParent !== null es un truco para saber si el elemento es visible
+        if (input.offsetParent !== null) {
+            filtro = input.value.toLowerCase();
+        }
+    });
+
+    // 3. Obtenemos ambos cuerpos de tabla
+    const tbodyActivos = document.getElementById("tbody-examenes-activos");
+    const tbodyHistorial = document.getElementById("tbody-examenes-historial");
     
-    // 2. Buscamos el cuerpo de la tabla que está visible en pantalla
-    const tabla = document.querySelector("table tbody"); 
-    if (!tabla) return; // Si por alguna razón no hay tabla, no hace nada
+    const tablas = [];
+    if (tbodyActivos) tablas.push(tbodyActivos);
+    if (tbodyHistorial) tablas.push(tbodyHistorial);
 
-    // 3. Obtenemos todas las filas (tr) de la tabla
-    const filas = tabla.getElementsByTagName("tr");
+    // 4. Aplicamos el filtro
+    tablas.forEach(tbody => {
+        const filas = tbody.getElementsByTagName("tr");
 
-    // 4. Recorremos fila por fila para ver si coincide con la búsqueda
-    for (let i = 0; i < filas.length; i++) {
-        // La columna 0 es el ID y la columna 1 es la Materia
-        const celdaId = filas[i].getElementsByTagName("td")[0];
-        const celdaMateria = filas[i].getElementsByTagName("td")[1];
+        for (let i = 0; i < filas.length; i++) {
+            // Evitamos buscar en la fila vacía de "No tienes exámenes..."
+            if (filas[i].getElementsByTagName("td").length > 1) {
+                
+                const contenidoFila = filas[i].textContent || filas[i].innerText;
 
-        // Si la fila tiene columnas (es decir, no es el mensaje de "No hay datos")
-        if (celdaId && celdaMateria) {
-            const textoId = celdaId.textContent || celdaId.innerText;
-            const textoMateria = celdaMateria.textContent || celdaMateria.innerText;
-
-            // Si el texto escrito está en el ID o en la Materia, mostramos la fila
-            if (textoId.toLowerCase().includes(filtro) || textoMateria.toLowerCase().includes(filtro)) {
-                filas[i].style.display = ""; 
-            } else {
-                // Si no coincide, la ocultamos
-                filas[i].style.display = "none"; 
+                // Mostramos u ocultamos la fila según la búsqueda
+                if (contenidoFila.toLowerCase().includes(filtro)) {
+                    filas[i].style.display = ""; 
+                } else {
+                    filas[i].style.display = "none"; 
+                }
             }
         }
-    }
+    });
 }
 // ==========================================
 // BUSCADOR EN TIEMPO REAL PARA REVISIONES
