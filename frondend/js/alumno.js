@@ -15,7 +15,7 @@ function cargarETSDisponibles() {
             </td>
         </tr>`;
 
-    fetch('../../php/endpoints/obtener_ets_disponibles.php')
+    fetch('/php/endpoints/obtener_ets_disponibles.php')
         .then(res => res.json())
         .then(datos => {
             if (datos.status !== 'success') {
@@ -131,10 +131,7 @@ function inicializarFiltroETS() {
 }
 
 // Punto de entrada de la vista (llamado desde app.js)
-function iniciarVistaInscripcionETS() {
-    cargarETSDisponibles();
-    inicializarFiltroETS();
-}
+
 
 // ==========================================
 // MÓDULO ALUMNO: MI KARDEX
@@ -225,54 +222,73 @@ function inicializarFiltrosKardex() {
 
 // Punto de entrada de la vista (llamado desde app.js)
 function iniciarVistaKardex() {
-    cargarMiKardex();
-    inicializarFiltrosKardex();
-    // Nota: el botón "Imprimir Kardex" (#btn-imprimir-kardex) queda deshabilitado
-    // a propósito; su diseño está pendiente de definirse.
-}
-// =================================================================
-// MÓDULO ALUMNO: MI KARDEX (LÓGICA FALTANTE)
-// =================================================================
-function iniciarVistaKardex() {
-    // 1. Capturamos los botones usando sus clases
+
+    // Cargar información del kardex
+    if (typeof cargarMiKardex === 'function') {
+        cargarMiKardex();
+    }
+
+    // Inicializar filtros existentes
+    if (typeof inicializarFiltrosKardex === 'function') {
+        inicializarFiltrosKardex();
+    }
+
+    // Capturar botones
     const btnTodas = document.querySelector('.btn-group .btn-outline-secondary');
     const btnAprobadas = document.querySelector('.btn-group .btn-outline-success');
     const btnReprobadas = document.querySelector('.btn-group .btn-outline-danger');
-    const btnImprimir = document.querySelector('.bi-printer').closest('button');
-    
-    // 2. Capturamos todas las filas de la tabla
-    const filas = document.querySelectorAll('.table tbody tr');
+    const btnImprimir = document.querySelector('.btn-outline-dark');
 
-    // 3. Función maestra para filtrar
+    // Capturar filas
+    const filas = document.querySelectorAll('#tabla-kardex tr[data-estado]');
+
     function filtrarKardex(tipo, botonClickeado) {
-        // Le quitamos el sombreado gris (active) a todos los botones
-        [btnTodas, btnAprobadas, btnReprobadas].forEach(btn => btn.classList.remove('active'));
-        // Se lo ponemos solo al que presionaste
-        botonClickeado.classList.add('active');
 
-        // Revisamos fila por fila
+        [btnTodas, btnAprobadas, btnReprobadas]
+            .filter(btn => btn)
+            .forEach(btn => btn.classList.remove('active'));
+
+        if (botonClickeado) {
+            botonClickeado.classList.add('active');
+        }
+
         filas.forEach(fila => {
-            // Sacamos el texto de la última columna (Aprobada o Reprobada)
-            const estadoMateria = fila.cells[4].innerText.trim().toLowerCase();
-            
+
+            const estadoMateria = fila.dataset.estado;
+
             if (tipo === 'todas') {
-                fila.style.display = ''; // Mostrar todo
-            } else if (tipo === 'aprobadas' && estadoMateria === 'aprobada') {
-                fila.style.display = ''; // Mostrar solo aprobadas
-            } else if (tipo === 'reprobadas' && estadoMateria === 'reprobada') {
-                fila.style.display = ''; // Mostrar solo reprobadas
-            } else {
-                fila.style.display = 'none'; // Ocultar las demás
+                fila.style.display = '';
+            }
+            else if (tipo === 'aprobadas' && estadoMateria === 'aprobada') {
+                fila.style.display = '';
+            }
+            else if (tipo === 'reprobadas' && estadoMateria === 'reprobada') {
+                fila.style.display = '';
+            }
+            else {
+                fila.style.display = 'none';
             }
         });
     }
 
-    // 4. Conectamos los clics a los botones
-    if (btnTodas) btnTodas.addEventListener('click', () => filtrarKardex('todas', btnTodas));
-    if (btnAprobadas) btnAprobadas.addEventListener('click', () => filtrarKardex('aprobadas', btnAprobadas));
-    if (btnReprobadas) btnReprobadas.addEventListener('click', () => filtrarKardex('reprobadas', btnReprobadas));
+    if (btnTodas) {
+        btnTodas.addEventListener('click', () =>
+            filtrarKardex('todas', btnTodas)
+        );
+    }
 
-    // 5. Botón de Imprimir
+    if (btnAprobadas) {
+        btnAprobadas.addEventListener('click', () =>
+            filtrarKardex('aprobadas', btnAprobadas)
+        );
+    }
+
+    if (btnReprobadas) {
+        btnReprobadas.addEventListener('click', () =>
+            filtrarKardex('reprobadas', btnReprobadas)
+        );
+    }
+
     if (btnImprimir) {
         btnImprimir.addEventListener('click', () => {
             window.print();
@@ -283,68 +299,161 @@ function iniciarVistaKardex() {
 // MÓDULO ALUMNO: INSCRIBIR ETS (LÓGICA FALTANTE)
 // =================================================================
 function iniciarVistaInscripcionETS() {
-    // 1. Lógica del Buscador y Botón Filtrar
-    const inputBuscador = document.querySelector('input[placeholder="Buscar por materia o profesor..."]');
-    const btnFiltrar = document.querySelector('.btn-primary'); // Asumiendo que "Filtrar" es el botón azul
-    const filasExamenes = document.querySelectorAll('table tbody tr');
 
-    function filtrarTablaExamenes() {
-        if (!inputBuscador) return;
-        
-        const textoBusqueda = inputBuscador.value.toLowerCase();
+    const tbody = document.getElementById('tbody-ets-alumno');
 
-        filasExamenes.forEach(fila => {
-            // Buscamos en la columna de Materia (índice 0) y Profesor (índice 2)
-            const materia = fila.cells[0].innerText.toLowerCase();
-            const profesor = fila.cells[2].innerText.toLowerCase();
+    if (!tbody) return;
 
-            // Si el texto coincide con la materia o el profesor, mostramos la fila
-            if (materia.includes(textoBusqueda) || profesor.includes(textoBusqueda)) {
-                fila.style.display = '';
-            } else {
-                fila.style.display = 'none';
-            }
+    fetch('/php/endpoints/obtener_ets_disponibles.php')
+    .then(response => response.json())
+    .then(resultado => {
+
+        if (resultado.status !== 'success') {
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-danger">
+                        Error al cargar los ETS.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        const datos = resultado.data;
+
+        if (datos.length === 0) {
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        No hay ETS disponibles.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = '';
+
+        datos.forEach(ets => {
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="ps-4 fw-bold">${ets.materia}</td>
+
+                    <td>
+                        ${ets.fecha}<br>
+                        <small>${ets.hora}</small>
+                    </td>
+
+                    <td>${ets.profesor}</td>
+
+                    <td>${ets.edificio} ${ets.salon}</td>
+
+                    <td>
+                        <span class="badge bg-success-subtle text-success">
+                            ${ets.cupo} lugares
+                        </span>
+                    </td>
+
+                    <td class="text-center">
+                        ${
+                            parseInt(ets.ya_inscrito) > 0
+                            ? `
+                                <button class="btn btn-secondary btn-sm" disabled>
+                                    Inscrito
+                                </button>
+                              `
+                            : `
+                                <button
+                                    class="btn btn-success btn-sm btn-inscribir"
+                                    data-id="${ets.id_examen}">
+                                    Inscribirme
+                                </button>
+                              `
+                        }
+                    </td>
+                </tr>
+            `;
         });
-    }
 
-    // El buscador se activa tanto al escribir como al presionar el botón
-    if (inputBuscador) {
-        inputBuscador.addEventListener('keyup', filtrarTablaExamenes);
-    }
-    if (btnFiltrar) {
-        btnFiltrar.addEventListener('click', (e) => {
-            e.preventDefault(); // Evita que la página se recargue
-            filtrarTablaExamenes();
+        document.querySelectorAll('.btn-inscribir')
+        .forEach(btn => {
+
+            btn.addEventListener('click', function() {
+
+                const idExamen = this.dataset.id;
+
+                if (!confirm('¿Deseas inscribirte a este ETS?')) {
+                    return;
+                }
+
+                const boton = this;
+
+                boton.disabled = true;
+                boton.innerHTML = `
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                    Procesando...
+                `;
+
+                fetch('/php/endpoints/inscribir.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id_examen: idExamen
+                    })
+                })
+                .then(response => response.json())
+                .then(resultado => {
+
+                    if (resultado.status === 'success') {
+
+                        alert(resultado.message);
+
+                        boton.classList.remove('btn-success');
+                        boton.classList.add('btn-secondary');
+
+                        boton.innerHTML = 'Inscrito';
+                        boton.disabled = true;
+
+                    } else {
+
+                        alert(resultado.message);
+
+                        boton.disabled = false;
+                        boton.innerHTML = 'Inscribirme';
+                    }
+
+                })
+                .catch(error => {
+
+                    console.error(error);
+
+                    alert('Error al comunicarse con el servidor.');
+
+                    boton.disabled = false;
+                    boton.innerHTML = 'Inscribirme';
+                });
+
+            });
+
         });
-    }
 
-    // 2. Lógica de los botones "Inscribirme"
-    const botonesInscribir = document.querySelectorAll('table tbody .btn-success'); // Asumiendo que son los verdes
+    })
+    .catch(error => {
 
-    botonesInscribir.forEach(btn => {
-        btn.addEventListener('click', function() {
-            // Sacamos los datos de la fila a la que pertenece el botón
-            const fila = this.closest('tr');
-            const materia = fila.cells[0].innerText.trim();
-            const fecha = fila.cells[1].innerText.trim();
+        console.error(error);
 
-            // Preguntamos al usuario si está seguro
-            if (confirm(`¿Estás seguro de que deseas inscribirte al ETS de ${materia} programado para el ${fecha}?`)) {
-                
-                // Cambiamos el estado del botón a "Cargando"
-                const botonOriginal = this.innerHTML;
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Procesando...';
-
-                // Simulamos una petición al servidor (esto se conectará al PHP real después)
-                setTimeout(() => {
-                    alert(`¡Éxito! Has quedado inscrito en el ETS de ${materia}.`);
-                    
-                    // Cambiamos el botón para que ya no se pueda presionar de nuevo
-                    this.className = 'btn btn-secondary btn-sm disabled';
-                    this.innerText = 'Inscrito';
-                }, 800); // Tarda menos de un segundo en responder
-            }
-        });
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger">
+                    Error al cargar los ETS.
+                </td>
+            </tr>
+        `;
     });
+
 }

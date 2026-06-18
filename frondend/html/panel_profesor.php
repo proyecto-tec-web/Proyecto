@@ -13,6 +13,33 @@ if ($hora >= 5 && $hora < 12) {
 } elseif ($hora >= 12 && $hora < 19) {
     $saludo = "buenas tardes";
 }
+
+// --- SOLUCIÓN PARA EL NOMBRE COMPLETO DEL PROFESOR ---
+$nombreProfesor = 'Docente'; // Valor por defecto alternativo
+
+if (isset($_SESSION['usuario_nombre']) && !empty(trim($_SESSION['usuario_nombre']))) {
+    $nombreProfesor = $_SESSION['usuario_nombre'];
+} else {
+    // Conectamos a la base de datos para traer Nombre y Apellido Paterno
+    require_once '../../php/config/db.php';
+    
+    if (isset($conexion)) {
+        try {
+            // MODIFICADO: Ahora seleccionamos nombre y apellido_paterno
+            $stmt = $conexion->prepare("SELECT nombre, apellido_paterno FROM profesor WHERE id_usuario = ?");
+            $stmt->execute([$_SESSION['id_usuario']]);
+            $profesorDB = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($profesorDB) {
+                // CONCATENAMOS: Nombre + Espacio + Apellido Paterno
+                $nombreProfesor = $profesorDB['nombre'] . ' ' . $profesorDB['apellido_paterno'];
+                $_SESSION['usuario_nombre'] = $nombreProfesor; 
+            }
+        } catch (PDOException $e) {
+            // Se mantiene el valor por defecto en caso de error
+        }
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -27,17 +54,18 @@ if ($hora >= 5 && $hora < 12) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
-    /* Fondo de pantalla para toda la aplicación */
+        /* Fondo de pantalla para toda la aplicación */
         body {
-        background-image: url('../img/fondo.jpg');
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        background-color: #f8f9fa;
-    }
+            background-image: url('../img/fondo.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-color: #f8f9fa;
+        }
         body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; }
         .sidebar { background-color: #004ec2; color: white; }
+        
         /* 1. Todos los enlaces inactivos (Color Blanco por defecto) */
         .sidebar .menu-link { 
             color: #ffffff !important; 
@@ -61,25 +89,18 @@ if ($hora >= 5 && $hora < 12) {
         
         /* Diseño de "Aplicación de Escritorio" para PC */
         @media (min-width: 768px) {
-            body { 
-                overflow: hidden; 
-            }
-            /* EL FIX: Solo afecta a la fila principal contenedora, no a las tarjetas */
-            .container-fluid > .row { 
-                height: 100vh; 
-            }
-            .sidebar-desktop { 
-                height: 100vh; 
-            }
+            body { overflow: hidden; }
+            .container-fluid > .row { height: 100vh; }
+            .sidebar-desktop { height: 100vh; }
             .main-wrapper { 
                 height: 100vh; 
                 overflow-y: auto; 
                 padding-bottom: 50px;
-                display: block; /* Evita que los elementos internos se estiren */
+                display: block; 
             } 
         }
         
-        /* Límite de ancho exclusivo para celulares (En PC se expande al 100%) */
+        /* Límite de ancho exclusivo para celulares */
         @media (max-width: 767.98px) {
             .offcanvas-md { max-width: 280px !important; }
         }
@@ -89,7 +110,7 @@ if ($hora >= 5 && $hora < 12) {
             position: fixed;
             bottom: 30px;
             right: 30px;
-            background-color: #ea4335; /* Rojo característico de Gmail */
+            background-color: #ea4335; 
             color: white;
             border-radius: 50%;
             width: 60px;
@@ -109,10 +130,12 @@ if ($hora >= 5 && $hora < 12) {
             box-shadow: 0 6px 16px rgba(234, 67, 53, 0.6);
             color: white;
         }
+
+        /* Clase de utilidad Azul ESCOM */
         .escom-blue { 
-        background-color: #004ec2 !important; 
-        color: #ffffff !important; 
-    }
+            background-color: #004ec2 !important; 
+            color: #ffffff !important; 
+        }
     </style>
 </head>
 <body>
@@ -120,7 +143,6 @@ if ($hora >= 5 && $hora < 12) {
     <header class="navbar d-md-none p-3 shadow-sm sticky-top" style="background-color: #004ec2;">
         <div class="d-flex align-items-center justify-content-between w-100">
             <h5 class="text-white mb-0 fw-bold" style="font-family: 'Montserrat', sans-serif;">Portal Docente</h5>
-            
             <button class="navbar-toggler text-white border-0 p-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
                 <i class="bi bi-list" style="font-size: 2rem;"></i>
             </button>
@@ -182,8 +204,8 @@ if ($hora >= 5 && $hora < 12) {
                             <hr class="text-secondary mb-3 border-2 opacity-25">
                             <ul class="nav flex-column w-100">
                                 <li class="nav-item">
-                                    <a class="nav-link fw-bold py-3 px-3 rounded-3 shadow-sm" href="../../php/endpoints/logout.php" style="background-color: #dc3545; color: #000000 !important; transition: transform 0.2s;">
-                                        <i class="bi bi-box-arrow-left me-3 fs-5" style="color: #000000;"></i> <b class="fs-6">Cerrar Sesión</b>
+                                    <a class="nav-link fw-bold py-3 px-3 rounded-3 shadow-sm escom-blue" href="../../php/endpoints/logout.php" style="transition: transform 0.2s; border: 1px solid rgba(255,255,255,0.2);">
+                                        <i class="bi bi-box-arrow-left me-3 fs-5 text-white"></i> <b class="fs-6 text-white">Cerrar Sesión</b>
                                     </a>
                                 </li>
                             </ul>
@@ -195,18 +217,21 @@ if ($hora >= 5 && $hora < 12) {
 
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-wrapper">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-                    <h1 class="h2 fw-bold" style="font-family: 'Montserrat', sans-serif;" id="titulo-seccion">¡Hola, <?php echo $saludo; ?>!</h1>
+                    
+                    <h1 class="h2 fw-bold" style="font-family: 'Optima', sans-serif;" id="titulo-seccion" data-nombre="<?php echo htmlspecialchars($nombreProfesor); ?>">
+                        <b>¡Bienvenido!, Profesor <?php echo htmlspecialchars($nombreProfesor); ?>. <?php echo $saludo; ?></b>
+                    </h1>
+
                     <a href="https://www.ipn.mx/assets/files/website/docs/inicio/calendarioipn-escolarizada.pdf" target="_blank" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm fw-bold text-white" style="font-family: 'Montserrat', sans-serif; background-color: #004ec2">
                         <i class="bi bi-calendar3 me-2 text-white"></i> Calendario Académico 2025-2026
                     </a>
                 </div>
-                
-                <div id="view-container"></div>
-
-                
+                <div id="view-container">
+                    <!-- Aquí se cargarán las vistas dinámicamente -->
+                </div>
                 <footer class="mt-auto pt-4 pb-2 text-muted text-center text-md-start">
                     <div class="border-top pt-3">
-                        <p class="mb-0 small">&copy; 2026 <strong>Sistema de Gestión Escolar</strong>. Planta Docentes (2026).</p>
+                        <p class="mb-0 small">&copy; 2026 <strong>Sistema de Gestión Escolar</strong>. Planta Docentes (ESCOM).</p>
                     </div>
                 </footer>
             </main>
