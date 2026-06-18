@@ -283,13 +283,6 @@ INSERT INTO kardex (id_alumno, id_materia, calificacion) VALUES
 (2, 8, 7.5), (4, 8, 10.0), (6, 8, 5.0), (8, 8, 9.0), (10, 8, 8.0), 
 (12, 8, 9.5), (14, 8, 10.0), (16, 8, 8.0);
 
--- Verifica primero qué inscripciones tiene el alumno logueado (alumno1 tiene id_alumno = 1)
--- Luego inserta:
-INSERT INTO peticion_revision (id_inscripcion, motivo_alumno, estado) VALUES
-(1, 'Considero que mi calificación no refleja mi desempeño en el examen.', 'Pendiente'),
-(2, 'Solicito una revisión de mi examen debido a posibles errores en la corrección.', 'Pendiente'),
-(3, 'Creo que hubo un error en la calificación y me gustaría que se revisara.', 'Pendiente');
-
 ALTER TABLE peticion_revision 
 ADD COLUMN notas_profesor TEXT DEFAULT NULL,
 ADD COLUMN fecha_revision DATETIME DEFAULT NULL,
