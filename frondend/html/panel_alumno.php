@@ -65,6 +65,11 @@ if ($rol_usuario !== 'alumno') {
                         <i class="bi bi-journal-text me-2"></i> Mi Kardex
                     </a>
                 </li>
+                <li>
+                    <a class="nav-link link-body-emphasis menu-link" onclick="cargarVista('alumno_revisiones', this)">
+                        <i class="bi bi-search me-2"></i> Revisiones de ETS
+                    </a>
+                </li>
             </ul>
             
             <hr>
@@ -99,8 +104,8 @@ if ($rol_usuario !== 'alumno') {
     </main>
 
     <script src="./../js/bootstrap.bundle.min.js"></script>
-    <script src="./../js/alumno.js?v=1004"></script>
-    <script src="./../js/app.js?v=1004"></script>
+    <script src="./../js/alumno.js?v=1002"></script>
+    <script src="./../js/app.js?v=1002"></script>
     <script src="./../js/chatboot.js?v=1002"></script>
 </body>
 </html>
