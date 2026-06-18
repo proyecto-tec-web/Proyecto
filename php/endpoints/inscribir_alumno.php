@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once './../config/db.php';
+session_start();
 
 $input = json_decode(file_get_contents('php://input'), true);
 
