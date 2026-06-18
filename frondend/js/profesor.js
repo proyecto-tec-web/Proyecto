@@ -1,9 +1,10 @@
-// =================================================================
-// MÓDULO: PANEL DEL PROFESOR
-// =================================================================
+// ==========================================
+// MÓDULO PROFESOR: DASHBOARD Y KPIs
+// Vista: vistasProfesor/dashboard_profesor.php
+// ==========================================
 
 function cargarKPIsProfesor() {
-    console.log("¡La función cargarKPIsProfesor sí se está ejecutando!"); // Pista 1
+    console.log("¡La función cargarKPIsProfesor sí se está ejecutando!"); 
     
     // --- NUEVO: Saludo Dinámico Personalizado al regresar a la vista ---
     setTimeout(() => {
@@ -24,7 +25,7 @@ function cargarKPIsProfesor() {
     fetch('/php/endpoints/obtener_kpis_profesor.php')
         .then(res => res.json())
         .then(datos => {
-            console.log("Respuesta de la Base de Datos:", datos); // Pista 2
+            console.log("Respuesta de la Base de Datos:", datos); 
             
             if (datos.status === 'success') {
                 document.getElementById('kpi-examenes-prof').innerText = datos.data.total_examenes;
@@ -40,6 +41,11 @@ function cargarKPIsProfesor() {
             pintarGraficaRendimiento(); // Pintamos la gráfica aquí para asegurarnos de que los datos ya estén cargados
         }).catch(err => console.error("Error de conexión:", err));
 }
+
+// ==========================================
+// MÓDULO PROFESOR: MIS EXÁMENES ETS
+// Vista: vistasProfesor/mis_examenes.php
+// ==========================================
 
 function cargarMisExamenes() {
     const tbodyActivos = document.getElementById('tbody-examenes-activos');
@@ -102,7 +108,6 @@ function cargarMisExamenes() {
                         let btnPrincipal = `<button class="btn ${claseBtn} btn-sm rounded-pill px-3" onclick="abrirModalCalificar(${ex.id_examen}, '${ex.materia}', '${ex.estado}')">${textoBtn}</button>`;
                         botonImprimir = `<button class="btn btn-outline-dark btn-sm rounded-pill px-3 ms-2 shadow-sm" onclick="imprimirPaseDeLista(${ex.id_examen})" title="Imprimir Pase de Lista Físico"><i class="bi bi-printer"></i></button>`;
                         
-                        // ¡LA CORRECCIÓN ESTÁ AQUÍ! 
                         // Si el examen ya está 'Calificado', quitamos el botón de Calendar
                         let mostrarCalendar = (ex.estado === 'Calificado') ? '' : ` ${botonCalendar}`;
                         
@@ -128,7 +133,6 @@ function cargarMisExamenes() {
                         </tr>
                     `;
 
-
                     if (ex.estado === 'Calificado') {
                         tbodyHistorial.innerHTML += filaHTML;
                         conteoHistorial++;
@@ -138,7 +142,6 @@ function cargarMisExamenes() {
                     }
                 });
 
-                
                 if (conteoActivos === 0) {
                     tbodyActivos.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">No tienes exámenes pendientes.</td></tr>`;
                 }
@@ -160,8 +163,10 @@ function cargarMisExamenes() {
 }
 
 // ==========================================
-// LÓGICA DE CALIFICACIONES Y LISTAS
+// MÓDULO PROFESOR: LISTA DE ALUMNOS (MODAL)
+// Vista: vistasProfesor/mis_examenes.php (Modal)
 // ==========================================
+
 let idExamenActual = null;
 let materiaActual = null;
 
@@ -245,7 +250,11 @@ function abrirModalCalificar(idExamen, materia, estado) {
         });
 }
 
-// Variable global para que no se duplique la validación si abrimos y cerramos la vista
+// ==========================================
+// MÓDULO PROFESOR: PETICIONES DE REVISIÓN
+// Vista: vistasProfesor/revisiones.php
+// ==========================================
+
 let validadorRevision = null;
 
 function inicializarJustValidateRevisiones() {
@@ -317,7 +326,7 @@ function inicializarJustValidateRevisiones() {
             });
         });
 }
-// --- MÓDULO REVISIONES ---
+
 function cargarRevisiones() {
     console.log("¡Ejecutando cargarRevisiones!");
     const tbody = document.getElementById('tbody-revisiones');
@@ -365,7 +374,8 @@ function cargarRevisiones() {
         .catch(err => {
             tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Fallo al conectar con el servidor.</td></tr>`;
         });
-        // Activar JustValidate al cargar la vista
+        
+    // Activar JustValidate al cargar la vista
     setTimeout(inicializarJustValidateRevisiones, 100);
 }
 
@@ -383,11 +393,21 @@ window.abrirModalRevision = function(idPeticion, idInscripcion, alumnoInfo, cali
     const modal = new bootstrap.Modal(document.getElementById('modalRevision'));
     modal.show();
 };
-// Función para abrir la nueva pestaña de impresión
+
+// ==========================================
+// MÓDULO PROFESOR: GENERACIÓN DE DOCUMENTOS
+// Vista: vistasProfesor/mis_examenes.php
+// ==========================================
+
 window.imprimirPaseDeLista = function(idExamen) {
     window.open(`/php/endpoints/generar_pase_lista.php?id_examen=${idExamen}`, '_blank');
 };
-// Variable global para evitar que Chart.js se vuelva loco
+
+// ==========================================
+// MÓDULO PROFESOR: GRÁFICAS DE RENDIMIENTO
+// Vista: vistasProfesor/dashboard_profesor.php
+// ==========================================
+
 let miGraficaRendimiento = null;
 
 function pintarGraficaRendimiento() {
@@ -495,11 +515,12 @@ function pintarGraficaRendimiento() {
         })
         .catch(err => console.error("Error al cargar la gráfica:", err));
 }
+
 // ==========================================
-// LÓGICA DE FIRMA Y GUARDADO FINAL
+// MÓDULO PROFESOR: FIRMA Y GUARDADO FINAL
+// Vista: vistasProfesor/mis_examenes.php (Modal)
 // ==========================================
 
-// 1. La Función Escudo (Pide el NIP)
 function solicitarNIPParaGuardar(idExamen) {
     Swal.fire({
         title: '<h3 style="font-family: \'Montserrat\', sans-serif; font-weight: bold; color: #004ec2;">Firma Electrónica</h3>',
@@ -550,7 +571,11 @@ function solicitarNIPParaGuardar(idExamen) {
     });
 }
 
-// 2. La Función Original de Guardado (Que se ejecuta tras firmar)
+// ==========================================
+// MÓDULO PROFESOR: Guardar Calificaciones Definitivas
+// Vista: vistasProfesor/mis_examenes.php
+// ==========================================
+
 function ejecutarGuardadoFinal(idExamen) {
     const inputs = document.querySelectorAll('.input-calificacion');
     let calificaciones = [];
@@ -614,8 +639,10 @@ function ejecutarGuardadoFinal(idExamen) {
         Swal.fire('Error de conexión', 'Detalles: ' + err.message, 'error');
     });
 }
+
 // ==========================================
-// EXPORTACIÓN DE DOCUMENTOS
+// MÓDULO PROFESOR: EXPORTACIÓN DE ACTAS CSV
+// Vista: vistasProfesor/mis_examenes.php
 // ==========================================
 
 window.exportarActaCSV = function() {
@@ -655,9 +682,12 @@ window.exportarActaCSV = function() {
     a.click();
     URL.revokeObjectURL(url);
 };
+
 // ==========================================
-// BUSCADOR EN TIEMPO REAL PARA EXÁMENES
+// MÓDULO PROFESOR: BUSCADORES EN TIEMPO REAL
+// Vista: vistasProfesor/mis_examenes.php
 // ==========================================
+
 function filtrarExamenes() {
     // 1. Buscamos todas las barras de búsqueda en la vista
     const buscadores = document.querySelectorAll("#buscadorExamenes");
@@ -699,9 +729,12 @@ function filtrarExamenes() {
         }
     });
 }
+
 // ==========================================
-// BUSCADOR EN TIEMPO REAL PARA REVISIONES
+// MÓDULO PROFESOR: BUSCADOR DE REVISIONES
+// Vista: vistasProfesor/revisiones.php
 // ==========================================
+
 function filtrarRevisiones() {
     const input = document.getElementById("buscadorRevisiones");
     if (!input) return; // Si no encuentra el buscador, se detiene
@@ -736,9 +769,12 @@ function filtrarRevisiones() {
         }
     }
 }
+
 // ==========================================
-// EXPORTAR TABLA DE EXÁMENES A EXCEL (.CSV)
+// MÓDULO PROFESOR: EXPORTAR TABLA A EXCEL
+// Vista: vistasProfesor/mis_examenes.php
 // ==========================================
+
 function exportarExamenesAExcel() {
     const tabla = document.querySelector("table");
     if (!tabla) return;

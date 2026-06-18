@@ -4,7 +4,6 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 header('Content-Type: application/json; charset=utf-8');
 
-require_once __DIR__ . '/seguridad_admin.php';
 require_once __DIR__ . '/../config/db.php';
 
 if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'admin' )) {
@@ -18,7 +17,6 @@ if (!isset($conexion) || !($conexion instanceof PDO)) {
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-// Validamos que lleguen todos los datos
 if (empty($data['boleta']) || empty($data['nombre']) || empty($data['paterno']) || empty($data['materno']) || empty($data['correo']) || empty($data['password'])) {
     echo json_encode(['status' => 'error', 'message' => 'Todos los campos son obligatorios.']);
     exit;
