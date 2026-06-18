@@ -22,9 +22,16 @@ try {
     $updateStmt = $conexion->prepare("UPDATE alumno SET situacion_academica = ? WHERE id_alumno = ?");
 
     foreach ($alumnos as &$al) {
+        // --- NUEVA REGLA ---
+        // Si el alumno ya está dado de baja, lo ignoramos y no recalculamos su estado.
+        if ($al['situacion_academica'] === 'Baja') {
+            continue; 
+        }
+        
+        // Si no está de baja, entonces sí calculamos si es Regular o Irregular
         $situacion_real = ($al['reprobadas'] >= 3) ? 'Irregular' : 'Regular';
         
-        //por si no es la situacion verdadera, la actualizamos en la base de datos y en el array que se enviará al frontend
+        // por si no es la situacion verdadera, la actualizamos en la base de datos y en el array que se enviará al frontend
         if ($al['situacion_academica'] !== $situacion_real) {
             $updateStmt->execute([$situacion_real, $al['id_alumno']]);
             $al['situacion_academica'] = $situacion_real; 

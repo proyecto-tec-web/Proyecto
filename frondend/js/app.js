@@ -349,14 +349,18 @@ function cargarTablaUsuarios() {
                     let boletaMostrar = user.boleta ? user.boleta : '<span class="text-muted"><small>N/A</small></span>';
                     let nombreMostrar = (user.nombre_persona && user.nombre_persona.trim() !== '') ? user.nombre_persona : '<span class="text-muted fst-italic"><small>Sin perfil asignado</small></span>';
 
+                    // SE QUITÓ EL BOTÓN DE ELIMINAR DE AQUÍ
                     let filaHTML = `
                         <tr data-rol="${rolNormalizado}">
                             <td class="ps-4 fw-bold text-secondary">#${user.id_usuario}</td>
-                            <td><strong>${boletaMostrar}</strong></td> <td>${nombreMostrar}</td>             <td>${user.correo}</td>
+                            <td><strong>${boletaMostrar}</strong></td> 
+                            <td>${nombreMostrar}</td>             
+                            <td>${user.correo}</td>
                             <td><span class="badge bg-${colorBadge} bg-opacity-10 text-${colorBadge} border border-${colorBadge}-subtle px-3 py-2 rounded-pill">${user.rol}</span></td>
                             <td class="pe-4 text-end">
-                                <button class="btn btn-sm btn-outline-secondary me-1 btn-editar-usuario" data-id="${user.id_usuario}" data-correo="${user.correo}" data-rol="${user.rol}"><i class="bi bi-pencil"></i></button>
-                                <button class="btn btn-sm btn-outline-danger btn-eliminar-usuario" data-id="${user.id_usuario}"><i class="bi bi-trash"></i></button>
+                                <button class="btn btn-sm btn-outline-secondary me-1 btn-editar-usuario" data-id="${user.id_usuario}" data-correo="${user.correo}" data-rol="${user.rol}" title="Editar Usuario">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </button>
                             </td>
                         </tr>`;
                     tbody.innerHTML += filaHTML;
@@ -371,32 +375,7 @@ function cargarTablaUsuarios() {
                     });
                 });
 
-                tbody.querySelectorAll('.btn-eliminar-usuario').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = this.getAttribute('data-id');
-                        Swal.fire({
-                            title: '¿Eliminar este usuario definitivamente?',
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonColor: '#d33',
-                            cancelButtonColor: '#6c757d',
-                            confirmButtonText: 'Sí, eliminar',
-                            cancelButtonText: 'Cancelar'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                fetch('../../php/endpoints/eliminar_usuario.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_usuario: id }) })
-                                .then(res => res.json()).then(data => { 
-                                    if(data.status === 'success') { 
-                                        Swal.fire('Eliminado', 'Usuario eliminado con éxito.', 'success');
-                                        cargarTablaUsuarios(); 
-                                    } else { 
-                                        Swal.fire('Error', data.message, 'error'); 
-                                    } 
-                                });
-                            }
-                        });
-                    });
-                });
+                // SE BORRÓ TODA LA LÓGICA DE EVENTOS DE ELIMINACIÓN AQUÍ
 
                 aplicarFiltrosUsuario();
             }

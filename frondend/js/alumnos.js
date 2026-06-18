@@ -46,16 +46,20 @@ function cargarTablaAlumnos() {
             }
 
             datos.data.forEach(al => {
-                // 1. CONFIGURAR EL COLOR DEL ESTADO (Regular = verde, Irregular = amarillo, Baja = rojo/gris)
+                // 1. CONFIGURAR EL COLOR Y EL TEXTO EXACTO DEL ESTADO
                 let badgeSit = 'success';
+                let textoEstado = '';
                 let btnBaja = '';
 
                 if (al.situacion_academica === 'Regular') {
                     badgeSit = 'success';
+                    textoEstado = 'Regular (Activo)';
                 } else if (al.situacion_academica === 'Irregular') {
                     badgeSit = 'warning text-dark';
+                    textoEstado = 'Irregular (Activo)';
                 } else if (al.situacion_academica === 'Baja') {
                     badgeSit = 'secondary'; // Color gris para que parezca inactivo
+                    textoEstado = 'Baja (Inactivo)';
                 }
 
                 // 2. CONFIGURAR EL BOTÓN DE BAJA (Si ya está de baja, lo bloqueamos)
@@ -75,7 +79,9 @@ function cargarTablaAlumnos() {
                         <td class="ps-4 fw-bold ${al.situacion_academica === 'Baja' ? 'text-muted text-decoration-line-through' : 'text-secondary'}">${al.boleta}</td>
                         <td class="${al.situacion_academica === 'Baja' ? 'text-muted' : ''}">${al.apellido_paterno} ${al.apellido_materno} ${al.nombre}</td>
                         <td class="${al.situacion_academica === 'Baja' ? 'text-muted' : ''}">${al.carrera}</td>
-                        <td><span class="badge bg-${badgeSit}">${al.situacion_academica}</span></td>
+                        
+                        <td><span class="badge bg-${badgeSit}">${textoEstado}</span></td>
+                        
                         <td class="pe-4 text-end">
                             <button class="btn btn-sm btn-outline-info me-1 btn-kardex" data-id="${al.id_alumno}" title="Ver Kardex">
                                 <i class="bi bi-card-list"></i> Kardex
@@ -150,7 +156,6 @@ function cargarTablaAlumnos() {
                                 }
                                 
                                 new bootstrap.Modal(document.getElementById('modalKardex')).show();
-                                // Quitamos cargarTablaAlumnos() de aquí para que no se refresque sin necesidad al cerrar
                             } else {
                                 Swal.fire('Error', 'Error al cargar Kardex: ' + data.message, 'error');
                             }

@@ -1,4 +1,6 @@
+// =================================================================
 // LÓGICA : VISTA INSCRIPCIONES
+// =================================================================
 
 function cargarTablaInscripciones() {
     const tbody = document.getElementById('tbody-inscripciones');
@@ -124,6 +126,9 @@ document.addEventListener('submit', function(e) {
         btnActual.disabled = true;
         btnActual.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
 
+        // PANTALLA DE CARGA SWEETALERT
+        Swal.fire({ title: 'Inscribiendo alumno...', text: 'Por favor espera.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
         fetch('/php/endpoints/inscribir_alumno.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -169,6 +174,9 @@ function eliminarInscripcionAlumno(idInscripcion) {
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
+            // PANTALLA DE CARGA SWEETALERT
+            Swal.fire({ title: 'Eliminando...', text: 'Por favor espera.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
             fetch('/php/endpoints/eliminar_inscripcion.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -207,6 +215,9 @@ window.cambiarEstadoPago = function(idInscripcion, nuevoEstado) {
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
+            // PANTALLA DE CARGA SWEETALERT
+            Swal.fire({ title: 'Actualizando estado...', text: 'Por favor espera.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
             fetch('/php/endpoints/actualizar_estado_pago.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -308,4 +319,7 @@ window.exportarCSV = function() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // NUEVO: SWEETALERT PARA CONFIRMAR LA EXPORTACIÓN
+    Swal.fire('¡Exportado!', 'El archivo Excel (.csv) se ha descargado correctamente.', 'success');
 };
