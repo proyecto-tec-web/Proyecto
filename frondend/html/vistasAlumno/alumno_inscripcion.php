@@ -75,3 +75,6 @@ if (
     </div>
 
 </div>
+<footer class="mt-5 text-muted" style="font-size: 0.85rem;">
+        © 2026 <strong>Sistema de Gestión Escolar</strong>. Portal del Alumno (ESCOM).
+    </footer>
