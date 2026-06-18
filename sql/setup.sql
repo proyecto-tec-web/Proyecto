@@ -289,5 +289,47 @@ ADD COLUMN fecha_revision DATETIME DEFAULT NULL,
 ADD COLUMN fecha_revision_agendada DATETIME DEFAULT NULL,
 ADD COLUMN lugar_revision VARCHAR(100) DEFAULT NULL;
 
+-- =========================================================================
+-- 1. CREAR CUENTAS DE USUARIO PARA LOS NUEVOS ALUMNOS IRREGULARES
+-- =========================================================================
+INSERT INTO usuario (id_usuario, correo, contrasena_hash, rol, estado) VALUES
+(27, 'alumno21@alumno.ipn.mx', 'IPN2026', 'alumno', 'Activo'),
+(28, 'alumno22@alumno.ipn.mx', 'IPN2026', 'alumno', 'Activo'),
+(29, 'alumno23@alumno.ipn.mx', 'IPN2026', 'alumno', 'Activo');
+
+-- =========================================================================
+-- 2. REGISTRAR A LOS ALUMNOS CON ESTADO 'Irregular'
+-- =========================================================================
+INSERT INTO alumno (id_alumno, nombre, apellido_materno, apellido_paterno, boleta, situacion_academica, id_carrera, id_usuario) VALUES
+(21, 'Héctor', 'Salinas', 'Juárez', '2026000021', 'Irregular', 1, 27),
+(22, 'Carmen', 'Vega', 'Romero', '2026000022', 'Irregular', 2, 28),
+(23, 'Arturo', 'Luna', 'Paredes', '2026000023', 'Irregular', 3, 29);
+
+-- =========================================================================
+-- 3. INSERTAR SUS CALIFICACIONES REPROBADAS EN EL KARDEX (> 3 reprobadas)
+-- =========================================================================
+
+-- Kardex del Alumno 21 (Héctor): Tiene 4 reprobadas
+INSERT INTO kardex (id_alumno, id_materia, calificacion) VALUES
+(21, 1, 4.5), -- Cálculo Diferencial
+(21, 2, 5.0), -- Fundamentos de Programación
+(21, 3, 3.0), -- Estructuras de Datos
+(21, 4, 5.5); -- Bases de Datos
+
+-- Kardex del Alumno 22 (Carmen): Tiene 5 reprobadas
+INSERT INTO kardex (id_alumno, id_materia, calificacion) VALUES
+(22, 1, 2.0), -- Cálculo Diferencial
+(22, 3, 4.0), -- Estructuras de Datos
+(22, 5, 5.0), -- Redes de Computadoras
+(22, 7, 3.5), -- Sistemas Operativos
+(22, 9, 4.5); -- Inteligencia Artificial
+
+-- Kardex del Alumno 23 (Arturo): Tiene 4 reprobadas
+INSERT INTO kardex (id_alumno, id_materia, calificacion) VALUES
+(23, 2, 5.5), -- Fundamentos de Programación
+(23, 4, 5.0), -- Bases de Datos
+(23, 6, 4.0), -- Desarrollo de Tecnologías Web
+(23, 10, 2.5); -- Álgebra Lineal
+
 SET FOREIGN_KEY_CHECKS = 1;
 
