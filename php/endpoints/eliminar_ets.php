@@ -1,39 +1,45 @@
-//PEMDIENTE DE REVISAR SI SE DEBE ELIMINAR TAMBIEN LAS INSCRIPCIONES ASOCIADAS AL EXAMEN, SI ES ASI, SE DEBE HACER EN UNA TRANSACCION PARA EVITAR INCONSISTENCIAS EN LA BASE DE DATOS.
 <?php
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-header("Content-Type: application/json; charset=UTF-8");
 session_start();
+// Ajusta la ruta de db.php si tu carpeta config está en otro lado
 require_once '../config/db.php'; 
 
-if (!isset($conexion) || !($conexion instanceof PDO)) {
-    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
-    exit;
+// 1. Verificamos que sea el administrador
+if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'admin' )) {
+    echo json_encode(["status" => "error", "message" => "Acceso denegado."]);
+    exit();
 }
 
-$input = json_decode(file_get_contents("php://input"), true);
-$id_examen = $input['id_examen'] ?? null;
+// 2. Leemos los datos que nos mandó app.js
+$datos = json_decode(file_get_contents("php://input"), true);
+
+// Atrapamos el ID (buscamos 'id_examen' o 'id' por si acaso)
+$id_examen = isset($datos['id_examen']) ? $datos['id_examen'] : (isset($datos['id']) ? $datos['id'] : null);
 
 if (!$id_examen) {
-    echo json_encode(["status" => "error", "message" => "ID de examen no proporcionado."]);
-    exit;
+    echo json_encode(["status" => "error", "message" => "No se recibió el ID del examen."]);
+    exit();
 }
 
 try {
-    $conexion->beginTransaction();
+    // 3. Intentamos borrar el examen
+    $sql = "DELETE FROM examen WHERE id_examen = ?";
+    $stmt = $conexion->prepare($sql);
+    $stmt->execute([$id_examen]);
 
-    $stmtInscripciones = $conexion->prepare("DELETE FROM inscripcion_examen WHERE id_examen = ?");
-    $stmtInscripciones->execute([$id_examen]);
-
-    $stmtExamen = $conexion->prepare("DELETE FROM examen WHERE id_examen = ?");
-    $stmtExamen->execute([$id_examen]);
-
-    $conexion->commit();
-
-    echo json_encode(["status" => "success", "message" => "Examen y sus inscripciones eliminados correctamente."]);
+    // Verificamos si realmente se borró algo
+    if ($stmt->rowCount() > 0) {
+        echo json_encode(["status" => "success"]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "El examen no existe o ya fue eliminado."]);
+    }
 
 } catch (PDOException $e) {
-    $conexion->rollBack();
-    echo json_encode(["status" => "error", "message" => "Error de BD: " . $e->getMessage()]);
+    // 4. Si la base de datos se queja (ej. alumnos ya inscritos), mandamos el error real
+    // El código 23000 es el error de llave foránea (Foreign Key) en SQL
+    if ($e->getCode() == '23000') {
+        echo json_encode(["status" => "error", "message" => "No se puede eliminar. El examen ya tiene alumnos inscritos o actas relacionadas."]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Error técnico: " . $e->getMessage()]);
+    }
 }
 ?>
