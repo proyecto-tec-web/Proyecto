@@ -14,7 +14,7 @@ function cargarVista(nombreVista, elementoClick) {
     contenedor.innerHTML = `<div class="text-center mt-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Consultando al servidor...</p></div>`;
 
     const vistasDelProfesor = ['dashboard_profesor', 'mis_examenes', 'revisiones'];
-    const vistasDelAlumno = ['dashboard_alumno', 'alumno_inscripcion', 'alumno_kardex', 'inscripcion_ets']; 
+    const vistasDelAlumno = ['dashboard_alumno', 'alumno_inscripcion', 'alumno_kardex', 'inscripcion_ets', 'alumno_revisiones']; 
     let carpetaDefinitiva = 'vistas'; 
 
     if (vistasDelProfesor.includes(nombreVista)) carpetaDefinitiva = 'vistasProfesor';
@@ -55,14 +55,6 @@ function inicializarLogicaVista(nombreVista) {
             cargarTablaInscripciones(); cargarExamenesParaSelect(); manejarFormularioInscripcion();
         }
     }
-
-    if (nombreVista === 'dashboard_alumno') {
-        if (typeof iniciarDashboardAlumno === 'function') {
-            iniciarDashboardAlumno();
-        } else {
-            console.error("❌ No se detectó iniciarDashboardAlumno()");
-        }
-    }
     if (nombreVista === 'alumno_inscripcion' || nombreVista === 'inscripcion_ets') {
         if (typeof iniciarVistaInscripcionETS === 'function') {
             iniciarVistaInscripcionETS();
@@ -78,6 +70,13 @@ function inicializarLogicaVista(nombreVista) {
             console.error("❌ No se detectó 'alumno.js'. Asegúrate de incluirlo en panel_alumno.php.");
         }
     }
+    if(nombreVista == 'alumno_revisiones') {
+        if (typeof iniciarVistaRevisionesAlumno === 'function') {
+            iniciarVistaRevisionesAlumno();
+        } else {
+            console.error("❌ No se detectó 'alumno.js'. Asegúrate de incluirlo en panel_alumno.php.");
+        }
+    }
 
     if (nombreVista === 'alumnos') { 
         if (typeof iniciarVistaAlumnos === 'function') {
@@ -86,8 +85,6 @@ function inicializarLogicaVista(nombreVista) {
             console.error("❌ El archivo alumnos.js no está cargado correctamente.");
         }
     }
-
-    
     
     if (nombreVista === 'dashboard') {
         const kpiExamenes = document.getElementById('kpi-examenes');
