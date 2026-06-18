@@ -167,7 +167,26 @@ function inscribirAlumnoETS(boton) {
 
 function iniciarVistaInscripcionETS() {
     cargarETSDisponibles();
-    inicializarFiltroETS();
+    inicializarFiltroETS(); // ¡Esta función no existía! Ya la agregamos abajo
+}
+
+// NUEVA FUNCIÓN: Buscador de ETS para el alumno
+function inicializarFiltroETS() {
+    const buscador = document.getElementById('buscador-ets');
+    if (!buscador) return;
+
+    buscador.addEventListener('keyup', function() {
+        const texto = this.value.toLowerCase();
+        const filas = document.querySelectorAll('#tbody-ets-alumno tr');
+
+        filas.forEach(fila => {
+            // Validamos que no oculte la fila de "Cargando..." o "No hay exámenes"
+            if (fila.cells.length > 1) { 
+                const contenido = fila.innerText.toLowerCase();
+                fila.style.display = contenido.includes(texto) ? '' : 'none';
+            }
+        });
+    });
 }
 
 // ==========================================
