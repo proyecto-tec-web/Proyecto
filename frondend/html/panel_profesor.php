@@ -245,6 +245,7 @@ if (isset($_SESSION['usuario_nombre']) && !empty(trim($_SESSION['usuario_nombre'
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/just-validate@latest/dist/just-validate.production.min.js"></script>
     <script src="../js/app.js?v=<?php echo time(); ?>"></script>
     <script src="../js/profesor.js?v=<?php echo time(); ?>"></script>

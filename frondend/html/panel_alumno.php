@@ -100,6 +100,7 @@ if ($rol_usuario !== 'alumno') {
 
     <script src="./../js/bootstrap.bundle.min.js"></script>
     <script src="./../js/alumno.js?v=1002"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="./../js/app.js?v=1002"></script>
     <script src="./../js/chatboot.js?v=1002"></script>
 </body>
