@@ -17,7 +17,7 @@ if ($datos) {
     try {
         $conexion->beginTransaction();
 
-        $id_examen = $datos['id'];
+        $id_examen = $datos['id_examen'];
         $fecha = $datos['fecha'];
         $hora = $datos['hora'];
         $id_salon = $datos['salon'];
