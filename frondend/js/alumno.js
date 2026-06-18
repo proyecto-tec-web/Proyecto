@@ -2,7 +2,7 @@
 // MÓDULO ALUMNO: INSCRIPCIÓN A ETS
 // Vista: vistasAlumno/alumno_inscripcion.php
 // ==========================================
-
+console.log('ALUMNO.JS CARGADO');
 // Carga la tabla de ETS disponibles desde la BD
 function cargarETSDisponibles() {
     const tbody = document.getElementById('tbody-ets-alumno');
@@ -80,44 +80,35 @@ function inscribirAlumnoETS(boton) {
     const idExamen = boton.getAttribute('data-id');
     const materia = boton.getAttribute('data-materia');
 
-    Swal.fire({
-        title: '¿Confirmas tu inscripción?',
-        text: `¿Te inscribirás al ETS de "${materia}"? Después deberás subir tu comprobante de pago.`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#28a745',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, inscribirme',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const htmlOriginal = boton.innerHTML;
-            boton.disabled = true;
-            boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Inscribiendo...';
+    if (!confirm(`¿Confirmas tu inscripción al ETS de "${materia}"?\nDespués deberás subir tu comprobante de pago.`)) {
+        return;
+    }
 
-            fetch('../../php/endpoints/inscribir.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_examen: idExamen })
-            })
-                .then(res => res.json())
-                .then(datos => {
-                    if (datos.status === 'success') {
-                        Swal.fire('¡Éxito!', datos.message || "¡Inscripción registrada con éxito!", 'success');
-                        cargarETSDisponibles(); // Refrescar tabla (cupo y estado del botón)
-                    } else {
-                        Swal.fire('Atención', datos.message, 'warning');
-                        boton.disabled = false;
-                        boton.innerHTML = htmlOriginal;
-                    }
-                })
-                .catch(() => {
-                    Swal.fire('Error', 'Ocurrió un error al comunicar con el servidor.', 'error');
-                    boton.disabled = false;
-                    boton.innerHTML = htmlOriginal;
-                });
-        }
-    });
+    const htmlOriginal = boton.innerHTML;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Inscribiendo...';
+
+    fetch('../../php/endpoints/inscribir.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_examen: idExamen })
+    })
+        .then(res => res.json())
+        .then(datos => {
+            if (datos.status === 'success') {
+                alert("✅ " + (datos.message || "¡Inscripción registrada con éxito!"));
+                cargarETSDisponibles(); // Refrescar tabla (cupo y estado del botón)
+            } else {
+                alert("⚠️ " + datos.message);
+                boton.disabled = false;
+                boton.innerHTML = htmlOriginal;
+            }
+        })
+        .catch(() => {
+            alert("Ocurrió un error al comunicar con el servidor.");
+            boton.disabled = false;
+            boton.innerHTML = htmlOriginal;
+        });
 }
 
 // Buscador / filtro por materia, academia o profesor
@@ -393,68 +384,58 @@ function iniciarVistaInscripcionETS() {
             btn.addEventListener('click', function() {
 
                 const idExamen = this.dataset.id;
+
+                if (!confirm('¿Deseas inscribirte a este ETS?')) {
+                    return;
+                }
+
                 const boton = this;
 
-                Swal.fire({
-                    title: '¿Confirmar inscripción?',
-                    text: '¿Deseas inscribirte a este ETS?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#28a745',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Sí, inscribirme',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
+                boton.disabled = true;
+                boton.innerHTML = `
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                    Procesando...
+                `;
 
+                fetch('/php/endpoints/inscribir.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id_examen: idExamen
+                    })
+                })
+                .then(response => response.json())
+                .then(resultado => {
+
+                    if (resultado.status === 'success') {
+
+                        alert(resultado.message);
+
+                        boton.classList.remove('btn-success');
+                        boton.classList.add('btn-secondary');
+
+                        boton.innerHTML = 'Inscrito';
                         boton.disabled = true;
-                        boton.innerHTML = `
-                            <span class="spinner-border spinner-border-sm me-1"></span>
-                            Procesando...
-                        `;
 
-                        fetch('/php/endpoints/inscribir.php', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                id_examen: idExamen
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(resultado => {
+                    } else {
 
-                            if (resultado.status === 'success') {
+                        alert(resultado.message);
 
-                                Swal.fire('¡Éxito!', resultado.message, 'success');
-
-                                boton.classList.remove('btn-success');
-                                boton.classList.add('btn-secondary');
-
-                                boton.innerHTML = 'Inscrito';
-                                boton.disabled = true;
-
-                            } else {
-
-                                Swal.fire('Atención', resultado.message, 'warning');
-
-                                boton.disabled = false;
-                                boton.innerHTML = 'Inscribirme';
-                            }
-
-                        })
-                        .catch(error => {
-
-                            console.error(error);
-
-                            Swal.fire('Error', 'Error al comunicarse con el servidor.', 'error');
-
-                            boton.disabled = false;
-                            boton.innerHTML = 'Inscribirme';
-                        });
-
+                        boton.disabled = false;
+                        boton.innerHTML = 'Inscribirme';
                     }
+
+                })
+                .catch(error => {
+
+                    console.error(error);
+
+                    alert('Error al comunicarse con el servidor.');
+
+                    boton.disabled = false;
+                    boton.innerHTML = 'Inscribirme';
                 });
 
             });
@@ -473,6 +454,101 @@ function iniciarVistaInscripcionETS() {
                 </td>
             </tr>
         `;
+    });
+
+}
+
+function iniciarDashboardAlumno() {
+
+    fetch('/php/endpoints/obtener_dashboard_alumno.php')
+    .then(response => response.json())
+    .then(resultado => {
+
+        if (resultado.status !== 'success') {
+            console.error(resultado.message);
+            return;
+        }
+
+        const resumen = resultado.resumen;
+
+        document.getElementById('total-ets').textContent =
+            resumen.ets_inscritos;
+
+        document.getElementById('promedio-general').textContent =
+            resumen.promedio;
+
+        document.getElementById('materias-reprobadas').textContent =
+            resumen.reprobadas;
+
+        document.getElementById('estatus-academico').textContent =
+            resumen.situacion;
+
+        const tbody = document.getElementById('tabla-mis-ets');
+
+        if (!tbody) return;
+
+        if (resultado.ets.length === 0) {
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        No tienes ETS inscritos.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        tbody.innerHTML = '';
+
+        resultado.ets.forEach(ets => {
+
+            let color = 'warning';
+
+            if (
+                ets.estado_pago === 'Pagado' ||
+                ets.estado_pago === 'Validado' ||
+                ets.estado_pago === 'Aprobado'
+            ) {
+                color = 'success';
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="ps-4 fw-semibold">
+                        ${ets.materia}
+                    </td>
+
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            ${ets.fecha}
+                        </span>
+                    </td>
+
+                    <td>${ets.hora}</td>
+
+                    <td>
+                        <span class="text-primary">
+                            ${ets.salon}
+                        </span>
+                        <small class="text-muted">
+                            (${ets.edificio})
+                        </small>
+                    </td>
+
+                    <td>
+                        <span class="badge bg-${color} bg-opacity-10 text-${color}">
+                            ${ets.estado_pago}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+
+    })
+    .catch(error => {
+        console.error(error);
     });
 
 }
