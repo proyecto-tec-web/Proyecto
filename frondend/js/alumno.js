@@ -1,19 +1,66 @@
+// =================================================================
+// MÓDULO ALUMNO: SISTEMA INTEGRAL (Dashboard, ETS, Kardex, Revisiones)
+// =================================================================
+console.log('ALUMNO.JS CARGADO CORRECTAMENTE');
+
 // ==========================================
-// MÓDULO ALUMNO: INSCRIPCIÓN A ETS
-// Vista: vistasAlumno/alumno_inscripcion.php
+// 1. MÓDULO: DASHBOARD (INICIO)
 // ==========================================
-console.log('ALUMNO.JS CARGADO');
-// Carga la tabla de ETS disponibles desde la BD
+function iniciarDashboardAlumno() {
+    fetch('/php/endpoints/obtener_dashboard_alumno.php')
+    .then(response => response.json())
+    .then(resultado => {
+        if (resultado.status !== 'success') {
+            console.error(resultado.message);
+            return;
+        }
+
+        const resumen = resultado.resumen;
+        document.getElementById('total-ets').textContent = resumen.ets_inscritos;
+        document.getElementById('promedio-general').textContent = resumen.promedio;
+        document.getElementById('materias-reprobadas').textContent = resumen.reprobadas;
+        document.getElementById('estatus-academico').textContent = resumen.situacion;
+
+        const tbody = document.getElementById('tabla-mis-ets');
+        if (!tbody) return;
+
+        if (resultado.ets.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">No tienes ETS inscritos.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = '';
+        resultado.ets.forEach(ets => {
+            let color = 'warning';
+            if (ets.estado_pago === 'Pagado' || ets.estado_pago === 'Validado' || ets.estado_pago === 'Aprobado') {
+                color = 'success';
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="ps-4 fw-semibold">${ets.materia}</td>
+                    <td><span class="badge bg-light text-dark border">${ets.fecha}</span></td>
+                    <td>${ets.hora}</td>
+                    <td>
+                        <span class="text-primary">${ets.salon}</span>
+                        <small class="text-muted">(${ets.edificio})</small>
+                    </td>
+                    <td><span class="badge bg-${color} bg-opacity-10 text-${color}">${ets.estado_pago}</span></td>
+                </tr>
+            `;
+        });
+    })
+    .catch(error => console.error(error));
+}
+
+// ==========================================
+// 2. MÓDULO: INSCRIPCIÓN A ETS
+// ==========================================
 function cargarETSDisponibles() {
     const tbody = document.getElementById('tbody-ets-alumno');
     if (!tbody) return;
 
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="6" class="text-center py-4 text-muted">
-                <div class="spinner-border spinner-border-sm me-2"></div> Cargando exámenes disponibles...
-            </td>
-        </tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div> Cargando exámenes disponibles...</td></tr>`;
 
     fetch('/php/endpoints/obtener_ets_disponibles.php')
         .then(res => res.json())
@@ -33,23 +80,15 @@ function cargarETSDisponibles() {
                 const sinCupo = parseInt(ets.cupo) <= 0;
                 const yaInscrito = parseInt(ets.ya_inscrito) > 0;
 
-                // Badge de cupo
-                const badgeCupo = sinCupo
-                    ? `<span class="badge bg-danger-subtle text-danger">Lleno</span>`
-                    : `<span class="badge bg-success-subtle text-success">${ets.cupo} disp.</span>`;
+                const badgeCupo = sinCupo ? `<span class="badge bg-danger-subtle text-danger">Lleno</span>` : `<span class="badge bg-success-subtle text-success">${ets.cupo} disp.</span>`;
 
-                // Botón de acción
                 let btnAccion;
                 if (yaInscrito) {
                     btnAccion = `<button class="btn btn-outline-success btn-sm rounded-pill px-3" disabled><i class="bi bi-check-circle me-1"></i>Inscrito</button>`;
                 } else if (sinCupo) {
                     btnAccion = `<button class="btn btn-secondary btn-sm rounded-pill px-3" disabled>Agotado</button>`;
                 } else {
-                    btnAccion = `
-                        <button class="btn btn-success btn-sm rounded-pill px-3 btn-inscribir-ets"
-                                data-id="${ets.id_examen}" data-materia="${ets.materia}">
-                            Inscribirme
-                        </button>`;
+                    btnAccion = `<button class="btn btn-success btn-sm rounded-pill px-3 btn-inscribir-ets" data-id="${ets.id_examen}" data-materia="${ets.materia}">Inscribirme</button>`;
                 }
 
                 tbody.innerHTML += `
@@ -63,55 +102,39 @@ function cargarETSDisponibles() {
                     </tr>`;
             });
 
-            // Eventos de los botones "Inscribirme"
             tbody.querySelectorAll('.btn-inscribir-ets').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    inscribirAlumnoETS(this);
-                });
+                btn.addEventListener('click', function () { inscribirAlumnoETS(this); });
             });
         })
-        .catch(() => {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">No se pudo conectar con el servidor.</td></tr>`;
-        });
+        .catch(() => { tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">No se pudo conectar con el servidor.</td></tr>`; });
 }
 
-// Envía la solicitud de inscripción al servidor
 function inscribirAlumnoETS(boton) {
     const idExamen = boton.getAttribute('data-id');
     const materia = boton.getAttribute('data-materia');
 
-    if (!confirm(`¿Confirmas tu inscripción al ETS de "${materia}"?\nDespués deberás subir tu comprobante de pago.`)) {
-        return;
-    }
+    if (!confirm(`¿Confirmas tu inscripción al ETS de "${materia}"?\nDespués deberás subir tu comprobante de pago.`)) return;
 
     const htmlOriginal = boton.innerHTML;
     boton.disabled = true;
     boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Inscribiendo...';
 
     fetch('../../php/endpoints/inscribir.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_examen: idExamen })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_examen: idExamen })
     })
-        .then(res => res.json())
-        .then(datos => {
-            if (datos.status === 'success') {
-                alert("✅ " + (datos.message || "¡Inscripción registrada con éxito!"));
-                cargarETSDisponibles(); // Refrescar tabla (cupo y estado del botón)
-            } else {
-                alert("⚠️ " + datos.message);
-                boton.disabled = false;
-                boton.innerHTML = htmlOriginal;
-            }
-        })
-        .catch(() => {
-            alert("Ocurrió un error al comunicar con el servidor.");
-            boton.disabled = false;
-            boton.innerHTML = htmlOriginal;
-        });
+    .then(res => res.json())
+    .then(datos => {
+        if (datos.status === 'success') {
+            alert("✅ " + (datos.message || "¡Inscripción registrada con éxito!"));
+            cargarETSDisponibles(); 
+        } else {
+            alert("⚠️ " + datos.message);
+            boton.disabled = false; boton.innerHTML = htmlOriginal;
+        }
+    })
+    .catch(() => { alert("Ocurrió un error al comunicar con el servidor."); boton.disabled = false; boton.innerHTML = htmlOriginal; });
 }
 
-// Buscador / filtro por materia, academia o profesor
 function inicializarFiltroETS() {
     const input = document.getElementById('buscador-ets');
     const btnFiltrar = document.getElementById('btn-filtrar-ets');
@@ -120,9 +143,7 @@ function inicializarFiltroETS() {
     const filtrar = () => {
         const texto = input.value.toLowerCase().trim();
         document.querySelectorAll('#tbody-ets-alumno tr').forEach(fila => {
-            if (fila.cells.length > 1) {
-                fila.style.display = fila.innerText.toLowerCase().includes(texto) ? '' : 'none';
-            }
+            if (fila.cells.length > 1) fila.style.display = fila.innerText.toLowerCase().includes(texto) ? '' : 'none';
         });
     };
 
@@ -130,45 +151,31 @@ function inicializarFiltroETS() {
     if (btnFiltrar) btnFiltrar.addEventListener('click', filtrar);
 }
 
-// Punto de entrada de la vista (llamado desde app.js)
-
+function iniciarVistaInscripcionETS() {
+    cargarETSDisponibles();
+    inicializarFiltroETS();
+}
 
 // ==========================================
-// MÓDULO ALUMNO: MI KARDEX
-// Vista: vistasAlumno/alumno_kardex.php
+// 3. MÓDULO: MI KARDEX
 // ==========================================
-
-// Convierte el número de semestre a etiqueta legible
 function etiquetaSemestre(n) {
     n = parseInt(n);
     const sufijos = { 1: '1er', 2: '2do', 3: '3er' };
     return (sufijos[n] || `${n}º`) + ' Semestre';
 }
 
-// Carga el kardex del alumno en sesión
 function cargarMiKardex() {
     const tbody = document.getElementById('tbody-kardex-alumno');
     if (!tbody) return;
 
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="5" class="text-center py-4 text-muted">
-                <div class="spinner-border spinner-border-sm me-2"></div> Cargando tu kardex...
-            </td>
-        </tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div> Cargando tu kardex...</td></tr>`;
 
     fetch('../../php/endpoints/obtener_mi_kardex.php')
         .then(res => res.json())
         .then(datos => {
-            if (datos.status !== 'success') {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Error: ${datos.message}</td></tr>`;
-                return;
-            }
-
-            if (datos.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">Aún no tienes materias registradas en tu kardex.</td></tr>`;
-                return;
-            }
+            if (datos.status !== 'success') { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Error: ${datos.message}</td></tr>`; return; }
+            if (datos.data.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">Aún no tienes materias registradas en tu kardex.</td></tr>`; return; }
 
             tbody.innerHTML = '';
             datos.data.forEach(mat => {
@@ -176,13 +183,8 @@ function cargarMiKardex() {
                 const aprobada = calif !== null && calif >= 6.0;
                 const textoCalif = calif === null ? 'NP' : (Number.isInteger(calif) ? calif : calif.toFixed(1));
 
-                const celdaCalif = aprobada
-                    ? `<td>${textoCalif}</td>`
-                    : `<td class="text-danger fw-bold">${textoCalif}</td>`;
-
-                const badge = aprobada
-                    ? `<span class="badge bg-success-subtle text-success">Aprobada</span>`
-                    : `<span class="badge bg-danger-subtle text-danger">Reprobada</span>`;
+                const celdaCalif = aprobada ? `<td>${textoCalif}</td>` : `<td class="text-danger fw-bold">${textoCalif}</td>`;
+                const badge = aprobada ? `<span class="badge bg-success-subtle text-success">Aprobada</span>` : `<span class="badge bg-danger-subtle text-danger">Reprobada</span>`;
 
                 tbody.innerHTML += `
                     <tr data-resultado="${aprobada ? 'aprobada' : 'reprobada'}">
@@ -193,26 +195,19 @@ function cargarMiKardex() {
                         <td class="text-center">${badge}</td>
                     </tr>`;
             });
-        })
-        .catch(() => {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">No se pudo conectar con el servidor.</td></tr>`;
-        });
+        }).catch(() => { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">No se pudo conectar con el servidor.</td></tr>`; });
 }
 
-// Filtros: Mostrar Todas / Aprobadas / Reprobadas
 function inicializarFiltrosKardex() {
     const botones = document.querySelectorAll('.btn-filtro-kardex');
-
     botones.forEach(btn => {
         btn.addEventListener('click', function () {
-            // Estado visual del grupo de botones
             botones.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
 
-            // Filtrar filas según data-resultado
             const filtro = this.getAttribute('data-filtro');
             document.querySelectorAll('#tbody-kardex-alumno tr').forEach(fila => {
-                if (fila.cells.length <= 1) return; // filas de mensaje/carga
+                if (fila.cells.length <= 1) return; 
                 const resultado = fila.getAttribute('data-resultado');
                 fila.style.display = (filtro === 'todas' || resultado === filtro) ? '' : 'none';
             });
@@ -220,335 +215,137 @@ function inicializarFiltrosKardex() {
     });
 }
 
-// Punto de entrada de la vista (llamado desde app.js)
 function iniciarVistaKardex() {
+    if (typeof cargarMiKardex === 'function') cargarMiKardex();
+    if (typeof inicializarFiltrosKardex === 'function') inicializarFiltrosKardex();
 
-    // Cargar información del kardex
-    if (typeof cargarMiKardex === 'function') {
-        cargarMiKardex();
-    }
-
-    // Inicializar filtros existentes
-    if (typeof inicializarFiltrosKardex === 'function') {
-        inicializarFiltrosKardex();
-    }
-
-    // Capturar botones
     const btnTodas = document.querySelector('.btn-group .btn-outline-secondary');
     const btnAprobadas = document.querySelector('.btn-group .btn-outline-success');
     const btnReprobadas = document.querySelector('.btn-group .btn-outline-danger');
     const btnImprimir = document.querySelector('.btn-outline-dark');
-
-    // Capturar filas
     const filas = document.querySelectorAll('#tabla-kardex tr[data-estado]');
 
     function filtrarKardex(tipo, botonClickeado) {
-
-        [btnTodas, btnAprobadas, btnReprobadas]
-            .filter(btn => btn)
-            .forEach(btn => btn.classList.remove('active'));
-
-        if (botonClickeado) {
-            botonClickeado.classList.add('active');
-        }
+        [btnTodas, btnAprobadas, btnReprobadas].filter(btn => btn).forEach(btn => btn.classList.remove('active'));
+        if (botonClickeado) botonClickeado.classList.add('active');
 
         filas.forEach(fila => {
-
             const estadoMateria = fila.dataset.estado;
-
-            if (tipo === 'todas') {
+            if (tipo === 'todas' || (tipo === 'aprobadas' && estadoMateria === 'aprobada') || (tipo === 'reprobadas' && estadoMateria === 'reprobada')) {
                 fila.style.display = '';
-            }
-            else if (tipo === 'aprobadas' && estadoMateria === 'aprobada') {
-                fila.style.display = '';
-            }
-            else if (tipo === 'reprobadas' && estadoMateria === 'reprobada') {
-                fila.style.display = '';
-            }
-            else {
+            } else {
                 fila.style.display = 'none';
             }
         });
     }
 
-    if (btnTodas) {
-        btnTodas.addEventListener('click', () =>
-            filtrarKardex('todas', btnTodas)
-        );
-    }
-
-    if (btnAprobadas) {
-        btnAprobadas.addEventListener('click', () =>
-            filtrarKardex('aprobadas', btnAprobadas)
-        );
-    }
-
-    if (btnReprobadas) {
-        btnReprobadas.addEventListener('click', () =>
-            filtrarKardex('reprobadas', btnReprobadas)
-        );
-    }
-
-    if (btnImprimir) {
-        btnImprimir.addEventListener('click', () => {
-            window.print();
-        });
-    }
+    if (btnTodas) btnTodas.addEventListener('click', () => filtrarKardex('todas', btnTodas));
+    if (btnAprobadas) btnAprobadas.addEventListener('click', () => filtrarKardex('aprobadas', btnAprobadas));
+    if (btnReprobadas) btnReprobadas.addEventListener('click', () => filtrarKardex('reprobadas', btnReprobadas));
+    if (btnImprimir) btnImprimir.addEventListener('click', () => window.print());
 }
-// =================================================================
-// MÓDULO ALUMNO: INSCRIBIR ETS (LÓGICA FALTANTE)
-// =================================================================
-function iniciarVistaInscripcionETS() {
 
-    const tbody = document.getElementById('tbody-ets-alumno');
+// ==========================================
+// 4. MÓDULO: PETICIONES DE REVISIÓN
+// ==========================================
+function iniciarVistaRevisionesAlumno() {
+    cargarHistorialRevisiones();
+    cargarExamenesParaRevision();
+}
 
+function cargarHistorialRevisiones() {
+    const tbody = document.getElementById('tbody-mis-revisiones');
     if (!tbody) return;
 
-    fetch('/php/endpoints/obtener_ets_disponibles.php')
-    .then(response => response.json())
-    .then(resultado => {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Cargando historial...</td></tr>`;
 
-        if (resultado.status !== 'success') {
-
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-danger">
-                        Error al cargar los ETS.
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        const datos = resultado.data;
-
-        if (datos.length === 0) {
-
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-muted">
-                        No hay ETS disponibles.
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        tbody.innerHTML = '';
-
-        datos.forEach(ets => {
-
-            tbody.innerHTML += `
-                <tr>
-                    <td class="ps-4 fw-bold">${ets.materia}</td>
-
-                    <td>
-                        ${ets.fecha}<br>
-                        <small>${ets.hora}</small>
-                    </td>
-
-                    <td>${ets.profesor}</td>
-
-                    <td>${ets.edificio} ${ets.salon}</td>
-
-                    <td>
-                        <span class="badge bg-success-subtle text-success">
-                            ${ets.cupo} lugares
-                        </span>
-                    </td>
-
-                    <td class="text-center">
-                        ${
-                            parseInt(ets.ya_inscrito) > 0
-                            ? `
-                                <button class="btn btn-secondary btn-sm" disabled>
-                                    Inscrito
-                                </button>
-                              `
-                            : `
-                                <button
-                                    class="btn btn-success btn-sm btn-inscribir"
-                                    data-id="${ets.id_examen}">
-                                    Inscribirme
-                                </button>
-                              `
-                        }
-                    </td>
-                </tr>
-            `;
-        });
-
-        document.querySelectorAll('.btn-inscribir')
-        .forEach(btn => {
-
-            btn.addEventListener('click', function() {
-
-                const idExamen = this.dataset.id;
-
-                if (!confirm('¿Deseas inscribirte a este ETS?')) {
-                    return;
-                }
-
-                const boton = this;
-
-                boton.disabled = true;
-                boton.innerHTML = `
-                    <span class="spinner-border spinner-border-sm me-1"></span>
-                    Procesando...
-                `;
-
-                fetch('/php/endpoints/inscribir.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id_examen: idExamen
-                    })
-                })
-                .then(response => response.json())
-                .then(resultado => {
-
-                    if (resultado.status === 'success') {
-
-                        alert(resultado.message);
-
-                        boton.classList.remove('btn-success');
-                        boton.classList.add('btn-secondary');
-
-                        boton.innerHTML = 'Inscrito';
-                        boton.disabled = true;
-
-                    } else {
-
-                        alert(resultado.message);
-
-                        boton.disabled = false;
-                        boton.innerHTML = 'Inscribirme';
-                    }
-
-                })
-                .catch(error => {
-
-                    console.error(error);
-
-                    alert('Error al comunicarse con el servidor.');
-
-                    boton.disabled = false;
-                    boton.innerHTML = 'Inscribirme';
-                });
-
-            });
-
-        });
-
-    })
-    .catch(error => {
-
-        console.error(error);
-
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center text-danger">
-                    Error al cargar los ETS.
-                </td>
-            </tr>
-        `;
-    });
-
-}
-
-function iniciarDashboardAlumno() {
-
-    fetch('/php/endpoints/obtener_dashboard_alumno.php')
-    .then(response => response.json())
-    .then(resultado => {
-
-        if (resultado.status !== 'success') {
-            console.error(resultado.message);
-            return;
-        }
-
-        const resumen = resultado.resumen;
-
-        document.getElementById('total-ets').textContent =
-            resumen.ets_inscritos;
-
-        document.getElementById('promedio-general').textContent =
-            resumen.promedio;
-
-        document.getElementById('materias-reprobadas').textContent =
-            resumen.reprobadas;
-
-        document.getElementById('estatus-academico').textContent =
-            resumen.situacion;
-
-        const tbody = document.getElementById('tabla-mis-ets');
-
-        if (!tbody) return;
-
-        if (resultado.ets.length === 0) {
-
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
-                        No tienes ETS inscritos.
-                    </td>
-                </tr>
-            `;
-
-            return;
-        }
-
-        tbody.innerHTML = '';
-
-        resultado.ets.forEach(ets => {
-
-            let color = 'warning';
-
-            if (
-                ets.estado_pago === 'Pagado' ||
-                ets.estado_pago === 'Validado' ||
-                ets.estado_pago === 'Aprobado'
-            ) {
-                color = 'success';
+    fetch('/php/endpoints/obtener_revisiones_alumno.php')
+        .then(res => res.json())
+        .then(datos => {
+            tbody.innerHTML = '';
+            if (datos.status !== 'success' || datos.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Aún no has solicitado ninguna revisión de examen.</td></tr>`;
+                return;
             }
 
-            tbody.innerHTML += `
-                <tr>
-                    <td class="ps-4 fw-semibold">
-                        ${ets.materia}
-                    </td>
+            datos.data.forEach(rev => {
+                let badgeEstado = '';
+                let infoCita = '<span class="text-muted small fst-italic">Por definir</span>';
+                let notasProfe = '<span class="text-muted small fst-italic">En espera...</span>';
 
-                    <td>
-                        <span class="badge bg-light text-dark border">
-                            ${ets.fecha}
-                        </span>
-                    </td>
+                if (rev.estado === 'Pendiente') {
+                    badgeEstado = `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="bi bi-hourglass-split me-1"></i> Pendiente</span>`;
+                } else if (rev.estado === 'Agendada') {
+                    badgeEstado = `<span class="badge bg-info-subtle text-info border border-info-subtle"><i class="bi bi-calendar-event me-1"></i> Cita Agendada</span>`;
+                    infoCita = `<strong>${rev.fecha_cita}</strong><br><small class="text-muted"><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.lugar_cita}</small>`;
+                } else if (rev.estado === 'Completada') {
+                    badgeEstado = `<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-circle me-1"></i> Resuelto</span>`;
+                    infoCita = `<strong>${rev.fecha_cita || '-'}</strong><br><small class="text-muted">${rev.lugar_cita || '-'}</small>`;
+                    notasProfe = `<div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${rev.notas_profesor}">${rev.notas_profesor}</div>`;
+                }
 
-                    <td>${ets.hora}</td>
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold text-secondary ps-4">#REV-${rev.id_peticion}</td>
+                        <td class="fw-semibold">${rev.materia}</td>
+                        <td class="text-muted small"><div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${rev.motivo_alumno}">${rev.motivo_alumno}</div></td>
+                        <td>${infoCita}</td>
+                        <td>${notasProfe}</td>
+                        <td class="text-center">${badgeEstado}</td>
+                    </tr>
+                `;
+            });
+        })
+        .catch(() => { tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Error al conectar con el servidor.</td></tr>`; });
+}
 
-                    <td>
-                        <span class="text-primary">
-                            ${ets.salon}
-                        </span>
-                        <small class="text-muted">
-                            (${ets.edificio})
-                        </small>
-                    </td>
+function cargarExamenesParaRevision() {
+    const select = document.getElementById('select-examen-revision');
+    if (!select) return;
 
-                    <td>
-                        <span class="badge bg-${color} bg-opacity-10 text-${color}">
-                            ${ets.estado_pago}
-                        </span>
-                    </td>
-                </tr>
-            `;
+    fetch('/php/endpoints/obtener_examenes_recientes_alumno.php')
+        .then(res => res.json())
+        .then(datos => {
+            select.innerHTML = '<option value="" selected disabled>Selecciona el examen a revisar...</option>';
+            if (datos.status === 'success' && datos.data.length > 0) {
+                datos.data.forEach(ex => {
+                    select.innerHTML += `<option value="${ex.id_inscripcion}">${ex.materia} (Calificación: ${ex.calificacion || 'Sin asentar'})</option>`;
+                });
+            } else {
+                select.innerHTML = '<option value="" disabled>No tienes exámenes recientes disponibles para revisión</option>';
+            }
         });
+}
 
+function enviarPeticionRevision() {
+    const idInscripcion = document.getElementById('select-examen-revision').value;
+    const motivo = document.getElementById('motivo-revision').value.trim();
+
+    if (!idInscripcion || motivo.length < 15) {
+        alert("⚠️ Por favor selecciona un examen y redacta una justificación de al menos 15 caracteres.");
+        return;
+    }
+
+    const btn = document.getElementById('btn-enviar-revision');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Enviando...`;
+
+    fetch('/php/endpoints/crear_peticion_revision_alumno.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_inscripcion: idInscripcion, motivo: motivo })
     })
-    .catch(error => {
-        console.error(error);
-    });
-
+    .then(res => res.json())
+    .then(datos => {
+        if (datos.status === 'success') {
+            alert("✅ Petición enviada correctamente. Tu profesor la revisará a la brevedad.");
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaRevision'));
+            if(modal) modal.hide();
+            document.getElementById('form-nueva-revision').reset();
+            cargarHistorialRevisiones(); 
+            cargarExamenesParaRevision(); 
+        } else {
+            alert("Error: " + datos.message);
+        }
+        btn.disabled = false; btn.innerHTML = `<i class="bi bi-send me-1"></i> Enviar Petición`;
+    })
+    .catch(() => { alert("Ocurrió un error de conexión."); btn.disabled = false; btn.innerHTML = `<i class="bi bi-send me-1"></i> Enviar Petición`; });
 }
