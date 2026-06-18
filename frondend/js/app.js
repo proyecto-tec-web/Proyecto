@@ -182,7 +182,10 @@ function inicializarLogicaVista(nombreVista) {
                 const password = document.getElementById('input-password').value;
                 const rol = document.getElementById('select-rol').value;
 
-                if (!correo || !password || !rol) { alert("Completa todos los campos"); return; }
+                if (!correo || !password || !rol) { 
+                    Swal.fire('Atención', 'Completa todos los campos', 'warning'); 
+                    return; 
+                }
                 btnGuardarUsuario.disabled = true; btnGuardarUsuario.innerHTML = "Guardando...";
 
                 fetch('../../php/endpoints/crear_usuario.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ correo, password, rol }) })
@@ -191,9 +194,11 @@ function inicializarLogicaVista(nombreVista) {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoUsuario'));
                         if(modal) modal.hide();
                         document.getElementById('form-nuevo-usuario').reset();
-                        alert("Usuario creado con éxito.");
+                        Swal.fire('¡Éxito!', 'Usuario creado con éxito.', 'success');
                         cargarTablaUsuarios();
-                    } else { alert("Error: " + datos.message); }
+                    } else { 
+                        Swal.fire('Error', datos.message, 'error'); 
+                    }
                     btnGuardarUsuario.disabled = false; btnGuardarUsuario.innerHTML = "Guardar Usuario";
                 });
             });
@@ -214,9 +219,11 @@ function inicializarLogicaVista(nombreVista) {
                     if (datos.status === 'success') {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarUsuario'));
                         if(modal) modal.hide();
-                        alert("Usuario actualizado con éxito.");
+                        Swal.fire('¡Éxito!', 'Usuario actualizado con éxito.', 'success');
                         cargarTablaUsuarios();
-                    } else { alert("Error: " + datos.message); }
+                    } else { 
+                        Swal.fire('Error', datos.message, 'error'); 
+                    }
                     btnActualizarUsuario.disabled = false; btnActualizarUsuario.innerHTML = "Actualizar Usuario";
                 });
             });
@@ -271,7 +278,10 @@ function inicializarLogicaVista(nombreVista) {
                 const salon = document.getElementById('select-salon').value;
                 const cupo = document.getElementById('input-cupo').value;
 
-                if(!materia || !sinodal || !fecha || !hora || !salon || !cupo) { alert("Llena todos los campos."); return; }
+                if(!materia || !sinodal || !fecha || !hora || !salon || !cupo) { 
+                    Swal.fire('Atención', 'Llena todos los campos.', 'warning'); 
+                    return; 
+                }
 
                 nuevoBtnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
                 nuevoBtnGuardar.disabled = true;
@@ -282,12 +292,15 @@ function inicializarLogicaVista(nombreVista) {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoETS'));
                         if(modal) modal.hide();
                         document.getElementById('form-nuevo-ets').reset();
-                        alert("¡Examen programado con éxito!"); 
+                        Swal.fire('¡Éxito!', '¡Examen programado con éxito!', 'success');
                         cargarTablaExamenes();
-                    } else { alert("Error: " + datos.message); }
+                    } else { 
+                        Swal.fire('Error', datos.message, 'error'); 
+                    }
                     nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen'; nuevoBtnGuardar.disabled = false;
                 }).catch(error => {
-                    alert("Error de conexión."); nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen'; nuevoBtnGuardar.disabled = false;
+                    Swal.fire('Error', 'Error de conexión.', 'error'); 
+                    nuevoBtnGuardar.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Examen'; nuevoBtnGuardar.disabled = false;
                 });
             });
         }
@@ -310,7 +323,6 @@ function cargarTablaUsuarios() {
     fetch('../../php/endpoints/obtener_usuarios.php')
         .then(respuesta => respuesta.json())
         .then(datos => {
-            // Se actualizó colspan a 6 por las nuevas columnas
             if (datos.status === 'error') { tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar.</td></tr>`; return; }
             tbody.innerHTML = ''; 
             if (datos.data && datos.data.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No hay usuarios.</td></tr>`; return; }
@@ -320,7 +332,6 @@ function cargarTablaUsuarios() {
                     let colorBadge = (user.rol === 'Administrador' || user.rol === 'admin') ? 'danger' : (user.rol === 'profesor' ? 'success' : 'primary');
                     let rolNormalizado = user.rol.toLowerCase();
 
-                    // Mapeo seguro en caso de que sea una cuenta sin boleta o nombre (ej. administrador principal)
                     let boletaMostrar = user.boleta ? user.boleta : '<span class="text-muted"><small>N/A</small></span>';
                     let nombreMostrar = (user.nombre_persona && user.nombre_persona.trim() !== '') ? user.nombre_persona : '<span class="text-muted fst-italic"><small>Sin perfil asignado</small></span>';
 
@@ -349,10 +360,28 @@ function cargarTablaUsuarios() {
                 tbody.querySelectorAll('.btn-eliminar-usuario').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const id = this.getAttribute('data-id');
-                        if (confirm('¿Eliminar este usuario definitivamente?')) {
-                            fetch('../../php/endpoints/eliminar_usuario.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_usuario: id }) })
-                            .then(res => res.json()).then(data => { if(data.status === 'success') { cargarTablaUsuarios(); } else { alert("Error: " + data.message); } });
-                        }
+                        Swal.fire({
+                            title: '¿Estás seguro?',
+                            text: '¿Eliminar este usuario definitivamente?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Sí, eliminar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                fetch('../../php/endpoints/eliminar_usuario.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_usuario: id }) })
+                                .then(res => res.json()).then(data => { 
+                                    if(data.status === 'success') { 
+                                        Swal.fire('¡Eliminado!', 'Usuario eliminado correctamente.', 'success');
+                                        cargarTablaUsuarios(); 
+                                    } else { 
+                                        Swal.fire('Error', data.message, 'error'); 
+                                    } 
+                                });
+                            }
+                        });
                     });
                 });
 
@@ -368,8 +397,6 @@ function aplicarFiltrosUsuario() {
 
     document.querySelectorAll('#cuerpo-tabla-usuarios tr').forEach(fila => {
         if(fila.cells.length > 1) { 
-            // Como las celdas nuevas son parte del "innerText" de la fila, 
-            // el buscador funcionará automáticamente sin tener que programarle nada extra
             const contenido = fila.innerText.toLowerCase(); 
             const rolFila = fila.getAttribute('data-rol') || '';
             let coincideTexto = contenido.includes(texto);
@@ -414,20 +441,56 @@ function cargarTablaExamenes() {
             tbody.querySelectorAll('.btn-abrir-ets').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
-                    if (confirm("¿ABRIR inscripciones para este examen?")) {
-                        fetch('../../php/endpoints/abrir_examen.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_examen: id }) })
-                        .then(res => res.json()).then(data => { if(data.status==='success') cargarTablaExamenes(); else alert("Error: "+data.message); });
-                    }
+                    Swal.fire({
+                        title: '¿Abrir Inscripciones?',
+                        text: '¿Estás seguro de ABRIR inscripciones para este examen?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#28a745',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Sí, abrir',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch('../../php/endpoints/abrir_examen.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_examen: id }) })
+                            .then(res => res.json()).then(data => { 
+                                if(data.status==='success') {
+                                    Swal.fire('¡Abierto!', 'Las inscripciones están abiertas.', 'success');
+                                    cargarTablaExamenes(); 
+                                } else {
+                                    Swal.fire('Error', data.message, 'error');
+                                }
+                            });
+                        }
+                    });
                 });
             });
 
             tbody.querySelectorAll('.btn-eliminar-ets').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
-                    if (confirm(`¿Eliminar examen #${id}?`)) {
-                        fetch('../../php/endpoints/eliminar_ets.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_examen: id }) })
-                        .then(res => res.json()).then(data => { if(data.status==='success') cargarTablaExamenes(); else alert(data.message); });
-                    }
+                    Swal.fire({
+                        title: '¿Eliminar examen?',
+                        text: `¿Eliminar examen #${id}? Esta acción no se puede deshacer.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch('../../php/endpoints/eliminar_ets.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_examen: id }) })
+                            .then(res => res.json()).then(data => { 
+                                if(data.status==='success') {
+                                    Swal.fire('¡Eliminado!', 'Examen eliminado correctamente.', 'success');
+                                    cargarTablaExamenes(); 
+                                } else {
+                                    Swal.fire('Error', data.message, 'error');
+                                }
+                            });
+                        }
+                    });
                 });
             });
 
@@ -504,9 +567,19 @@ function guardarCalificaciones() {
         lista.push({ id_inscripcion: input.getAttribute('data-id'), calificacion: input.value });
     });
 
-    if (invalido) { alert("Error: Calificación fuera de rango (0-10)."); return; }
+    if (invalido) { 
+        Swal.fire('Error', 'Calificación fuera de rango (0-10).', 'error'); 
+        return; 
+    }
     fetch('../../php/endpoints/guardar_calificaciones.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_examen: idExamen, calificaciones: lista }) })
-    .then(res => res.json()).then(data => { if (data.status === 'success') { alert("¡Guardado!"); cargarSelectExamenesCalificar(); } else alert(data.message); });
+    .then(res => res.json()).then(data => { 
+        if (data.status === 'success') { 
+            Swal.fire('¡Guardado!', 'Calificaciones guardadas correctamente.', 'success'); 
+            cargarSelectExamenesCalificar(); 
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    });
 }
 
 function exportarCalificacionesCSV() {
@@ -517,7 +590,7 @@ function exportarCalificacionesCSV() {
 
     const filas = document.querySelectorAll('#tbody-calificaciones tr');
     if (filas.length === 0 || (filas.length === 1 && filas[0].cells.length === 1)) {
-        alert("No hay datos para exportar.");
+        Swal.fire('Sin datos', 'No hay datos para exportar.', 'info');
         return;
     }
 
@@ -593,13 +666,30 @@ function cargarTablaProfesoresAdmin() {
         tbody.querySelectorAll('.btn-estado-profe').forEach(btn => {
             btn.onclick = function() {
                 let accion = this.dataset.estado === 'Activo' ? 'deshabilitar' : 'habilitar';
-                if(confirm(`¿Estás seguro de ${accion} a este profesor?`)) {
-                    fetch('../../php/endpoints/eliminar_profesor.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ boleta: this.dataset.boleta }) })
-                    .then(res => res.json()).then(data => {
-                        if(data.status === 'success') { cargarTablaProfesoresAdmin(); }
-                        else { alert("❌ " + data.message); }
-                    });
-                }
+                
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `¿Estás seguro de ${accion} a este profesor?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#f39c12',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: `Sí, ${accion}`,
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('../../php/endpoints/eliminar_profesor.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ boleta: this.dataset.boleta }) })
+                        .then(res => res.json()).then(data => {
+                            if(data.status === 'success') { 
+                                Swal.fire('¡Listo!', `Profesor ${accion}do correctamente.`, 'success');
+                                cargarTablaProfesoresAdmin(); 
+                            }
+                            else { 
+                                Swal.fire('Error', data.message, 'error'); 
+                            }
+                        });
+                    }
+                });
             }
         });
 
@@ -628,7 +718,10 @@ function guardarNuevoProfesor() {
         paterno: document.getElementById('prof-paterno').value, materno: document.getElementById('prof-materno').value,
         correo: document.getElementById('prof-correo').value, password: document.getElementById('prof-password').value
     };
-    if (!datos.boleta || !datos.nombre || !datos.paterno || !datos.materno || !datos.correo || !datos.password) { alert("Llena todos los campos."); return; }
+    if (!datos.boleta || !datos.nombre || !datos.paterno || !datos.materno || !datos.correo || !datos.password) { 
+        Swal.fire('Atención', 'Llena todos los campos.', 'warning'); 
+        return; 
+    }
 
     const btn = document.getElementById('btn-guardar-profesor');
     btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
@@ -641,7 +734,10 @@ function guardarNuevoProfesor() {
             if(mod) mod.hide();
             cargarTablaProfesoresAdmin(); 
             document.getElementById('form-nuevo-profesor').reset();
-        } else alert(data.message);
+            Swal.fire('¡Éxito!', 'Profesor registrado correctamente', 'success');
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
     });
 }
 
@@ -654,7 +750,10 @@ function actualizarProfesor() {
         materno: document.getElementById('edit-prof-materno').value.trim()
     };
 
-    if (!datos.boleta_nueva || !datos.nombre || !datos.paterno || !datos.materno) { alert("Llena todos los campos."); return; }
+    if (!datos.boleta_nueva || !datos.nombre || !datos.paterno || !datos.materno) { 
+        Swal.fire('Atención', 'Llena todos los campos.', 'warning'); 
+        return; 
+    }
 
     const btn = document.getElementById('btn-actualizar-profesor');
     btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
@@ -666,9 +765,9 @@ function actualizarProfesor() {
             const mod = bootstrap.Modal.getInstance(document.getElementById('modalEditarProfesor'));
             if(mod) mod.hide();
             cargarTablaProfesoresAdmin();
-            alert("✅ " + data.message);
+            Swal.fire('¡Éxito!', data.message, 'success');
         } else {
-            alert("❌ " + data.message);
+            Swal.fire('Error', data.message, 'error');
         }
     });
 }

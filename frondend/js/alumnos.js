@@ -88,7 +88,7 @@ function cargarTablaAlumnos() {
                                 
                                 new bootstrap.Modal(document.getElementById('modalEditarAlumno')).show();
                             } else {
-                                alert("Error: " + data.message);
+                                Swal.fire('Error', data.message, 'error');
                             }
                         });
                 });
@@ -129,7 +129,7 @@ function cargarTablaAlumnos() {
                                 new bootstrap.Modal(document.getElementById('modalKardex')).show();
                                 cargarTablaAlumnos(); 
                             } else {
-                                alert("Error al cargar Kardex: " + data.message);
+                                Swal.fire('Error', 'Error al cargar Kardex: ' + data.message, 'error');
                             }
                         });
                 });
@@ -158,7 +158,8 @@ function configurarEventosAlumnos() {
             };
 
             if(!datos.boleta || !datos.carrera || !datos.nombre || !datos.correo) {
-                alert("Completa los campos principales."); return;
+                Swal.fire('Atención', 'Completa los campos principales.', 'warning');
+                return;
             }
 
             btnGuardar.disabled = true;
@@ -175,16 +176,16 @@ function configurarEventosAlumnos() {
                     const modalEl = document.getElementById('modalNuevoAlumno');
                     if(modalEl) bootstrap.Modal.getInstance(modalEl).hide();
                     document.getElementById('form-nuevo-alumno').reset();
-                    alert("Alumno y cuenta de usuario creados con éxito.");
+                    Swal.fire('¡Éxito!', 'Alumno y cuenta de usuario creados con éxito.', 'success');
                     cargarTablaAlumnos();
                 } else {
-                    alert("Error: " + respuesta.message);
+                    Swal.fire('Error', respuesta.message, 'error');
                 }
                 btnGuardar.disabled = false;
                 btnGuardar.innerText = "Finalizar Inscripción";
             })
             .catch(err => {
-                alert("Ocurrió un error de conexión.");
+                Swal.fire('Error', 'Ocurrió un error de conexión.', 'error');
                 btnGuardar.disabled = false;
                 btnGuardar.innerText = "Finalizar Inscripción";
             });
@@ -218,10 +219,10 @@ function configurarEventosAlumnos() {
                 if(respuesta.status === 'success') {
                     const modalEl = document.getElementById('modalEditarAlumno');
                     if(modalEl) bootstrap.Modal.getInstance(modalEl).hide();
-                    alert("Datos del alumno actualizados correctamente.");
+                    Swal.fire('¡Éxito!', 'Datos del alumno actualizados correctamente.', 'success');
                     cargarTablaAlumnos();
                 } else {
-                    alert("Error: " + respuesta.message);
+                    Swal.fire('Error', respuesta.message, 'error');
                 }
                 btnActualizar.disabled = false;
                 btnActualizar.innerText = "Guardar Cambios";

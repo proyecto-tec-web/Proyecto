@@ -1,4 +1,3 @@
-
 function iniciarVistaCatalogos() {
     const btnMaterias = document.getElementById('btn-cat-materias');
     const btnSalones = document.getElementById('btn-cat-salones');
@@ -347,7 +346,7 @@ function guardarNuevoRegistro() {
     .then(res => res.json())
     .then(datos => {
         if (datos.status === 'success') {
-            alert(datos.message); 
+            Swal.fire('¡Éxito!', datos.message, 'success'); 
             modalActual.hide(); 
             cargarDatosCatalogo(tipoModalActual.replace('editar_', '')); 
         } else {
@@ -366,39 +365,102 @@ function guardarNuevoRegistro() {
 
 // --- MATERIAS ---
 function eliminarMateria(id) {
-    if (confirm("¿Seguro que deseas eliminar la materia #" + id + "?")) {
-        const fd = new FormData(); fd.append('id_materia', id);
-        fetch('../../php/endpoints/eliminar_materia.php', { method: 'POST', body: fd })
-        .then(res => res.json()).then(d => { alert(d.message); if(d.status === 'success') cargarDatosCatalogo('materias'); });
-    }
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: `¿Seguro que deseas eliminar la materia #${id}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData(); fd.append('id_materia', id);
+            fetch('../../php/endpoints/eliminar_materia.php', { method: 'POST', body: fd })
+            .then(res => res.json()).then(d => { 
+                if(d.status === 'success') {
+                    Swal.fire('¡Eliminada!', d.message, 'success');
+                    cargarDatosCatalogo('materias'); 
+                } else {
+                    Swal.fire('Error', d.message, 'error');
+                }
+            });
+        }
+    });
 }
 function editarMateria(id) {
     fetch('../../php/endpoints/obtener_materia.php?id=' + id)
-    .then(res => res.json()).then(d => { if(d.status === 'success') abrirModalNuevo('materias', d.data); else alert(d.message); });
+    .then(res => res.json()).then(d => { 
+        if(d.status === 'success') abrirModalNuevo('materias', d.data); 
+        else Swal.fire('Error', d.message, 'error'); 
+    });
 }
 
 // --- SALONES ---
 function eliminarSalon(id) {
-    if (confirm("¿Seguro que deseas eliminar el salón #" + id + "?")) {
-        const fd = new FormData(); fd.append('id_salon', id);
-        fetch('../../php/endpoints/eliminar_salon.php', { method: 'POST', body: fd })
-        .then(res => res.json()).then(d => { alert(d.message); if(d.status === 'success') cargarDatosCatalogo('salones'); });
-    }
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: `¿Seguro que deseas eliminar el salón #${id}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData(); fd.append('id_salon', id);
+            fetch('../../php/endpoints/eliminar_salon.php', { method: 'POST', body: fd })
+            .then(res => res.json()).then(d => { 
+                if(d.status === 'success') {
+                    Swal.fire('¡Eliminado!', d.message, 'success');
+                    cargarDatosCatalogo('salones'); 
+                } else {
+                    Swal.fire('Error', d.message, 'error');
+                }
+            });
+        }
+    });
 }
 function editarSalon(id) {
     fetch('../../php/endpoints/obtener_salon.php?id=' + id)
-    .then(res => res.json()).then(d => { if(d.status === 'success') abrirModalNuevo('salones', d.data); else alert(d.message); });
+    .then(res => res.json()).then(d => { 
+        if(d.status === 'success') abrirModalNuevo('salones', d.data); 
+        else Swal.fire('Error', d.message, 'error'); 
+    });
 }
 
 // --- CARRERAS ---
 function eliminarCarrera(id) {
-    if (confirm("¿Seguro que deseas eliminar la carrera #" + id + "?")) {
-        const fd = new FormData(); fd.append('id_carrera', id);
-        fetch('../../php/endpoints/eliminar_carrera.php', { method: 'POST', body: fd })
-        .then(res => res.json()).then(d => { alert(d.message); if(d.status === 'success') cargarDatosCatalogo('carreras'); });
-    }
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: `¿Seguro que deseas eliminar la carrera #${id}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData(); fd.append('id_carrera', id);
+            fetch('../../php/endpoints/eliminar_carrera.php', { method: 'POST', body: fd })
+            .then(res => res.json()).then(d => { 
+                if(d.status === 'success') {
+                    Swal.fire('¡Eliminada!', d.message, 'success');
+                    cargarDatosCatalogo('carreras'); 
+                } else {
+                    Swal.fire('Error', d.message, 'error');
+                }
+            });
+        }
+    });
 }
 function editarCarrera(id) {
     fetch('../../php/endpoints/obtener_carrera.php?id=' + id)
-    .then(res => res.json()).then(d => { if(d.status === 'success') abrirModalNuevo('carreras', d.data); else alert(d.message); });
+    .then(res => res.json()).then(d => { 
+        if(d.status === 'success') abrirModalNuevo('carreras', d.data); 
+        else Swal.fire('Error', d.message, 'error'); 
+    });
 }
