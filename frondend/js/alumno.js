@@ -271,7 +271,21 @@ function cargarHistorialRevisiones() {
             datos.data.forEach(rev => {
                 let badgeEstado = '';
                 let infoCita = '<span class="text-muted small fst-italic">Por definir</span>';
-                let notasProfe = '<span class="text-muted small fst-italic">En espera...</span>';
+                
+                // 1. Preparamos el HTML de la Justificación del Alumno con botón "Leer completo"
+                // Usamos encodeURIComponent para evitar que saltos de línea rompan el HTML
+                const motivoCodificado = encodeURIComponent(rev.motivo_alumno || '');
+                let htmlMotivo = `
+                    <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Haz clic en Leer completo para ver más">
+                        ${rev.motivo_alumno}
+                    </div>
+                    <button class="btn btn-link btn-sm p-0 text-decoration-none fw-bold" style="font-size: 0.8rem;" onclick="mostrarDetalleTexto('Mi Justificación', '${motivoCodificado}')">
+                        <i class="bi bi-eye"></i> Leer completo
+                    </button>
+                `;
+
+                // 2. Preparamos las notas del profesor por defecto
+                let htmlNotas = '<span class="text-muted small fst-italic">En espera...</span>';
 
                 if (rev.estado === 'Pendiente') {
                     badgeEstado = `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="bi bi-hourglass-split me-1"></i> Pendiente</span>`;
@@ -281,16 +295,26 @@ function cargarHistorialRevisiones() {
                 } else if (rev.estado === 'Completada') {
                     badgeEstado = `<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-circle me-1"></i> Resuelto</span>`;
                     infoCita = `<strong>${rev.fecha_cita || '-'}</strong><br><small class="text-muted">${rev.lugar_cita || '-'}</small>`;
-                    notasProfe = `<div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${rev.notas_profesor}">${rev.notas_profesor}</div>`;
+                    
+                    // Si está completada, mostramos las notas con el botón
+                    const notasCodificadas = encodeURIComponent(rev.notas_profesor || '');
+                    htmlNotas = `
+                        <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Haz clic en Leer completo para ver más">
+                            ${rev.notas_profesor}
+                        </div>
+                        <button class="btn btn-link btn-sm p-0 text-decoration-none fw-bold text-success" style="font-size: 0.8rem;" onclick="mostrarDetalleTexto('Notas del Profesor', '${notasCodificadas}')">
+                            <i class="bi bi-eye"></i> Leer completo
+                        </button>
+                    `;
                 }
 
                 tbody.innerHTML += `
                     <tr>
                         <td class="fw-bold text-secondary ps-4">#REV-${rev.id_peticion}</td>
                         <td class="fw-semibold">${rev.materia}</td>
-                        <td class="text-muted small"><div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${rev.motivo_alumno}">${rev.motivo_alumno}</div></td>
+                        <td class="text-muted small">${htmlMotivo}</td>
                         <td>${infoCita}</td>
-                        <td>${notasProfe}</td>
+                        <td>${htmlNotas}</td>
                         <td class="text-center">${badgeEstado}</td>
                     </tr>
                 `;
@@ -349,3 +373,23 @@ function enviarPeticionRevision() {
     })
     .catch(() => { alert("Ocurrió un error de conexión."); btn.disabled = false; btn.innerHTML = `<i class="bi bi-send me-1"></i> Enviar Petición`; });
 }
+// ==========================================
+// FUNCIÓN AUXILIAR: VER TEXTOS LARGOS EN MODAL
+// ==========================================
+window.mostrarDetalleTexto = function(titulo, textoCodificado) {
+    // Decodificamos el texto para recuperar los espacios, acentos y saltos de línea
+    const textoReal = decodeURIComponent(textoCodificado);
+    
+    Swal.fire({
+        title: titulo,
+        html: `
+            <div class="text-start bg-light p-3 rounded border mt-3" 
+                 style="max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-size: 15px; color: #333;">
+                ${textoReal}
+            </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'Cerrar',
+        confirmButtonColor: '#0d6efd'
+    });
+};
