@@ -1,9 +1,10 @@
-// =================================================================
-// MÓDULO: PANEL DEL PROFESOR
-// =================================================================
+// ==========================================
+// MÓDULO PROFESOR: DASHBOARD Y KPIs
+// Vista: vistasProfesor/dashboard_profesor.php
+// ==========================================
 
 function cargarKPIsProfesor() {
-    console.log("¡La función cargarKPIsProfesor sí se está ejecutando!"); // Pista 1
+    console.log("¡La función cargarKPIsProfesor sí se está ejecutando!"); 
     
     // --- NUEVO: Saludo Dinámico Personalizado al regresar a la vista ---
     setTimeout(() => {
@@ -24,7 +25,7 @@ function cargarKPIsProfesor() {
     fetch('/php/endpoints/obtener_kpis_profesor.php')
         .then(res => res.json())
         .then(datos => {
-            console.log("Respuesta de la Base de Datos:", datos); // Pista 2
+            console.log("Respuesta de la Base de Datos:", datos); 
             
             if (datos.status === 'success') {
                 document.getElementById('kpi-examenes-prof').innerText = datos.data.total_examenes;
@@ -40,6 +41,11 @@ function cargarKPIsProfesor() {
             pintarGraficaRendimiento(); // Pintamos la gráfica aquí para asegurarnos de que los datos ya estén cargados
         }).catch(err => console.error("Error de conexión:", err));
 }
+
+// ==========================================
+// MÓDULO PROFESOR: MIS EXÁMENES ETS
+// Vista: vistasProfesor/mis_examenes.php
+// ==========================================
 
 function cargarMisExamenes() {
     const tbodyActivos = document.getElementById('tbody-examenes-activos');
@@ -102,7 +108,6 @@ function cargarMisExamenes() {
                         let btnPrincipal = `<button class="btn ${claseBtn} btn-sm rounded-pill px-3" onclick="abrirModalCalificar(${ex.id_examen}, '${ex.materia}', '${ex.estado}')">${textoBtn}</button>`;
                         botonImprimir = `<button class="btn btn-outline-dark btn-sm rounded-pill px-3 ms-2 shadow-sm" onclick="imprimirPaseDeLista(${ex.id_examen})" title="Imprimir Pase de Lista Físico"><i class="bi bi-printer"></i></button>`;
                         
-                        // ¡LA CORRECCIÓN ESTÁ AQUÍ! 
                         // Si el examen ya está 'Calificado', quitamos el botón de Calendar
                         let mostrarCalendar = (ex.estado === 'Calificado') ? '' : ` ${botonCalendar}`;
                         
@@ -128,7 +133,6 @@ function cargarMisExamenes() {
                         </tr>
                     `;
 
-
                     if (ex.estado === 'Calificado') {
                         tbodyHistorial.innerHTML += filaHTML;
                         conteoHistorial++;
@@ -138,7 +142,6 @@ function cargarMisExamenes() {
                     }
                 });
 
-                
                 if (conteoActivos === 0) {
                     tbodyActivos.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">No tienes exámenes pendientes.</td></tr>`;
                 }
@@ -160,8 +163,10 @@ function cargarMisExamenes() {
 }
 
 // ==========================================
-// LÓGICA DE CALIFICACIONES Y LISTAS
+// MÓDULO PROFESOR: LISTA DE ALUMNOS (MODAL)
+// Vista: vistasProfesor/mis_examenes.php (Modal)
 // ==========================================
+
 let idExamenActual = null;
 let materiaActual = null;
 
@@ -245,103 +250,137 @@ function abrirModalCalificar(idExamen, materia, estado) {
         });
 }
 
-// Variable global para que no se duplique la validación si abrimos y cerramos la vista
-let validadorRevision = null;
+// ==========================================
+// MÓDULO PROFESOR: PETICIONES DE REVISIÓN
+// Vista: vistasProfesor/revisiones.php
+// ==========================================
+
+let validadorAgendarCita = null;
+let validadorEjecutarRevision = null;
 
 function inicializarJustValidateRevisiones() {
-    const formRevision = document.getElementById('form-revision');
-    if (!formRevision) return;
+    // 1. Validador para el Modal de Agendar Cita
+    const formCita = document.getElementById('form-agendar-cita');
+    if (formCita) {
+        if (validadorAgendarCita) validadorAgendarCita.destroy();
+        
+        validadorAgendarCita = new JustValidate('#form-agendar-cita', { validateBeforeSubmitting: true });
+        validadorAgendarCita
+            .addField('#cita-fecha', [{ rule: 'required', errorMessage: 'La fecha es obligatoria.' }])
+            .addField('#cita-lugar', [{ rule: 'required', errorMessage: 'El lugar es obligatorio.' }])
+            .onSuccess((event) => {
+                event.preventDefault();
+                
+                // AQUÍ DECLARAMOS LAS VARIABLES CORRECTAMENTE PARA QUE NO DE ERROR
+                const idPeticion = document.getElementById('cita-id-peticion').value;
+                const fecha = document.getElementById('cita-fecha').value.replace('T', ' ') + ':00';
+                const lugar = document.getElementById('cita-lugar').value.trim();
 
-    // Limpiamos instancias anteriores
-    if (validadorRevision) {
-        validadorRevision.destroy();
+                fetch('/php/endpoints/agendar_cita_revision.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_peticion: idPeticion, fecha_cita: fecha, lugar_cita: lugar })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === 'success') {
+                        Swal.fire('¡Cita Agendada!', 'El alumno ha sido notificado.', 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('modalAgendarCita')).hide();
+                        cargarRevisiones(); // Recarga la tabla en tiempo real
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                });
+            });
     }
 
-    // Inicializamos JustValidate
-    validadorRevision = new JustValidate('#form-revision', {
-        validateBeforeSubmitting: true,
-    });
+    // 2. Validador para el Modal de Ejecutar Revisión y Calificar
+    const formRevision = document.getElementById('form-ejecutar-revision');
+    if (formRevision) {
+        if (validadorEjecutarRevision) validadorEjecutarRevision.destroy();
 
-    // Definimos las reglas
-    validadorRevision
-        .addField('#rev-calif-nueva', [
-            { rule: 'required', errorMessage: 'La calificación es obligatoria.' },
-            { rule: 'minNumber', value: 0, errorMessage: 'La calificación mínima es 0.' },
-            { rule: 'maxNumber', value: 10, errorMessage: 'La calificación máxima es 10.' }
-        ])
-        .addField('#rev-notas', [
-            { rule: 'required', errorMessage: 'Debes justificar el cambio.' },
-            { rule: 'minLength', value: 15, errorMessage: 'Escribe al menos 15 caracteres.' }
-        ])
-        .onSuccess((event) => {
-            // Si JustValidate da luz verde, interceptamos el envío del form y lanzamos SweetAlert2
-            event.preventDefault();
+        validadorEjecutarRevision = new JustValidate('#form-ejecutar-revision', { validateBeforeSubmitting: true });
+        validadorEjecutarRevision
+            .addField('#rev-calif-nueva', [
+                { rule: 'required', errorMessage: 'La calificación es obligatoria.' },
+                { rule: 'minNumber', value: 0, errorMessage: 'Mínimo 0.' },
+                { rule: 'maxNumber', value: 10, errorMessage: 'Máximo 10.' }
+            ])
+            .addField('#rev-notas', [
+                { rule: 'required', errorMessage: 'Debes justificar el cambio.' },
+                { rule: 'minLength', value: 15, errorMessage: 'Escribe al menos 15 caracteres.' }
+            ])
+            .onSuccess((event) => {
+                event.preventDefault();
+                
+                const idPeticion = document.getElementById('rev-id-peticion').value;
+                const califNueva = document.getElementById('rev-calif-nueva').value.trim();
+                const notas = document.getElementById('rev-notas').value.trim();
 
-            const idPeticion = document.getElementById('rev-id-peticion').value;
-            const idInscripcion = document.getElementById('rev-id-inscripcion').value;
-            const califNueva = document.getElementById('rev-calif-nueva').value.trim();
-            const notas = document.getElementById('rev-notas').value.trim();
-
-            Swal.fire({
-                title: '¿Confirmar modificación de Acta?',
-                text: "Estás a punto de alterar una calificación oficial de forma irreversible.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ffc107',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, autorizo el cambio'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Petición al backend
-                    fetch('/php/endpoints/ejecutar_revision.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id_peticion: idPeticion,
-                            id_inscripcion: idInscripcion,
-                            calificacion_nueva: parseFloat(califNueva),
-                            notas: notas
+                Swal.fire({
+                    title: '¿Confirmar modificación?',
+                    text: "Se alterará el Acta Oficial del alumno.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ffc107',
+                    confirmButtonText: 'Sí, autorizo'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/php/endpoints/ejecutar_revision.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id_peticion: idPeticion, calificacion_nueva: parseFloat(califNueva), notas: notas })
                         })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            Swal.fire('¡Acta Actualizada!', 'La justificación fue guardada.', 'success');
-                            bootstrap.Modal.getInstance(document.getElementById('modalRevision')).hide();
-                            cargarRevisiones(); 
-                        } else {
-                            Swal.fire('Error del servidor', data.message, 'error');
-                        }
-                    });
-                }
+                        .then(res => res.json())
+                        .then(data => {
+                            if(data.status === 'success') {
+                                Swal.fire('¡Acta Actualizada!', 'La modificación fue guardada.', 'success');
+                                bootstrap.Modal.getInstance(document.getElementById('modalEjecutarRevision')).hide();
+                                cargarRevisiones(); // Recarga la tabla en tiempo real
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
+                        });
+                    }
+                });
             });
-        });
+    }
 }
-// --- MÓDULO REVISIONES ---
+
 function cargarRevisiones() {
-    console.log("¡Ejecutando cargarRevisiones!");
     const tbody = document.getElementById('tbody-revisiones');
     if (!tbody) return;
 
-    // Iremos a buscar las revisiones a la base de datos
-    fetch('/php/endpoints/obtener_revisiones.php')
+    fetch('/php/endpoints/obtener_revisiones.php', { cache: 'no-store' })
         .then(res => res.json())
         .then(datos => {
             tbody.innerHTML = '';
             
             if (datos.status === 'error' || datos.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No tienes peticiones de revisión pendientes.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No tienes peticiones de revisión.</td></tr>`;
                 return;
             }
 
             datos.data.forEach(rev => {
-                let badgeEstado = rev.estado === 'Completada' ? 'success' : 'warning';
+                let badgeEstado = 'secondary';
                 let botonAccion = '';
 
-                if (rev.estado === 'Completada') {
-                    botonAccion = `<span class="text-success fw-bold"><i class="bi bi-check-all"></i> Modificado</span>`;
-                } else {
-                    botonAccion = `<button class="btn btn-warning btn-sm fw-bold shadow-sm text-dark" onclick="abrirModalRevision(${rev.id_peticion}, ${rev.id_inscripcion}, '${rev.boleta} - ${rev.nombre}', ${rev.calificacion_actual})"><i class="bi bi-pencil-square"></i> Revisar</button>`;
+                // Limpiamos los datos para evitar que comillas rompan el HTML
+                let califActual = rev.calificacion_actual !== null ? rev.calificacion_actual : 'S/C';
+                let motivoSeguro = rev.motivo_alumno ? rev.motivo_alumno.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/(\r\n|\n|\r)/gm, " ") : 'Sin motivo especificado';
+
+                if (rev.estado === 'Pendiente') {
+                    badgeEstado = 'danger';
+                    // Pasamos los 4 datos: ID, Info del Alumno, Calificación y Motivo
+                    botonAccion = `<button class="btn btn-info btn-sm fw-bold shadow-sm text-dark" onclick="abrirModalAgendarCita(${rev.id_peticion}, '${rev.boleta} - ${rev.nombre}', '${califActual}', '${motivoSeguro}')"><i class="bi bi-calendar-event"></i> Agendar Cita</button>`;
+                
+                } else if (rev.estado === 'Agendada') {
+                    badgeEstado = 'warning';
+                    botonAccion = `<button class="btn btn-warning btn-sm fw-bold shadow-sm text-dark" onclick="abrirModalAsentarCalificacion(${rev.id_peticion}, ${rev.calificacion_actual})"><i class="bi bi-pencil-square"></i> Calificar</button>`;
+                
+                } else if (rev.estado === 'Completada') {
+                    badgeEstado = 'success';
+                    botonAccion = `<span class="text-success fw-bold"><i class="bi bi-check-all"></i> Resuelto</span>`;
                 }
 
                 tbody.innerHTML += `
@@ -353,10 +392,10 @@ function cargarRevisiones() {
                         </td>
                         <td class="fw-semibold">${rev.materia}</td>
                         <td>
-                            <small><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.salon}</small><br>
-                            <small><i class="bi bi-clock-fill text-primary"></i> ${rev.horario}</small>
+                            <small><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.salon || 'Por definir'}</small><br>
+                            <small><i class="bi bi-clock-fill text-primary"></i> ${rev.horario || 'Por definir'}</small>
                         </td>
-                        <td><span class="badge bg-${badgeEstado} text-dark">${rev.estado}</span></td>
+                        <td><span class="badge bg-${badgeEstado}">${rev.estado}</span></td>
                         <td class="text-end">${botonAccion}</td>
                     </tr>
                 `;
@@ -365,29 +404,53 @@ function cargarRevisiones() {
         .catch(err => {
             tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Fallo al conectar con el servidor.</td></tr>`;
         });
-        // Activar JustValidate al cargar la vista
+        
     setTimeout(inicializarJustValidateRevisiones, 100);
 }
 
-// Función que pasa los datos de la tabla a la ventana emergente (Modal)
-window.abrirModalRevision = function(idPeticion, idInscripcion, alumnoInfo, califActual) {
-    document.getElementById('rev-id-peticion').value = idPeticion;
-    document.getElementById('rev-id-inscripcion').value = idInscripcion;
-    document.getElementById('rev-alumno-nombre').value = alumnoInfo;
-    document.getElementById('rev-calif-actual').value = califActual;
+// Abre Modal 1 (Cita) - Recibe calificación y motivo
+window.abrirModalAgendarCita = function(idPeticion, alumnoInfo, califActual, motivo) {
+    document.getElementById('cita-id-peticion').value = idPeticion;
+    document.getElementById('cita-alumno-nombre').value = alumnoInfo;
     
-    // Limpiamos los campos editables por si tenían datos de una revisión anterior
+    // Inyectamos la calificación y el motivo que me pediste
+    document.getElementById('cita-calif-actual').value = califActual;
+    document.getElementById('cita-motivo').value = motivo;
+    
+    // Limpiamos los campos de fecha y lugar
+    const inputFecha = document.getElementById('cita-fecha');
+    inputFecha.value = '';
+    inputFecha.min = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.getElementById('cita-lugar').value = '';
+
+    new bootstrap.Modal(document.getElementById('modalAgendarCita')).show();
+};
+
+// Abre Modal 2 (Calificar)
+window.abrirModalAsentarCalificacion = function(idPeticion, califActual) {
+    document.getElementById('rev-id-peticion').value = idPeticion;
+    document.getElementById('rev-calif-actual').value = (califActual !== null && califActual !== 'null') ? califActual : '0.0';
+    
     document.getElementById('rev-calif-nueva').value = '';
     document.getElementById('rev-notas').value = '';
 
-    const modal = new bootstrap.Modal(document.getElementById('modalRevision'));
-    modal.show();
+    new bootstrap.Modal(document.getElementById('modalEjecutarRevision')).show();
 };
-// Función para abrir la nueva pestaña de impresión
+
+// ==========================================
+// MÓDULO PROFESOR: GENERACIÓN DE DOCUMENTOS
+// Vista: vistasProfesor/mis_examenes.php
+// ==========================================
+
 window.imprimirPaseDeLista = function(idExamen) {
     window.open(`/php/endpoints/generar_pase_lista.php?id_examen=${idExamen}`, '_blank');
 };
-// Variable global para evitar que Chart.js se vuelva loco
+
+// ==========================================
+// MÓDULO PROFESOR: GRÁFICAS DE RENDIMIENTO
+// Vista: vistasProfesor/dashboard_profesor.php
+// ==========================================
+
 let miGraficaRendimiento = null;
 
 function pintarGraficaRendimiento() {
@@ -495,11 +558,12 @@ function pintarGraficaRendimiento() {
         })
         .catch(err => console.error("Error al cargar la gráfica:", err));
 }
+
 // ==========================================
-// LÓGICA DE FIRMA Y GUARDADO FINAL
+// MÓDULO PROFESOR: FIRMA Y GUARDADO FINAL
+// Vista: vistasProfesor/mis_examenes.php (Modal)
 // ==========================================
 
-// 1. La Función Escudo (Pide el NIP)
 function solicitarNIPParaGuardar(idExamen) {
     Swal.fire({
         title: '<h3 style="font-family: \'Montserrat\', sans-serif; font-weight: bold; color: #004ec2;">Firma Electrónica</h3>',
@@ -550,7 +614,11 @@ function solicitarNIPParaGuardar(idExamen) {
     });
 }
 
-// 2. La Función Original de Guardado (Que se ejecuta tras firmar)
+// ==========================================
+// MÓDULO PROFESOR: Guardar Calificaciones Definitivas
+// Vista: vistasProfesor/mis_examenes.php
+// ==========================================
+
 function ejecutarGuardadoFinal(idExamen) {
     const inputs = document.querySelectorAll('.input-calificacion');
     let calificaciones = [];
@@ -614,8 +682,10 @@ function ejecutarGuardadoFinal(idExamen) {
         Swal.fire('Error de conexión', 'Detalles: ' + err.message, 'error');
     });
 }
+
 // ==========================================
-// EXPORTACIÓN DE DOCUMENTOS
+// MÓDULO PROFESOR: EXPORTACIÓN DE ACTAS CSV
+// Vista: vistasProfesor/mis_examenes.php
 // ==========================================
 
 window.exportarActaCSV = function() {
@@ -655,9 +725,12 @@ window.exportarActaCSV = function() {
     a.click();
     URL.revokeObjectURL(url);
 };
+
 // ==========================================
-// BUSCADOR EN TIEMPO REAL PARA EXÁMENES
+// MÓDULO PROFESOR: BUSCADORES EN TIEMPO REAL
+// Vista: vistasProfesor/mis_examenes.php
 // ==========================================
+
 function filtrarExamenes() {
     // 1. Buscamos todas las barras de búsqueda en la vista
     const buscadores = document.querySelectorAll("#buscadorExamenes");
@@ -699,9 +772,12 @@ function filtrarExamenes() {
         }
     });
 }
+
 // ==========================================
-// BUSCADOR EN TIEMPO REAL PARA REVISIONES
+// MÓDULO PROFESOR: BUSCADOR DE REVISIONES
+// Vista: vistasProfesor/revisiones.php
 // ==========================================
+
 function filtrarRevisiones() {
     const input = document.getElementById("buscadorRevisiones");
     if (!input) return; // Si no encuentra el buscador, se detiene
@@ -736,9 +812,12 @@ function filtrarRevisiones() {
         }
     }
 }
+
 // ==========================================
-// EXPORTAR TABLA DE EXÁMENES A EXCEL (.CSV)
+// MÓDULO PROFESOR: EXPORTAR TABLA A EXCEL
+// Vista: vistasProfesor/mis_examenes.php
 // ==========================================
+
 function exportarExamenesAExcel() {
     const tabla = document.querySelector("table");
     if (!tabla) return;
