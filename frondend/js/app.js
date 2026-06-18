@@ -55,6 +55,14 @@ function inicializarLogicaVista(nombreVista) {
             cargarTablaInscripciones(); cargarExamenesParaSelect(); manejarFormularioInscripcion();
         }
     }
+    if (nombreVista === 'dashboard_alumno') {
+        if (typeof iniciarDashboardAlumno === 'function') {
+            iniciarDashboardAlumno();
+        } else {
+            console.error("❌ No se detectó iniciarDashboardAlumno()");
+        }
+    }
+    
     if (nombreVista === 'alumno_inscripcion' || nombreVista === 'inscripcion_ets') {
         if (typeof iniciarVistaInscripcionETS === 'function') {
             iniciarVistaInscripcionETS();
