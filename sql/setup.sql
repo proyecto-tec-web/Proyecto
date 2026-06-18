@@ -96,6 +96,15 @@ CREATE TABLE inscripcion_examen (
     FOREIGN KEY (id_examen) REFERENCES examen(id_examen)
 );
 
+CREATE TABLE peticion_revision (
+    id_peticion INT AUTO_INCREMENT PRIMARY KEY,
+    id_inscripcion INT NOT NULL, 
+    motivo_alumno TEXT NOT NULL, 
+    fecha_solicitud DATETIME DEFAULT CURRENT_TIMESTAMP,
+    estado VARCHAR(20) NOT NULL DEFAULT 'Pendiente',
+    FOREIGN KEY (id_inscripcion) REFERENCES inscripcion_examen(id_inscripcion)
+);
+
 INSERT INTO usuario (id_usuario, correo, contrasena_hash, rol, estado) VALUES
 (1, 'admin@ipn.mx', 'admin123', 'admin', 'Activo'),
 (2, 'jrodriguez@ipn.mx', 'profesor123', 'profesor', 'Activo'),
@@ -274,4 +283,18 @@ INSERT INTO kardex (id_alumno, id_materia, calificacion) VALUES
 (2, 8, 7.5), (4, 8, 10.0), (6, 8, 5.0), (8, 8, 9.0), (10, 8, 8.0), 
 (12, 8, 9.5), (14, 8, 10.0), (16, 8, 8.0);
 
+-- Verifica primero qué inscripciones tiene el alumno logueado (alumno1 tiene id_alumno = 1)
+-- Luego inserta:
+INSERT INTO peticion_revision (id_inscripcion, motivo_alumno, estado) VALUES
+(1, 'Considero que mi calificación no refleja mi desempeño en el examen.', 'Pendiente'),
+(2, 'Solicito una revisión de mi examen debido a posibles errores en la corrección.', 'Pendiente'),
+(3, 'Creo que hubo un error en la calificación y me gustaría que se revisara.', 'Pendiente');
+
+ALTER TABLE peticion_revision 
+ADD COLUMN notas_profesor TEXT DEFAULT NULL,
+ADD COLUMN fecha_revision DATETIME DEFAULT NULL,
+ADD COLUMN fecha_revision_agendada DATETIME DEFAULT NULL,
+ADD COLUMN lugar_revision VARCHAR(100) DEFAULT NULL;
+
 SET FOREIGN_KEY_CHECKS = 1;
+
