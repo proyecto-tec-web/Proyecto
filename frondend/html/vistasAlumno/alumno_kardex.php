@@ -19,6 +19,78 @@ $alumno = $stmt_alumno->fetch(PDO::FETCH_ASSOC);
 $id_alumno = $alumno['id_alumno'] ?? null;
 ?>
 
+<style>
+    /* Ocultar el encabezado oficial en la pantalla de la computadora */
+    .encabezado-oficial-print {
+        display: none;
+    }
+
+    /* =========================================
+       ESTILOS EXCLUSIVOS PARA IMPRESIÓN (Ctrl + P)
+       ========================================= */
+    @media print {
+        /* 1. Ocultar todo lo innecesario (botones, menús, footer y el título original) */
+        .btn-group, .btn-outline-dark, button, footer, nav, aside, .navbar,
+        h1, h2, h3, h5, .page-title {
+            display: none !important;
+        }
+
+        /* 2. Mostrar el encabezado oficial del IPN */
+        .encabezado-oficial-print {
+            display: block !important;
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 15px;
+        }
+
+        /* Darle formato formal a las letras del IPN */
+        .encabezado-oficial-print h2.ipn-titulo {
+            display: block !important;
+            font-size: 22px !important;
+            font-weight: bold !important;
+            color: #000 !important;
+            margin: 0 !important;
+        }
+        
+        .encabezado-oficial-print h4.escom-titulo {
+            display: block !important;
+            font-size: 16px !important;
+            color: #333 !important;
+            margin: 5px 0 !important;
+        }
+
+        /* 3. Limpiar sombras y ajustar la tabla */
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+        }
+        .container-fluid {
+            padding: 0 !important;
+        }
+        .table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+        }
+        .table th {
+            background-color: #f1f3f5 !important; 
+            -webkit-print-color-adjust: exact !important; 
+            color-adjust: exact !important;
+            color: #000 !important;
+            border-bottom: 2px solid #000 !important;
+        }
+    }
+</style>
+
+<div class="encabezado-oficial-print">
+    <h2 class="ipn-titulo">INSTITUTO POLITÉCNICO NACIONAL</h2>
+    <h4 class="escom-titulo">ESCUELA SUPERIOR DE CÓMPUTO</h4>
+    <h4 class="escom-titulo" style="margin-top: 15px !important; font-weight: bold !important;">KARDEX DE EVALUACIÓN OFICIAL</h4>
+    <img src="../img/ipn.jpg" alt="Logo IPN" style="position: absolute; top: 15px; left: 15px; width: 60px; height: auto;">
+    <img src="../img/escom.jpg" alt="Logo ESCOM" style="position: absolute; top: 15px; right: 15px; width: 100px; height: auto;">
+</div>
+
 <div class="container-fluid p-0">
     
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -28,7 +100,7 @@ $id_alumno = $alumno['id_alumno'] ?? null;
             <button type="button" class="btn btn-outline-danger" data-filtro="reprobadas">Reprobadas</button>
         </div>
         
-        <button class="btn btn-outline-dark btn-sm" onclick="window.print()">
+        <button class="btn btn-outline-dark btn-sm">
             <i class="bi bi-printer"></i> Imprimir Kardex
         </button>
     </div>
