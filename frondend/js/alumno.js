@@ -109,46 +109,60 @@ function cargarETSDisponibles() {
         .catch(() => { tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">No se pudo conectar con el servidor.</td></tr>`; });
 }
 
+// Envía la solicitud de inscripción al servidor
 function inscribirAlumnoETS(boton) {
     const idExamen = boton.getAttribute('data-id');
     const materia = boton.getAttribute('data-materia');
 
-    if (!confirm(`¿Confirmas tu inscripción al ETS de "${materia}"?\nDespués deberás subir tu comprobante de pago.`)) return;
+    // 1. Reemplazamos el confirm() feo por un Swal.fire elegante
+    Swal.fire({
+        title: '¿Confirmar inscripción?',
+        html: `Estás a punto de inscribirte al ETS de <b>${materia}</b>.<br><br><small>Después deberás subir tu comprobante de pago.</small>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754', // Color verde (success) de Bootstrap
+        cancelButtonColor: '#6c757d',  // Color gris (secondary)
+        confirmButtonText: '<i class="bi bi-check-circle"></i> Sí, inscribirme',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        // 2. Si el alumno dice que SÍ, ejecutamos el código de inscripción
+        if (result.isConfirmed) {
+            
+            const htmlOriginal = boton.innerHTML;
+            boton.disabled = true;
+            boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Inscribiendo...';
 
-    const htmlOriginal = boton.innerHTML;
-    boton.disabled = true;
-    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Inscribiendo...';
-
-    fetch('../../php/endpoints/inscribir.php', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_examen: idExamen })
-    })
-    .then(res => res.json())
-    .then(datos => {
-        if (datos.status === 'success') {
-            alert("✅ " + (datos.message || "¡Inscripción registrada con éxito!"));
-            cargarETSDisponibles(); 
-        } else {
-            alert("⚠️ " + datos.message);
-            boton.disabled = false; boton.innerHTML = htmlOriginal;
+            fetch('../../php/endpoints/inscribir.php', {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ id_examen: idExamen })
+            })
+            .then(res => res.json())
+            .then(datos => {
+                if (datos.status === 'success') {
+                    // Alerta bonita de Éxito
+                    Swal.fire({
+                        title: '¡Inscrito!',
+                        text: datos.message || "Tu inscripción ha sido registrada con éxito.",
+                        icon: 'success',
+                        confirmButtonColor: '#0d6efd' // Azul para combinar con tu panel
+                    });
+                    cargarETSDisponibles(); // Refrescamos la tabla
+                } else {
+                    // Alerta bonita de Advertencia
+                    Swal.fire('Atención', datos.message, 'warning');
+                    boton.disabled = false; 
+                    boton.innerHTML = htmlOriginal;
+                }
+            })
+            .catch(() => { 
+                // Alerta bonita de Error
+                Swal.fire('Error', 'Ocurrió un error al comunicar con el servidor.', 'error');
+                boton.disabled = false; 
+                boton.innerHTML = htmlOriginal; 
+            });
         }
-    })
-    .catch(() => { alert("Ocurrió un error al comunicar con el servidor."); boton.disabled = false; boton.innerHTML = htmlOriginal; });
-}
-
-function inicializarFiltroETS() {
-    const input = document.getElementById('buscador-ets');
-    const btnFiltrar = document.getElementById('btn-filtrar-ets');
-    if (!input) return;
-
-    const filtrar = () => {
-        const texto = input.value.toLowerCase().trim();
-        document.querySelectorAll('#tbody-ets-alumno tr').forEach(fila => {
-            if (fila.cells.length > 1) fila.style.display = fila.innerText.toLowerCase().includes(texto) ? '' : 'none';
-        });
-    };
-
-    input.addEventListener('keyup', filtrar);
-    if (btnFiltrar) btnFiltrar.addEventListener('click', filtrar);
+    });
 }
 
 function iniciarVistaInscripcionETS() {
