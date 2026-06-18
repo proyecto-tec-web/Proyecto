@@ -1,13 +1,11 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once './../config/db.php';
+session_start();
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
-    echo json_encode(["status" => "error", "message" => "Acceso no autorizado."]);
-    exit();
-}
+
 
 if (!isset($conexion) || !($conexion instanceof PDO)) {
     echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);

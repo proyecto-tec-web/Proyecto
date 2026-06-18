@@ -117,7 +117,7 @@ document.addEventListener('submit', function(e) {
         const btnActual = formActual.querySelector('#btn-guardar-inscripcion');
 
         if (!idExamen) {
-            alert("Por favor, selecciona un examen válido.");
+            Swal.fire('Atención', 'Por favor, selecciona un examen válido.', 'warning');
             return;
         }
 
@@ -135,7 +135,7 @@ document.addEventListener('submit', function(e) {
             btnActual.innerHTML = '<i class="bi bi-save me-1"></i> Confirmar Inscripción';
 
             if (datos.status === 'success') {
-                alert("¡Alumno inscrito correctamente!");
+                Swal.fire('¡Éxito!', 'Alumno inscrito correctamente.', 'success');
                 
                 const modalElement = formActual.closest('.modal');
                 const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -146,69 +146,93 @@ document.addEventListener('submit', function(e) {
                 formActual.reset();
                 cargarTablaInscripciones(); 
             } else {
-                alert("Error: " + datos.message);
+                Swal.fire('Error', datos.message, 'error');
             }
         })
         .catch(err => {
             btnActual.disabled = false;
             btnActual.innerHTML = '<i class="bi bi-save me-1"></i> Confirmar Inscripción';
-            alert('Fallo la conexión con el servidor.');
+            Swal.fire('Error', 'Fallo la conexión con el servidor.', 'error');
         });
     }
 });
 
 function eliminarInscripcionAlumno(idInscripcion) {
-    if (!confirm(`¿Estás completamente seguro de que deseas eliminar permanentemente la inscripción #${idInscripcion}?`)) return;
-
-    fetch('/php/endpoints/eliminar_inscripcion.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_inscripcion: idInscripcion })
-    })
-    .then(res => res.json())
-    .then(datos => {
-        if (datos.status === 'success') {
-            alert("Inscripción eliminada correctamente.");
-            cargarTablaInscripciones();
-        } else {
-            alert("Error: " + datos.message);
+    Swal.fire({
+        title: `¿Eliminar permanentemente la inscripción #${idInscripcion}?`,
+        text: 'Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/php/endpoints/eliminar_inscripcion.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_inscripcion: idInscripcion })
+            })
+            .then(res => res.json())
+            .then(datos => {
+                if (datos.status === 'success') {
+                    Swal.fire('¡Eliminada!', 'Inscripción eliminada correctamente.', 'success');
+                    cargarTablaInscripciones();
+                } else {
+                    Swal.fire('Error', datos.message, 'error');
+                }
+            })
+            .catch(err => {
+                Swal.fire('Error', 'Fallo de conexión con el servidor.', 'error');
+            });
         }
-    })
-    .catch(err => {
-        alert("Fallo de conexión con el servidor.");
     });
 }
 
 // FUNCIÓN PARA APROBAR / RECHAZAR PAGOS
 window.cambiarEstadoPago = function(idInscripcion, nuevoEstado) {
     let accion = nuevoEstado === 'Pagado' ? 'aprobar' : 'rechazar';
+    let iconType = nuevoEstado === 'Pagado' ? 'question' : 'warning';
+    let btnColor = nuevoEstado === 'Pagado' ? '#198754' : '#d33';
     
-    if (!confirm(`¿Estás seguro de que deseas ${accion} el pago de la inscripción #${idInscripcion}?`)) {
-        return;
-    }
-
-    fetch('/php/endpoints/actualizar_estado_pago.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            id_inscripcion: idInscripcion, 
-            estado: nuevoEstado 
-        })
-    })
-    .then(res => res.json())
-    .then(datos => {
-        if (datos.status === 'success') {
-            cargarTablaInscripciones();
-            if (nuevoEstado === 'Rechazado') {
-                alert("Pago rechazado. Esta boleta sigue manteniendo su cupo hasta que la borres.");
-            }
-        } else {
-            alert("Error: " + datos.message);
+    Swal.fire({
+        title: `¿Estás seguro de que deseas ${accion} el pago?`,
+        text: `Inscripción #${idInscripcion}`,
+        icon: iconType,
+        showCancelButton: true,
+        confirmButtonColor: btnColor,
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: `Sí, ${accion}`,
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/php/endpoints/actualizar_estado_pago.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    id_inscripcion: idInscripcion, 
+                    estado: nuevoEstado 
+                })
+            })
+            .then(res => res.json())
+            .then(datos => {
+                if (datos.status === 'success') {
+                    cargarTablaInscripciones();
+                    if (nuevoEstado === 'Rechazado') {
+                        Swal.fire('Pago rechazado', 'Esta boleta sigue manteniendo su cupo hasta que la borres.', 'info');
+                    } else {
+                        Swal.fire('¡Aprobado!', 'El pago ha sido registrado correctamente.', 'success');
+                    }
+                } else {
+                    Swal.fire('Error', datos.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error("Fallo de red:", err);
+                Swal.fire('Error', 'Fallo la conexión con el servidor.', 'error');
+            });
         }
-    })
-    .catch(err => {
-        console.error("Fallo de red:", err);
-        alert("Fallo la conexión con el servidor.");
     });
 };
 

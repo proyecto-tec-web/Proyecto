@@ -11,7 +11,7 @@ if (!isset($conexion) || !($conexion instanceof PDO)) {
     echo json_encode(['status' => 'error', 'message' => 'No hay conexión a la base de datos.']);
     exit;
 }
-
+session_start();
 if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
     echo json_encode(["status" => "error", "message" => "Acceso no autorizado."]);
     exit();

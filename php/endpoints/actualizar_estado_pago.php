@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once './../config/db.php';
+session_start();
 
 if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'admin' )) {
     echo json_encode(["status" => "error", "message" => "Acceso denegado."]);

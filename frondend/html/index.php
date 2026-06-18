@@ -122,6 +122,7 @@ if ($rol_usuario !== 'admin') {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="./../js/app.js?v=1000"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="./../js/inscripciones.js?v=1000"></script>
     <script src="./../js/alumnos.js?v=1000"></script>
     <script src="./../js/catalogos.js?v=1001"></script>
