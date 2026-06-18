@@ -146,8 +146,13 @@ function cargarTablaAlumnos() {
 function configurarEventosAlumnos() {
     
     // CREAR ALUMNO
-    const btnGuardar = document.getElementById('btn-guardar-alumno');
+    let btnGuardar = document.getElementById('btn-guardar-alumno');
     if(btnGuardar) {
+        // Destrucción de listeners duplicados
+        let nuevoBtnGuardar = btnGuardar.cloneNode(true);
+        btnGuardar.parentNode.replaceChild(nuevoBtnGuardar, btnGuardar);
+        btnGuardar = nuevoBtnGuardar;
+
         btnGuardar.addEventListener('click', () => {
             const datos = {
                 boleta: document.getElementById('alum-boleta').value,
@@ -192,15 +197,19 @@ function configurarEventosAlumnos() {
         });
     }
 
-    // ACTUALIZAR ALUMNO (¡CORREGIDO!)
-    const btnActualizar = document.getElementById('btn-actualizar-alumno');
+    // ACTUALIZAR ALUMNO
+    let btnActualizar = document.getElementById('btn-actualizar-alumno');
     if(btnActualizar) {
+        // Destrucción de listeners duplicados
+        let nuevoBtnActualizar = btnActualizar.cloneNode(true);
+        btnActualizar.parentNode.replaceChild(nuevoBtnActualizar, btnActualizar);
+        btnActualizar = nuevoBtnActualizar;
+
         btnActualizar.addEventListener('click', () => {
             const datos = {
                 id: document.getElementById('edit-alum-id').value,
                 boleta: document.getElementById('edit-alum-boleta').value,
                 carrera: document.getElementById('edit-alum-carrera').value,
-                // ELIMINAMOS LA LÍNEA QUE ROMPÍA EL CÓDIGO AQUÍ
                 nombre: document.getElementById('edit-alum-nombre').value,
                 paterno: document.getElementById('edit-alum-paterno').value,
                 materno: document.getElementById('edit-alum-materno').value
@@ -257,6 +266,8 @@ function configurarEventosAlumnos() {
         });
     }
 
+    // Los inputs de búsqueda no requieren clonación porque no ejecutan inserciones SQL
+    // y la función aplicarFiltros no tiene efectos secundarios asíncronos.
     if (buscador) buscador.addEventListener('keyup', aplicarFiltros);
     if (filtroSituacion) filtroSituacion.addEventListener('change', aplicarFiltros);
 }

@@ -30,7 +30,12 @@ if ($datos) {
         echo json_encode(["status" => "success"]);
     } catch (PDOException $e) {
         $conexion->rollBack();
-        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        if ($e->errorInfo[1] == 1062) {
+            echo json_encode(["status" => "error", "message" => "El correo ingresado ya está registrado."]);
+        } else {
+            // Ocultar detalles técnicos al cliente
+            echo json_encode(["status" => "error", "message" => "Ocurrió un error en la base de datos."]);
+        }
     }
 }
 $conexion = null;
