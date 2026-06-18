@@ -12,8 +12,9 @@
         </div>
         <select class="form-select shadow-sm w-25" id="filtro-situacion">
             <option value="Todos">Todos los estados</option>
-            <option value="Regular">Solo Regulares</option>
-            <option value="Irregular">Solo Irregulares</option>
+            <option value="Regular">Solo Regulares (Activos)</option>
+            <option value="Irregular">Solo Irregulares (Activos)</option>
+            <option value="Baja">Solo Bajas (Inactivos)</option>
         </select>
     </div>
     

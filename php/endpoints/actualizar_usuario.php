@@ -16,7 +16,7 @@ if ($datos) {
     try {
         if (!empty($datos['password'])) {
             $password_hash = password_hash($datos['password'], PASSWORD_DEFAULT);
-            $sql = "UPDATE usuario SET correo = ?, rol = ?, password = ? WHERE id_usuario = ?";
+            $sql = "UPDATE usuario SET correo = ?, rol = ?, contrasena_hash = ? WHERE id_usuario = ?";
             $stmt = $conexion->prepare($sql);
             $stmt->execute([$datos['correo'], $datos['rol'], $password_hash, $datos['id']]);
         } else {

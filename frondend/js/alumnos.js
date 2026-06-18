@@ -46,13 +46,35 @@ function cargarTablaAlumnos() {
             }
 
             datos.data.forEach(al => {
-                let badgeSit = (al.situacion_academica === 'Regular') ? 'success' : (al.situacion_academica === 'Irregular' ? 'warning' : 'danger');
-                
+                // 1. CONFIGURAR EL COLOR DEL ESTADO (Regular = verde, Irregular = amarillo, Baja = rojo/gris)
+                let badgeSit = 'success';
+                let btnBaja = '';
+
+                if (al.situacion_academica === 'Regular') {
+                    badgeSit = 'success';
+                } else if (al.situacion_academica === 'Irregular') {
+                    badgeSit = 'warning text-dark';
+                } else if (al.situacion_academica === 'Baja') {
+                    badgeSit = 'secondary'; // Color gris para que parezca inactivo
+                }
+
+                // 2. CONFIGURAR EL BOTÓN DE BAJA (Si ya está de baja, lo bloqueamos)
+                if (al.situacion_academica !== 'Baja') {
+                    btnBaja = `<button class="btn btn-sm btn-outline-danger me-1 btn-eliminar-alumno" data-id="${al.id_alumno}" title="Dar de Baja">
+                                    <i class="bi bi-person-dash"></i>
+                               </button>`;
+                } else {
+                    // Botón bloqueado indicando que ya está inactivo
+                    btnBaja = `<button class="btn btn-sm btn-secondary me-1 disabled" title="Alumno Inactivo">
+                                    <i class="bi bi-person-fill-slash"></i> Baja
+                               </button>`;
+                }
+
                 tbody.innerHTML += `
                     <tr>
-                        <td class="ps-4 fw-bold text-secondary">${al.boleta}</td>
-                        <td>${al.apellido_paterno} ${al.apellido_materno} ${al.nombre}</td>
-                        <td>${al.carrera}</td>
+                        <td class="ps-4 fw-bold ${al.situacion_academica === 'Baja' ? 'text-muted text-decoration-line-through' : 'text-secondary'}">${al.boleta}</td>
+                        <td class="${al.situacion_academica === 'Baja' ? 'text-muted' : ''}">${al.apellido_paterno} ${al.apellido_materno} ${al.nombre}</td>
+                        <td class="${al.situacion_academica === 'Baja' ? 'text-muted' : ''}">${al.carrera}</td>
                         <td><span class="badge bg-${badgeSit}">${al.situacion_academica}</span></td>
                         <td class="pe-4 text-end">
                             <button class="btn btn-sm btn-outline-info me-1 btn-kardex" data-id="${al.id_alumno}" title="Ver Kardex">
@@ -61,6 +83,7 @@ function cargarTablaAlumnos() {
                             <button class="btn btn-sm btn-outline-primary me-1 btn-editar-alumno" data-id="${al.id_alumno}" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </button>
+                            ${btnBaja}
                         </td>
                     </tr>
                 `;
@@ -70,7 +93,7 @@ function cargarTablaAlumnos() {
             // EVENTOS DE LOS BOTONES DE LA TABLA
             // ==========================================
             
-            // 1. Botón Editar (¡CORREGIDO!)
+            // 1. Botón Editar
             tbody.querySelectorAll('.btn-editar-alumno').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const idAlumno = this.getAttribute('data-id');
@@ -82,14 +105,13 @@ function cargarTablaAlumnos() {
                                 document.getElementById('edit-alum-id').value = data.alumno.id_alumno;
                                 document.getElementById('edit-alum-boleta').value = data.alumno.boleta;
                                 document.getElementById('edit-alum-carrera').value = data.alumno.id_carrera;
-                                // ELIMINAMOS LA LÍNEA QUE ROMPÍA EL CÓDIGO AQUÍ
                                 document.getElementById('edit-alum-nombre').value = data.alumno.nombre;
                                 document.getElementById('edit-alum-paterno').value = data.alumno.apellido_paterno;
                                 document.getElementById('edit-alum-materno').value = data.alumno.apellido_materno;
                                 
                                 new bootstrap.Modal(document.getElementById('modalEditarAlumno')).show();
                             } else {
-                                alert("Error: " + data.message);
+                                Swal.fire('Error', data.message, 'error');
                             }
                         });
                 });
@@ -128,11 +150,53 @@ function cargarTablaAlumnos() {
                                 }
                                 
                                 new bootstrap.Modal(document.getElementById('modalKardex')).show();
-                                cargarTablaAlumnos(); 
+                                // Quitamos cargarTablaAlumnos() de aquí para que no se refresque sin necesidad al cerrar
                             } else {
-                                alert("Error al cargar Kardex: " + data.message);
+                                Swal.fire('Error', 'Error al cargar Kardex: ' + data.message, 'error');
                             }
                         });
+                });
+            });
+
+            // 3. Botón Dar de Baja
+            tbody.querySelectorAll('.btn-eliminar-alumno').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const idAlumno = this.getAttribute('data-id');
+                    const nombreAlumno = this.closest('tr').cells[1].innerText; 
+
+                    Swal.fire({
+                        title: `¿Dar de baja a ${nombreAlumno}?`,
+                        text: "El alumno pasará a estado inactivo y ya no podrá iniciar sesión en el sistema. Su historial se conservará.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Sí, dar de baja',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            Swal.fire({ title: 'Procesando...', text: 'Por favor espera.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+                            fetch('/php/endpoints/eliminar_alumno.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id_alumno: idAlumno })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    Swal.fire('¡Baja exitosa!', data.message, 'success');
+                                    cargarTablaAlumnos(); // Refrescar la tabla para ver el cambio a Inactivo
+                                } else {
+                                    Swal.fire('Error', data.message, 'error');
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                Swal.fire('Error', 'Fallo de conexión con el servidor.', 'error');
+                            });
+                        }
+                    });
                 });
             });
 
@@ -145,7 +209,6 @@ function cargarTablaAlumnos() {
 
 function configurarEventosAlumnos() {
     
-    // CREAR ALUMNO
     let btnGuardar = document.getElementById('btn-guardar-alumno');
     if(btnGuardar) {
         // Destrucción de listeners duplicados
@@ -154,19 +217,47 @@ function configurarEventosAlumnos() {
         btnGuardar = nuevoBtnGuardar;
 
         btnGuardar.addEventListener('click', () => {
+            // 1. OBTENER Y LIMPIAR (trim) LOS DATOS DE ENTRADA
             const datos = {
-                boleta: document.getElementById('alum-boleta').value,
+                boleta: document.getElementById('alum-boleta').value.trim(),
                 carrera: document.getElementById('alum-carrera').value,
-                nombre: document.getElementById('alum-nombre').value,
-                paterno: document.getElementById('alum-paterno').value,
-                materno: document.getElementById('alum-materno').value,
-                correo: document.getElementById('alum-correo').value
+                nombre: document.getElementById('alum-nombre').value.trim(),
+                paterno: document.getElementById('alum-paterno').value.trim(),
+                materno: document.getElementById('alum-materno').value.trim(),
+                correo: document.getElementById('alum-correo').value.trim()
             };
 
-            if(!datos.boleta || !datos.carrera || !datos.nombre || !datos.correo) {
-                alert("Completa los campos principales."); return;
+            // 2. EXPRESIONES REGULARES (Filtros)
+            const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+            const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const regexBoleta = /^[0-9]{10}$/; // Asume 10 números exactos
+
+            // 3. VALIDACIONES
+            // A. Campos principales vacíos
+            if(!datos.boleta || !datos.carrera || !datos.nombre || !datos.paterno || !datos.correo) {
+                alert("Por favor, completa todos los campos obligatorios."); 
+                return;
             }
 
+            // B. Validar formato de nombres y apellidos (solo letras)
+            if(!regexNombre.test(datos.nombre) || !regexNombre.test(datos.paterno) || (datos.materno !== "" && !regexNombre.test(datos.materno))) {
+                alert("El nombre y los apellidos solo deben contener letras y espacios.");
+                return;
+            }
+
+            // C. Validar Boleta (Solo 10 números)
+            if(!regexBoleta.test(datos.boleta)) {
+                alert("La boleta debe contener exactamente 10 números (sin espacios ni letras).");
+                return;
+            }
+
+            // D. Validar formato de Correo Electrónico
+            if(!regexCorreo.test(datos.correo)) {
+                alert("Por favor, ingresa un correo electrónico válido (ejemplo@dominio.com).");
+                return;
+            }
+
+            // 4. SI TODO PASA, ENVIAR AL SERVIDOR
             btnGuardar.disabled = true;
             btnGuardar.innerText = "Inscribiendo...";
 
@@ -193,6 +284,7 @@ function configurarEventosAlumnos() {
                 alert("Ocurrió un error de conexión.");
                 btnGuardar.disabled = false;
                 btnGuardar.innerText = "Finalizar Inscripción";
+                console.error(err);
             });
         });
     }

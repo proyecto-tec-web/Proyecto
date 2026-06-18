@@ -770,16 +770,44 @@ function aplicarFiltrosProfesor() {
 }
 
 function guardarNuevoProfesor() {
+    // 1. Obtener y limpiar (trim) los datos
     const datos = {
-        boleta: document.getElementById('prof-boleta').value, nombre: document.getElementById('prof-nombre').value,
-        paterno: document.getElementById('prof-paterno').value, materno: document.getElementById('prof-materno').value,
-        correo: document.getElementById('prof-correo').value, password: document.getElementById('prof-password').value
+        boleta: document.getElementById('prof-boleta').value.trim(),
+        nombre: document.getElementById('prof-nombre').value.trim(),
+        paterno: document.getElementById('prof-paterno').value.trim(),
+        materno: document.getElementById('prof-materno').value.trim(),
+        correo: document.getElementById('prof-correo').value.trim(),
+        password: document.getElementById('prof-password').value.trim()
     };
+
+    // 2. Expresiones Regulares (Filtros)
+    const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Permite números y letras, común en algunos números de empleado institucionales
+    const regexBoleta = /^[0-9A-Za-z]+$/; 
+
+    // 3. Validaciones
     if (!datos.boleta || !datos.nombre || !datos.paterno || !datos.materno || !datos.correo || !datos.password) { 
-        Swal.fire('Atención', 'Llena todos los campos.', 'warning'); 
+        Swal.fire('Atención', 'Por favor, completa todos los campos obligatorios.', 'warning'); 
         return; 
     }
 
+    if (!regexBoleta.test(datos.boleta)) {
+        Swal.fire('Atención', 'El No. de Empleado contiene caracteres no válidos (usa solo números y letras, sin espacios).', 'warning');
+        return;
+    }
+
+    if (!regexNombre.test(datos.nombre) || !regexNombre.test(datos.paterno) || !regexNombre.test(datos.materno)) {
+        Swal.fire('Atención', 'El nombre y apellidos solo deben contener letras y espacios.', 'warning');
+        return;
+    }
+
+    if (!regexCorreo.test(datos.correo)) {
+        Swal.fire('Atención', 'Por favor, ingresa un correo electrónico válido (ejemplo@ipn.mx).', 'warning');
+        return;
+    }
+
+    // 4. Enviar al Servidor
     const btn = document.getElementById('btn-guardar-profesor');
     btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
@@ -795,10 +823,14 @@ function guardarNuevoProfesor() {
         } else {
             Swal.fire('Error', data.message, 'error');
         }
+    }).catch(() => {
+        btn.disabled = false; btn.innerHTML = 'Guardar Profesor';
+        Swal.fire('Error', 'Problema de conexión con el servidor.', 'error');
     });
 }
 
 function actualizarProfesor() {
+    // 1. Obtener y limpiar (trim) los datos
     const datos = {
         boleta_actual: document.getElementById('edit-prof-boleta-actual').value,
         boleta_nueva: document.getElementById('edit-prof-boleta').value.trim(),
@@ -807,11 +839,27 @@ function actualizarProfesor() {
         materno: document.getElementById('edit-prof-materno').value.trim()
     };
 
+    // 2. Expresiones Regulares
+    const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    const regexBoleta = /^[0-9A-Za-z]+$/;
+
+    // 3. Validaciones
     if (!datos.boleta_nueva || !datos.nombre || !datos.paterno || !datos.materno) { 
-        Swal.fire('Atención', 'Llena todos los campos.', 'warning'); 
+        Swal.fire('Atención', 'Todos los campos son obligatorios.', 'warning'); 
         return; 
     }
 
+    if (!regexBoleta.test(datos.boleta_nueva)) {
+        Swal.fire('Atención', 'El No. de Empleado contiene caracteres no válidos.', 'warning');
+        return;
+    }
+
+    if (!regexNombre.test(datos.nombre) || !regexNombre.test(datos.paterno) || !regexNombre.test(datos.materno)) {
+        Swal.fire('Atención', 'El nombre y apellidos solo deben contener letras y espacios.', 'warning');
+        return;
+    }
+
+    // 4. Enviar al Servidor
     const btn = document.getElementById('btn-actualizar-profesor');
     btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
@@ -826,6 +874,9 @@ function actualizarProfesor() {
         } else {
             Swal.fire('Error', data.message, 'error');
         }
+    }).catch(() => {
+        btn.disabled = false; btn.innerHTML = 'Actualizar Profesor';
+        Swal.fire('Error', 'Problema de conexión con el servidor.', 'error');
     });
 }
 

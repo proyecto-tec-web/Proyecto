@@ -6,12 +6,19 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../config/db.php';
 
+// 1. Validar que exista una sesión
 if (!isset($_SESSION['id_usuario'])) {
     echo json_encode(['status' => 'error', 'message' => 'Acceso denegado. Inicia sesión.']);
     exit;
 }
 
 $rol_usuario = strtolower(trim($_SESSION['rol'] ?? $_SESSION['usuario_rol'] ?? ''));
+
+// 2. BLOQUEO ABSOLUTO A ALUMNOS
+if ($rol_usuario === 'alumno') {
+    echo json_encode(['status' => 'error', 'message' => 'Acceso denegado. Los alumnos no pueden calificar exámenes.']);
+    exit;
+}
 
 $data = json_decode(file_get_contents("php://input"), true);
 $id_examen = $data['id_examen'] ?? null;
@@ -23,13 +30,26 @@ if (!$id_examen || empty($calificaciones)) {
 }
 
 try {
-    $stmtExamen = $conexion->prepare("SELECT estado FROM examen WHERE id_examen = ?");
+    // 3. OBTENEMOS EL ESTADO Y EL DUEÑO (PROFESOR) DEL EXAMEN
+    $stmtExamen = $conexion->prepare("SELECT estado, id_profesor FROM examen WHERE id_examen = ?");
     $stmtExamen->execute([$id_examen]);
     $examen = $stmtExamen->fetch(PDO::FETCH_ASSOC);
 
     if (!$examen) {
         echo json_encode(['status' => 'error', 'message' => 'El examen no existe.']);
         exit;
+    }
+
+    // 4. VERIFICAMOS PROPIEDAD SI ES UN PROFESOR
+    if ($rol_usuario === 'profesor') {
+        $stmtProf = $conexion->prepare("SELECT id_profesor FROM profesor WHERE id_usuario = ?");
+        $stmtProf->execute([$_SESSION['id_usuario']]);
+        $profesor = $stmtProf->fetch(PDO::FETCH_ASSOC);
+
+        if (!$profesor || $examen['id_profesor'] != $profesor['id_profesor']) {
+            echo json_encode(['status' => 'error', 'message' => 'Acceso denegado. No eres el titular de este examen.']);
+            exit;
+        }
     }
 
     $estado_actual = $examen['estado'];

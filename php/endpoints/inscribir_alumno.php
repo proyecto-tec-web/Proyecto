@@ -1,7 +1,13 @@
 <?php
+session_start(); // 1. INICIAMOS SESIÓN
 header('Content-Type: application/json; charset=utf-8');
 require_once './../config/db.php';
-session_start();
+
+// 2. ESCUDO DE SEGURIDAD: Solo el admin puede inscribir manualmente (o ajusta si el alumno puede)
+if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'] ?? '')) !== 'admin')) {
+    echo json_encode(["status" => "error", "message" => "Acceso denegado. Se requieren permisos de administrador."]);
+    exit();
+}
 
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -30,7 +36,6 @@ try {
     }
     
     $id_alumno = $alumno['id_alumno'];
-
 
     $sqlKardex = "SELECT k.calificacion 
                 FROM kardex k 
