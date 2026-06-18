@@ -1,6 +1,7 @@
 // =================================================================
 // MÓDULO INDEPENDIENTE: GESTIÓN DE ALUMNOS Y KARDEX
 // =================================================================
+console.log('ALUMNO.JS CARGADO');
 
 function iniciarVistaAlumnos() {
     cargarTablaAlumnos();
@@ -88,7 +89,7 @@ function cargarTablaAlumnos() {
                                 
                                 new bootstrap.Modal(document.getElementById('modalEditarAlumno')).show();
                             } else {
-                                Swal.fire('Error', data.message, 'error');
+                                alert("Error: " + data.message);
                             }
                         });
                 });
@@ -129,7 +130,7 @@ function cargarTablaAlumnos() {
                                 new bootstrap.Modal(document.getElementById('modalKardex')).show();
                                 cargarTablaAlumnos(); 
                             } else {
-                                Swal.fire('Error', 'Error al cargar Kardex: ' + data.message, 'error');
+                                alert("Error al cargar Kardex: " + data.message);
                             }
                         });
                 });
@@ -158,8 +159,7 @@ function configurarEventosAlumnos() {
             };
 
             if(!datos.boleta || !datos.carrera || !datos.nombre || !datos.correo) {
-                Swal.fire('Atención', 'Completa los campos principales.', 'warning');
-                return;
+                alert("Completa los campos principales."); return;
             }
 
             btnGuardar.disabled = true;
@@ -176,16 +176,16 @@ function configurarEventosAlumnos() {
                     const modalEl = document.getElementById('modalNuevoAlumno');
                     if(modalEl) bootstrap.Modal.getInstance(modalEl).hide();
                     document.getElementById('form-nuevo-alumno').reset();
-                    Swal.fire('¡Éxito!', 'Alumno y cuenta de usuario creados con éxito.', 'success');
+                    alert("Alumno y cuenta de usuario creados con éxito.");
                     cargarTablaAlumnos();
                 } else {
-                    Swal.fire('Error', respuesta.message, 'error');
+                    alert("Error: " + respuesta.message);
                 }
                 btnGuardar.disabled = false;
                 btnGuardar.innerText = "Finalizar Inscripción";
             })
             .catch(err => {
-                Swal.fire('Error', 'Ocurrió un error de conexión.', 'error');
+                alert("Ocurrió un error de conexión.");
                 btnGuardar.disabled = false;
                 btnGuardar.innerText = "Finalizar Inscripción";
             });
@@ -219,10 +219,10 @@ function configurarEventosAlumnos() {
                 if(respuesta.status === 'success') {
                     const modalEl = document.getElementById('modalEditarAlumno');
                     if(modalEl) bootstrap.Modal.getInstance(modalEl).hide();
-                    Swal.fire('¡Éxito!', 'Datos del alumno actualizados correctamente.', 'success');
+                    alert("Datos del alumno actualizados correctamente.");
                     cargarTablaAlumnos();
                 } else {
-                    Swal.fire('Error', respuesta.message, 'error');
+                    alert("Error: " + respuesta.message);
                 }
                 btnActualizar.disabled = false;
                 btnActualizar.innerText = "Guardar Cambios";

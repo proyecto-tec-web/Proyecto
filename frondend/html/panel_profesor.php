@@ -167,7 +167,7 @@ if (isset($_SESSION['usuario_nombre']) && !empty(trim($_SESSION['usuario_nombre'
                                 <img src="../img/logoESCOMBlanco.png" alt="ESCOM" class="img-fluid" style="max-height: 65px;">
                                 <img src="../img/tiburonProfesor.png" alt="Logo Institucional" class="img-fluid" style="max-height: 65px;">
                             </div>
-                            <h5 class="fw-bold mt-2" style="font-family: 'Montserrat', sans-serif;">Planta Docente</h5>
+                            <h5 class="fw-bold mt-2" style="font-family: 'Montserrat', sans-serif;">Portal Docente</h5>
                             <span class="badge bg-light text-primary mb-2 px-3 py-1 rounded-pill">Profesor</span><br>
                             <small class="text-light opacity-75" style="letter-spacing: 0.5px;"><?php echo $_SESSION['usuario_correo']; ?></small>
                         </div>
@@ -245,7 +245,6 @@ if (isset($_SESSION['usuario_nombre']) && !empty(trim($_SESSION['usuario_nombre'
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/just-validate@latest/dist/just-validate.production.min.js"></script>
     <script src="../js/app.js?v=<?php echo time(); ?>"></script>
     <script src="../js/profesor.js?v=<?php echo time(); ?>"></script>
