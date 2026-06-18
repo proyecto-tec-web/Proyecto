@@ -1,42 +1,42 @@
 <?php
 session_start();
 require_once '../config/db.php';
-    
-$datos = json_decode(file_get_contents("php://input"), true);
 
-if (!isset($datos['id_peticion'], $datos['id_inscripcion'], $datos['calificacion_nueva'], $datos['notas'])) {
-    echo json_encode(["status" => "error", "message" => "Datos incompletos para ejecutar la revisión."]);
-    exit();
-}
-if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'Profesor' && $_SESSION['rol'] !== 'admin') {
+if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])) !== 'profesor') {
     echo json_encode(["status" => "error", "message" => "Acceso no autorizado."]);
     exit();
 }
 
-if (!isset($conexion) || !($conexion instanceof PDO)) {
-    echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
-    exit;
+$datos = json_decode(file_get_contents("php://input"), true);
+
+if (!isset($datos['id_peticion'], $datos['calificacion_nueva'], $datos['notas'])) {
+    echo json_encode(["status" => "error", "message" => "Datos incompletos para calificar."]);
+    exit();
 }
 
 try {
-
     $conexion->beginTransaction();
 
-
-    $stmtCalif = $conexion->prepare("UPDATE inscripcion_examen SET calificacion = ? WHERE id_inscripcion = ?");
-    $stmtCalif->execute([$datos['calificacion_nueva'], $datos['id_inscripcion']]);
-
-    $stmtRev = $conexion->prepare("UPDATE revision_examen SET estado = 'Completada', notas_profesor = ? WHERE id_peticion = ?");
+    // 1. Guardamos las notas y cambiamos estado a Completada
+    $sqlRev = "UPDATE peticion_revision SET notas_profesor = ?, estado = 'Completada' WHERE id_peticion = ?";
+    $stmtRev = $conexion->prepare($sqlRev);
     $stmtRev->execute([$datos['notas'], $datos['id_peticion']]);
 
+    // 2. Modificamos la calificación en el kardex (inscripcion_examen)
+    $sqlCalif = "UPDATE inscripcion_examen 
+                 SET calificacion = ? 
+                 WHERE id_inscripcion = (SELECT id_inscripcion FROM peticion_revision WHERE id_peticion = ?)";
+    $stmtCalif = $conexion->prepare($sqlCalif);
+    $stmtCalif->execute([$datos['calificacion_nueva'], $datos['id_peticion']]);
+
     $conexion->commit();
-    
-    echo json_encode(["status" => "success"]);
+    echo json_encode(["status" => "success", "message" => "Calificación modificada exitosamente."]);
 
 } catch (PDOException $e) {
     $conexion->rollBack();
-    echo json_encode(["status" => "error", "message" => "Error al ejecutar la revisión: " . $e->getMessage()]);
+    echo json_encode(["status" => "error", "message" => "Error al ejecutar revisión: " . $e->getMessage()]);
 }
 
 $conexion = null;
+
 ?>
