@@ -27,11 +27,6 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'La boleta ingresada no pertenece a ningún alumno registrado.']);
         exit;
     }
-
-    if (strtolower(trim($alumno['situacion_academica'])) !== 'irregular') {
-        echo json_encode(['status' => 'error', 'message' => 'Inscripción denegada. El alumno es "Regular". Solo los alumnos irregulares pueden presentar ETS.']);
-        exit;
-    }
     
     $id_alumno = $alumno['id_alumno'];
 
