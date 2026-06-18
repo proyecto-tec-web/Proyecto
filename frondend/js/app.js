@@ -451,6 +451,9 @@ function cargarTablaExamenes() {
                     </tr>`;
             });
 
+            // =======================================
+            // LÓGICA PARA ABRIR EXAMEN (Con SweetAlert)
+            // =======================================
             tbody.querySelectorAll('.btn-abrir-ets').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
@@ -458,13 +461,19 @@ function cargarTablaExamenes() {
                         title: '¿ABRIR inscripciones para este examen?',
                         icon: 'question',
                         showCancelButton: true,
+                        confirmButtonColor: '#198754',
+                        cancelButtonColor: '#6c757d',
                         confirmButtonText: 'Sí, abrir',
                         cancelButtonText: 'Cancelar'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            fetch('../../php/endpoints/abrir_examen.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_examen: id }) })
+                            fetch('../../php/endpoints/abrir_examen.php', { 
+                                method: 'POST', 
+                                headers: {'Content-Type': 'application/json'}, 
+                                body: JSON.stringify({ id_examen: id, id: id }) 
+                            })
                             .then(res => res.json()).then(data => { 
-                                if(data.status==='success') {
+                                if(data.status === 'success') {
                                     Swal.fire('¡Abierto!', 'Inscripciones abiertas correctamente.', 'success');
                                     cargarTablaExamenes(); 
                                 } else {
@@ -476,11 +485,16 @@ function cargarTablaExamenes() {
                 });
             });
 
+            // =======================================
+            // LÓGICA PARA ELIMINAR EXAMEN (Con manejo de errores reales)
+            // =======================================
             tbody.querySelectorAll('.btn-eliminar-ets').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
+                    
                     Swal.fire({
                         title: `¿Eliminar examen #${id}?`,
+                        text: `Vas a eliminar definitivamente este examen. Esta acción no se puede deshacer.`,
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#d33',
@@ -489,36 +503,75 @@ function cargarTablaExamenes() {
                         cancelButtonText: 'Cancelar'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            fetch('../../php/endpoints/eliminar_ets.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_examen: id }) })
-                            .then(res => res.json()).then(data => { 
-                                if(data.status==='success') {
-                                    Swal.fire('Eliminado', 'El examen ha sido eliminado.', 'success');
+                            Swal.fire({ title: 'Eliminando...', text: 'Por favor espera.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+                            fetch('../../php/endpoints/eliminar_ets.php', { 
+                                method: 'POST', 
+                                headers: {'Content-Type': 'application/json'}, 
+                                body: JSON.stringify({ id_examen: id, id: id })
+                            })
+                            .then(res => {
+                                if (!res.ok) throw new Error("Error en el servidor");
+                                return res.json();
+                            })
+                            .then(data => { 
+                                if(data.status === 'success') { 
+                                    Swal.fire('¡Eliminado!', 'El examen ha sido borrado.', 'success');
                                     cargarTablaExamenes(); 
-                                } else {
-                                    Swal.fire('Error', data.message, 'error');
+                                } else { 
+                                    Swal.fire('Error', data.message, 'error'); 
                                 } 
+                            })
+                            .catch(err => {
+                                console.error("Error técnico al eliminar:", err);
+                                Swal.fire(
+                                    'Error en la Base de Datos', 
+                                    'No se pudo eliminar el examen. Es posible que ya tenga alumnos inscritos o actas ligadas a él.', 
+                                    'error'
+                                );
                             });
                         }
                     });
                 });
             });
 
+            // =======================================
+            // LÓGICA PARA MODIFICAR EXAMEN 
+            // =======================================
             tbody.querySelectorAll('.btn-modificar-ets').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
-                    fetch(`../../php/endpoints/obtener_examen_id.php?id=${id}`)
-                        .then(res => res.json()).then(data => {
-                            if (data.status === 'success') {
-                                document.getElementById('edit-id').value = data.examen.id_examen;
-                                document.getElementById('edit-materia').value = data.examen.id_materia;
-                                document.getElementById('edit-sinodal').value = data.examen.id_profesor;
-                                document.getElementById('edit-fecha').value = data.examen.fecha;
-                                document.getElementById('edit-hora').value = data.examen.hora_inicio;
-                                document.getElementById('edit-salon').value = data.examen.id_salon;
-                                document.getElementById('edit-cupo').value = data.examen.cupo;
-                                new bootstrap.Modal(document.getElementById('modalEditarETS')).show();
+                    
+                    // 1. Primero cargamos los catálogos en los Selects del modal de edición
+                    fetch('../../php/endpoints/obtener_catalogos_ets.php')
+                        .then(res => res.json()).then(catData => {
+                            if(catData.status === 'success') {
+                                const selMat = document.getElementById('edit-materia');
+                                const selSin = document.getElementById('edit-sinodal');
+                                const selSal = document.getElementById('edit-salon');
+                                
+                                if(selMat) { selMat.innerHTML = '<option value="" disabled>Selecciona...</option>'; catData.materias.forEach(m => selMat.innerHTML += `<option value="${m.id_materia}">${m.nombre}</option>`); }
+                                if(selSin) { selSin.innerHTML = '<option value="" disabled>Selecciona...</option>'; catData.profesores.forEach(p => selSin.innerHTML += `<option value="${p.id_profesor}">${p.nombre}</option>`); }
+                                if(selSal) { selSal.innerHTML = '<option value="" disabled>Selecciona...</option>'; catData.salones.forEach(s => selSal.innerHTML += `<option value="${s.id_salon}">${s.nombre}</option>`); }
+                                
+                                // 2. Ya que están llenos los selects, pedimos los datos del examen
+                                fetch(`../../php/endpoints/obtener_examen_id.php?id=${id}`)
+                                    .then(res => res.json()).then(data => {
+                                        if (data.status === 'success') {
+                                            document.getElementById('edit-id').value = data.examen.id_examen;
+                                            document.getElementById('edit-materia').value = data.examen.id_materia;
+                                            document.getElementById('edit-sinodal').value = data.examen.id_profesor;
+                                            document.getElementById('edit-fecha').value = data.examen.fecha;
+                                            document.getElementById('edit-hora').value = data.examen.hora_inicio;
+                                            document.getElementById('edit-salon').value = data.examen.id_salon;
+                                            document.getElementById('edit-cupo').value = data.examen.cupo;
+                                            new bootstrap.Modal(document.getElementById('modalEditarETS')).show();
+                                        } else {
+                                            Swal.fire("Error", "Error al obtener los datos del examen: " + data.message, "error");
+                                        }
+                                    });
                             }
-                        });
+                        }).catch(err => console.error("Error cargando catálogos de edición:", err));
                 });
             });
         });
@@ -775,3 +828,74 @@ function actualizarProfesor() {
         }
     });
 }
+
+// ==========================================
+// MÓDULO ADMIN: ACTUALIZAR EXAMEN ETS (Global Listener)
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    // Escuchamos clics globales para atrapar el botón de actualizar examen que vive en el modal
+    document.body.addEventListener('click', function(e) {
+        if(e.target && e.target.id === 'btn-actualizar-ets') {
+            
+            const datos = {
+                id_examen: document.getElementById('edit-id').value,
+                materia: document.getElementById('edit-materia').value,
+                sinodal: document.getElementById('edit-sinodal').value,
+                fecha: document.getElementById('edit-fecha').value,
+                hora: document.getElementById('edit-hora').value,
+                salon: document.getElementById('edit-salon').value,
+                cupo: document.getElementById('edit-cupo').value
+            };
+
+            if(!datos.materia || !datos.sinodal || !datos.fecha || !datos.hora || !datos.salon || !datos.cupo) { 
+                Swal.fire("Atención", "Llena todos los campos.", "warning"); 
+                return; 
+            }
+
+            const btn = document.getElementById('btn-actualizar-ets');
+            const textoOriginal = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Actualizando...';
+            btn.disabled = true;
+
+            fetch('../../php/endpoints/actualizar_ets.php', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(datos) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = textoOriginal;
+                
+                if (data.status === 'success') {
+                    // 1. Ocultar el modal de Bootstrap (inicia la animación)
+                    const modalEl = document.getElementById('modalEditarETS');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                    
+                    // 2. Le damos 300 milisegundos a Bootstrap para que termine su animación
+                    setTimeout(() => {
+                        // Limpiamos forzosamente cualquier rastro del modal viejo
+                        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style.paddingRight = '';
+
+                        // 3. AHORA SÍ, mostramos la alerta de SweetAlert de forma segura
+                        Swal.fire('¡Actualizado!', 'El examen se modificó correctamente.', 'success'); 
+                        
+                        // 4. Recargamos la tabla de fondo
+                        if(typeof cargarTablaExamenes === 'function') cargarTablaExamenes();
+                    }, 300); // <-- 300ms de retraso estratégico
+
+                } else { 
+                    Swal.fire("Error", data.message, "error"); 
+                }
+            })
+            .catch(error => {
+                Swal.fire("Error de conexión", "No se pudo comunicar con el servidor.", "error"); 
+                btn.disabled = false; 
+                btn.innerHTML = textoOriginal;
+            });
+        }
+    });
+});
