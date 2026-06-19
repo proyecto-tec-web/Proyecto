@@ -305,10 +305,6 @@ INSERT INTO alumno (id_alumno, nombre, apellido_materno, apellido_paterno, bolet
 (22, 'Carmen', 'Vega', 'Romero', '2026000022', 'Irregular', 2, 28),
 (23, 'Arturo', 'Luna', 'Paredes', '2026000023', 'Irregular', 3, 29);
 
--- =========================================================================
--- 3. INSERTAR SUS CALIFICACIONES REPROBADAS EN EL KARDEX (> 3 reprobadas)
--- =========================================================================
-
 -- Kardex del Alumno 21 (Héctor): Tiene 4 reprobadas
 INSERT INTO kardex (id_alumno, id_materia, calificacion) VALUES
 (21, 1, 4.5), -- Cálculo Diferencial
