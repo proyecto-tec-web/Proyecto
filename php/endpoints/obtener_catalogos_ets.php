@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'seguridad_admin.php';
 require_once '../config/db.php';
 
 if (!isset($conexion) || !($conexion instanceof PDO)) {

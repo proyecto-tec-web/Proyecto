@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'seguridad_profesor.php';
 require_once '../config/db.php';
 
 if (!isset($_SESSION['id_usuario'])) {

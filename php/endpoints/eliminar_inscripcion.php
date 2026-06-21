@@ -5,7 +5,10 @@ session_start();
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-
+if (!isset($_SESSION['id_usuario']) || (strtolower(trim($_SESSION['usuario_rol'])) !== 'admin' )) {
+    echo json_encode(["status" => "error", "message" => "Acceso denegado."]);
+    exit();
+}
 
 if (!isset($conexion) || !($conexion instanceof PDO)) {
     echo json_encode(["status" => "error", "message" => "No hay conexión a la base de datos."]);
@@ -16,6 +19,7 @@ if (empty($input['id_inscripcion'])) {
     echo json_encode(['status' => 'error', 'message' => 'ID de inscripción no proporcionado.']);
     exit;
 }
+
 
 $id_inscripcion = intval($input['id_inscripcion']);
 

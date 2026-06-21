@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'seguridad_admin.php';
 header('Content-Type: application/json; charset=utf-8');
 require_once '../config/db.php';
 
