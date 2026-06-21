@@ -6,7 +6,39 @@ console.log('ALUMNO.JS CARGADO CORRECTAMENTE');
 // ==========================================
 // 1. MÓDULO: DASHBOARD (INICIO)
 // ==========================================
+
+// Carga el nombre y boleta del alumno en la tarjeta de bienvenida
+function cargarPerfilAlumno() {
+    fetch('/php/endpoints/obtener_perfil_alumno.php')
+        .then(response => response.json())
+        .then(data => {
+            const msjBienvenida = document.getElementById('mensaje-bienvenida');
+            const boletaAlumno = document.getElementById('boleta-alumno');
+            
+            // Verificamos que los elementos existan en el DOM actual
+            if (!msjBienvenida || !boletaAlumno) return;
+
+            if(data.status === 'success') {
+                msjBienvenida.textContent = '¡Bienvenido(a), ' + data.nombre + '!';
+                boletaAlumno.textContent = data.boleta;
+            } else {
+                console.error("Error al cargar perfil:", data.message);
+                msjBienvenida.textContent = 'Bienvenido(a)';
+                boletaAlumno.textContent = 'No disponible';
+            }
+        })
+        .catch(error => {
+            console.error("Error de conexión al cargar perfil:", error);
+            const msjBienvenida = document.getElementById('mensaje-bienvenida');
+            if (msjBienvenida) msjBienvenida.textContent = 'Bienvenido(a)';
+        });
+}
+
 function iniciarDashboardAlumno() {
+    // 1. Cargamos el perfil (Nombre y Boleta)
+    cargarPerfilAlumno();
+
+    // 2. Cargamos las métricas y la tabla
     fetch('/php/endpoints/obtener_dashboard_alumno.php')
     .then(response => response.json())
     .then(resultado => {
@@ -114,18 +146,16 @@ function inscribirAlumnoETS(boton) {
     const idExamen = boton.getAttribute('data-id');
     const materia = boton.getAttribute('data-materia');
 
-    // 1. Reemplazamos el confirm() feo por un Swal.fire elegante
     Swal.fire({
         title: '¿Confirmar inscripción?',
         html: `Estás a punto de inscribirte al ETS de <b>${materia}</b>.<br><br><small>Después deberás subir tu comprobante de pago.</small>`,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#198754', // Color verde (success) de Bootstrap
-        cancelButtonColor: '#6c757d',  // Color gris (secondary)
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
         confirmButtonText: '<i class="bi bi-check-circle"></i> Sí, inscribirme',
         cancelButtonText: 'Cancelar'
     }).then((result) => {
-        // 2. Si el alumno dice que SÍ, ejecutamos el código de inscripción
         if (result.isConfirmed) {
             
             const htmlOriginal = boton.innerHTML;
@@ -140,23 +170,20 @@ function inscribirAlumnoETS(boton) {
             .then(res => res.json())
             .then(datos => {
                 if (datos.status === 'success') {
-                    // Alerta bonita de Éxito
                     Swal.fire({
                         title: '¡Inscrito!',
                         text: datos.message || "Tu inscripción ha sido registrada con éxito.",
                         icon: 'success',
-                        confirmButtonColor: '#0d6efd' // Azul para combinar con tu panel
+                        confirmButtonColor: '#0d6efd'
                     });
-                    cargarETSDisponibles(); // Refrescamos la tabla
+                    cargarETSDisponibles();
                 } else {
-                    // Alerta bonita de Advertencia
                     Swal.fire('Atención', datos.message, 'warning');
                     boton.disabled = false; 
                     boton.innerHTML = htmlOriginal;
                 }
             })
             .catch(() => { 
-                // Alerta bonita de Error
                 Swal.fire('Error', 'Ocurrió un error al comunicar con el servidor.', 'error');
                 boton.disabled = false; 
                 boton.innerHTML = htmlOriginal; 
@@ -167,10 +194,9 @@ function inscribirAlumnoETS(boton) {
 
 function iniciarVistaInscripcionETS() {
     cargarETSDisponibles();
-    inicializarFiltroETS(); // ¡Esta función no existía! Ya la agregamos abajo
+    inicializarFiltroETS();
 }
 
-// NUEVA FUNCIÓN: Buscador de ETS para el alumno
 function inicializarFiltroETS() {
     const buscador = document.getElementById('buscador-ets');
     if (!buscador) return;
@@ -180,7 +206,6 @@ function inicializarFiltroETS() {
         const filas = document.querySelectorAll('#tbody-ets-alumno tr');
 
         filas.forEach(fila => {
-            // Validamos que no oculte la fila de "Cargando..." o "No hay exámenes"
             if (fila.cells.length > 1) { 
                 const contenido = fila.innerText.toLowerCase();
                 fila.style.display = contenido.includes(texto) ? '' : 'none';
@@ -305,8 +330,6 @@ function cargarHistorialRevisiones() {
                 let badgeEstado = '';
                 let infoCita = '<span class="text-muted small fst-italic">Por definir</span>';
                 
-                // 1. Preparamos el HTML de la Justificación del Alumno con botón "Leer completo"
-                // Usamos encodeURIComponent para evitar que saltos de línea rompan el HTML
                 const motivoCodificado = encodeURIComponent(rev.motivo_alumno || '');
                 let htmlMotivo = `
                     <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Haz clic en Leer completo para ver más">
@@ -317,7 +340,6 @@ function cargarHistorialRevisiones() {
                     </button>
                 `;
 
-                // 2. Preparamos las notas del profesor por defecto
                 let htmlNotas = '<span class="text-muted small fst-italic">En espera...</span>';
 
                 if (rev.estado === 'Pendiente') {
@@ -329,7 +351,6 @@ function cargarHistorialRevisiones() {
                     badgeEstado = `<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-circle me-1"></i> Resuelto</span>`;
                     infoCita = `<strong>${rev.fecha_cita || '-'}</strong><br><small class="text-muted">${rev.lugar_cita || '-'}</small>`;
                     
-                    // Si está completada, mostramos las notas con el botón
                     const notasCodificadas = encodeURIComponent(rev.notas_profesor || '');
                     htmlNotas = `
                         <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Haz clic en Leer completo para ver más">
@@ -406,11 +427,11 @@ function enviarPeticionRevision() {
     })
     .catch(() => { alert("Ocurrió un error de conexión."); btn.disabled = false; btn.innerHTML = `<i class="bi bi-send me-1"></i> Enviar Petición`; });
 }
+
 // ==========================================
 // FUNCIÓN AUXILIAR: VER TEXTOS LARGOS EN MODAL
 // ==========================================
 window.mostrarDetalleTexto = function(titulo, textoCodificado) {
-    // Decodificamos el texto para recuperar los espacios, acentos y saltos de línea
     const textoReal = decodeURIComponent(textoCodificado);
     
     Swal.fire({

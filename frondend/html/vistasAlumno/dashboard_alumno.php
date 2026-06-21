@@ -11,6 +11,24 @@ if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])
 
 <div class="tab-pane fade show active" id="pills-inicio" role="tabpanel">
 
+    <!-- Tarjeta de Bienvenida -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-3 bg-primary text-white" style="background: linear-gradient(45deg, #0d6efd, #0dcaf0);">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 id="mensaje-bienvenida" class="fw-bold mb-1">Cargando perfil...</h3>
+                        <p class="mb-0 fs-5">Boleta: <span id="boleta-alumno" class="fw-semibold">...</span></p>
+                    </div>
+                    <div class="d-none d-md-block">
+                        <i class="bi bi-person-bounding-box" style="font-size: 3rem; opacity: 0.8;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores -->
     <div class="row g-3 mb-4">
 
         <div class="col-12 col-sm-6 col-xl-3">
@@ -53,6 +71,7 @@ if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])
 
     </div>
 
+    <!-- Tablas y Avisos -->
     <div class="row g-3 mb-4">
 
         <div class="col-12 col-xl-8">
@@ -147,5 +166,5 @@ if (!isset($_SESSION['id_usuario']) || strtolower(trim($_SESSION['usuario_rol'])
 
 </div>
 <footer class="mt-5 text-muted" style="font-size: 0.85rem;">
-        © 2026 <strong>Sistema de Gestión Escolar</strong>. Portal del Alumno (ESCOM).
-    </footer>
+    © 2026 <strong>Sistema ETS</strong>. Portal del Alumno (ESCOM).
+</footer>
