@@ -809,46 +809,39 @@ window.exportarActaCSV = function() {
 // ==========================================
 
 function filtrarExamenes() {
-    console.log("Ejecutando función de filtrado de exámenes en tiempo real...");
-    // 1. Buscamos todas las barras de búsqueda en la vista
-    const buscadores = document.querySelectorAll("#buscadorExamenes");
-    let filtro = "";
+    console.log("Filtrando exámenes de forma independiente...");
 
-    // 2. Revisamos cuál de las barras está visible en la pantalla actual
-    buscadores.forEach(input => {
-        // offsetParent !== null es un truco para saber si el elemento es visible
-        if (input.offsetParent !== null) {
-            filtro = input.value.toLowerCase();
-        }
-    });
-
-    // 3. Obtenemos ambos cuerpos de tabla
+    // 1. LÓGICA PARA LA PESTAÑA PENDIENTES
+    const inputActivos = document.getElementById("buscadorExamenes1");
     const tbodyActivos = document.getElementById("tbody-examenes-activos");
-    const tbodyHistorial = document.getElementById("tbody-examenes-historial");
     
-    const tablas = [];
-    if (tbodyActivos) tablas.push(tbodyActivos);
-    if (tbodyHistorial) tablas.push(tbodyHistorial);
-
-    // 4. Aplicamos el filtro
-    tablas.forEach(tbody => {
-        const filas = tbody.getElementsByTagName("tr");
-
-        for (let i = 0; i < filas.length; i++) {
-            // Evitamos buscar en la fila vacía de "No tienes exámenes..."
-            if (filas[i].getElementsByTagName("td").length > 1) {
-                
-                const contenidoFila = filas[i].textContent || filas[i].innerText;
-
-                // Mostramos u ocultamos la fila según la búsqueda
-                if (contenidoFila.toLowerCase().includes(filtro)) {
-                    filas[i].style.display = ""; 
-                } else {
-                    filas[i].style.display = "none"; 
-                }
+    if (inputActivos && tbodyActivos) {
+        const filtro1 = inputActivos.value.toLowerCase();
+        const filas1 = tbodyActivos.getElementsByTagName("tr");
+        
+        for (let i = 0; i < filas1.length; i++) {
+            if (filas1[i].getElementsByTagName("td").length > 1) { // Ignorar fila vacía
+                const textoFila = filas1[i].textContent || filas1[i].innerText;
+                filas1[i].style.display = textoFila.toLowerCase().includes(filtro1) ? "" : "none";
             }
         }
-    });
+    }
+
+    // 2. LÓGICA PARA LA PESTAÑA HISTORIAL
+    const inputHistorial = document.getElementById("buscadorExamenes2");
+    const tbodyHistorial = document.getElementById("tbody-examenes-historial");
+    
+    if (inputHistorial && tbodyHistorial) {
+        const filtro2 = inputHistorial.value.toLowerCase();
+        const filas2 = tbodyHistorial.getElementsByTagName("tr");
+        
+        for (let i = 0; i < filas2.length; i++) {
+            if (filas2[i].getElementsByTagName("td").length > 1) { // Ignorar fila vacía
+                const textoFila = filas2[i].textContent || filas2[i].innerText;
+                filas2[i].style.display = textoFila.toLowerCase().includes(filtro2) ? "" : "none";
+            }
+        }
+    }
 }
 
 // ==========================================
