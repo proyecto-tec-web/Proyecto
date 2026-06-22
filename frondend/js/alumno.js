@@ -346,7 +346,66 @@ function cargarHistorialRevisiones() {
                     badgeEstado = `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="bi bi-hourglass-split me-1"></i> Pendiente</span>`;
                 } else if (rev.estado === 'Agendada') {
                     badgeEstado = `<span class="badge bg-info-subtle text-info border border-info-subtle"><i class="bi bi-calendar-event me-1"></i> Cita Agendada</span>`;
-                    infoCita = `<strong>${rev.fecha_cita}</strong><br><small class="text-muted"><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.lugar_cita}</small>`;
+                    
+                    // --- INICIO MAGIA GOOGLE CALENDAR CORREGIDA ---
+                    let urlCal = "#";
+                    if (rev.fecha_cita) {
+                        let partes = rev.fecha_cita.split(' '); 
+                        if (partes.length === 2) {
+                            let fechaStr = partes[0]; // Ej: "24/06/2026"
+                            let horaStr = partes[1];  // Ej: "22:14" o "22:14:00"
+
+                            // 1. Armamos la fecha en formato YYYYMMDD perfecto
+                            let anio, mes, dia;
+                            if (fechaStr.includes('/')) {
+                                let fPartes = fechaStr.split('/');
+                                dia = fPartes[0].padStart(2, '0');
+                                mes = fPartes[1].padStart(2, '0');
+                                anio = fPartes[2];
+                            } else {
+                                let fPartes = fechaStr.split('-');
+                                anio = fPartes[0];
+                                mes = fPartes[1].padStart(2, '0');
+                                dia = fPartes[2].padStart(2, '0');
+                            }
+                            let fechaLimpia = `${anio}${mes}${dia}`;
+
+                            // 2. Armamos la hora en formato HHMMSS perfecto
+                            let hPartes = horaStr.split(':');
+                            let hh = hPartes[0].padStart(2, '0');
+                            let mm = hPartes[1].padStart(2, '0');
+                            let ss = (hPartes[2] || '00').padStart(2, '0');
+                            let hrInicio = `${hh}${mm}${ss}`;
+
+                            // 3. Calculamos la hora de fin (+1 hora)
+                            let hrFinInt = parseInt(hh) + 1;
+                            let hrFinStr = String(hrFinInt).padStart(2, '0');
+                            if (hrFinInt >= 24) hrFinStr = "23"; 
+                            let hrFin = `${hrFinStr}${mm}${ss}`;
+                            
+                            // 4. Juntamos las piezas
+                            let datesCal = `${fechaLimpia}T${hrInicio}/${fechaLimpia}T${hrFin}`;
+                            let titleCal = encodeURIComponent(`Revisión de ETS: ${rev.materia}`);
+                            let descCal = encodeURIComponent(`Cita para la aclaración y revisión de tu examen de ETS.\nFolio: #REV-${rev.id_peticion}`);
+                            let locCal = encodeURIComponent(rev.lugar_cita || 'Por definir');
+                            
+                            urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titleCal}&dates=${datesCal}&details=${descCal}&location=${locCal}`;
+                        }
+                    }
+                    
+                    let botonCalendar = `<a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm ms-2 shadow-sm rounded-circle px-2 py-1" title="Añadir a mi Google Calendar"><i class="bi bi-calendar-plus"></i></a>`;
+                    // --- FIN MAGIA GOOGLE CALENDAR CORREGIDA ---
+
+                    infoCita = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${rev.fecha_cita}</strong><br>
+                                <small class="text-muted"><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.lugar_cita}</small>
+                            </div>
+                            ${botonCalendar}
+                        </div>
+                    `;
+
                 } else if (rev.estado === 'Completada') {
                     badgeEstado = `<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-circle me-1"></i> Resuelto</span>`;
                     infoCita = `<strong>${rev.fecha_cita || '-'}</strong><br><small class="text-muted">${rev.lugar_cita || '-'}</small>`;
@@ -400,32 +459,70 @@ function enviarPeticionRevision() {
     const motivo = document.getElementById('motivo-revision').value.trim();
 
     if (!idInscripcion || motivo.length < 15) {
-        alert("⚠️ Por favor selecciona un examen y redacta una justificación de al menos 15 caracteres.");
-        return;
+    Swal.fire({
+        // Alerta de validación
+        title: 'Atención',
+        text: 'Por favor, selecciona un examen y proporciona una justificación detallada (al menos 15 caracteres) para tu solicitud de revisión.',
+        icon: 'warning',
+        confirmButtonColor: '#0d6efd'
+    });
+    return;
     }
 
+    // Alerta de advertencia por enviar la solicitud
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Una vez enviada la petición, tu justificación no podrá ser modificada y el profesor será notificado.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, enviar petición',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        // Si el usuario confirma, procedemos a enviar la solicitud
+        if (result.isConfirmed) {
     const btn = document.getElementById('btn-enviar-revision');
+    const textoOriginal = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Enviando...`;
 
     fetch('/php/endpoints/crear_peticion_revision_alumno.php', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_inscripcion: idInscripcion, motivo: motivo })
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ id_inscripcion: idInscripcion, motivo: motivo })
     })
     .then(res => res.json())
     .then(datos => {
         if (datos.status === 'success') {
-            alert("✅ Petición enviada correctamente. Tu profesor la revisará a la brevedad.");
+            Swal.fire({
+                // Alerta de éxito
+                title: 'Petición enviada correctamente',
+                text: 'Tu profesor la revisará a la brevedad.',
+                icon: 'success',
+                confirmButtonColor: '#198754'
+            });
+
             const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaRevision'));
             if(modal) modal.hide();
             document.getElementById('form-nueva-revision').reset();
             cargarHistorialRevisiones(); 
             cargarExamenesParaRevision(); 
         } else {
-            alert("Error: " + datos.message);
+            // Alerta de error del servidor
+            Swal.fire('Error', datos.message, 'error');
         }
-        btn.disabled = false; btn.innerHTML = `<i class="bi bi-send me-1"></i> Enviar Petición`;
+        btn.disabled = false; 
+        btn.innerHTML = textoOriginal;
     })
-    .catch(() => { alert("Ocurrió un error de conexión."); btn.disabled = false; btn.innerHTML = `<i class="bi bi-send me-1"></i> Enviar Petición`; });
+    .catch(() => { 
+        // Alerta de error de conexión
+        Swal.fire('Error de conexión', 'Ocurrió un error al comunicar con el servidor.', 'error');
+        btn.disabled = false; 
+        btn.innerHTML = textoOriginal; 
+            });
+        }
+    });
 }
 
 // ==========================================
