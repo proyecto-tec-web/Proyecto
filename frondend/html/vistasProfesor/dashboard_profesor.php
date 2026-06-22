@@ -16,11 +16,11 @@
 
 <div class="row">
     <div class="col-md-4 mb-3">
-        <div class="card shadow-sm rounded-3 h-100 border border-4" style="background-color: #F8F4F8; border-color: #800020 !important;">
+        <div class="card shadow-sm rounded-3 h-100 border border-4" style="background-color: #F8F4F8; border-color: #800040 !important;">
             <div class="card-body">
                 <h5 class="text-dark fw-bold mb-2">MIS EXÁMENES ETS</h5>
                 <h2 class="fw-bold text-dark mb-0" id="kpi-examenes-prof">
-                    <span class="spinner-border spinner-border-sm" style="color: #800020 !important;"></span>
+                    <span class="spinner-border spinner-border-sm" style="color: #800040 !important;"></span>
                 </h2>
             </div>
         </div>
@@ -38,11 +38,11 @@
     </div>
     
     <div class="col-md-4 mb-3">
-        <div class="card shadow-sm rounded-3 h-100 border border-4" style="background-color: #f4fcf9; border-color: #54ffcc !important;">
+        <div class="card shadow-sm rounded-3 h-100 border border-4" style="background-color: #fcf4f5; border-color: #ff547f !important;">
             <div class="card-body">
                 <h5 class="text-dark fw-bold mb-2">EXÁMENES CALIFICADOS</h5>
                 <h2 class="fw-bold text-dark mb-0" id="kpi-pendientes-prof">
-                    <span class="spinner-border spinner-border-sm" style="color: #54ffcc !important;"></span>
+                    <span class="spinner-border spinner-border-sm" style="color: #ff547f !important;"></span>
                 </h2>
             </div>
         </div>
