@@ -369,6 +369,12 @@ function cargarRevisiones() {
                 let califActual = rev.calificacion_actual !== null ? rev.calificacion_actual : 'S/C';
                 let motivoSeguro = rev.motivo_alumno ? rev.motivo_alumno.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/(\r\n|\n|\r)/gm, " ") : 'Sin motivo especificado';
 
+                // Preparamos el HTML base del lugar y horario
+                let htmlLugarHorario = `
+                    <small><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.salon || 'Por definir'}</small><br>
+                    <small><i class="bi bi-clock-fill text-primary"></i> ${rev.horario || 'Por definir'}</small>
+                `;
+
                 if (rev.estado === 'Pendiente') {
                     badgeEstado = 'danger';
                     // Pasamos los 4 datos: ID, Info del Alumno, Calificación y Motivo
@@ -378,6 +384,58 @@ function cargarRevisiones() {
                     badgeEstado = 'warning';
                     botonAccion = `<button class="btn btn-warning btn-sm fw-bold shadow-sm text-dark" onclick="abrirModalAsentarCalificacion(${rev.id_peticion}, ${rev.calificacion_actual})"><i class="bi bi-pencil-square"></i> Calificar</button>`;
                 
+                    // --- INICIO MAGIA GOOGLE CALENDAR DOCENTE ---
+                    if (rev.horario) {
+                        // Limpiamos el separador " | " que trae la base de datos del profe
+                        let horarioLimpio = rev.horario.replace(' | ', ' ');
+                        let partes = horarioLimpio.split(' ');
+                        
+                        if (partes.length >= 2) {
+                            let fechaStr = partes[0]; // Ej: "2026-06-24"
+                            let horaStr = partes[1];  // Ej: "22:14"
+
+                            // 1. Armamos la fecha
+                            let anio, mes, dia;
+                            if (fechaStr.includes('/')) {
+                                let fPartes = fechaStr.split('/');
+                                dia = fPartes[0].padStart(2, '0');
+                                mes = fPartes[1].padStart(2, '0');
+                                anio = fPartes[2];
+                            } else {
+                                let fPartes = fechaStr.split('-');
+                                anio = fPartes[0];
+                                mes = fPartes[1].padStart(2, '0');
+                                dia = fPartes[2].padStart(2, '0');
+                            }
+                            let fechaLimpia = `${anio}${mes}${dia}`;
+
+                            // 2. Armamos la hora
+                            let hPartes = horaStr.split(':');
+                            let hh = hPartes[0].padStart(2, '0');
+                            let mm = hPartes[1].padStart(2, '0');
+                            let ss = (hPartes[2] || '00').padStart(2, '0');
+                            let hrInicio = `${hh}${mm}${ss}`;
+
+                            // 3. Calculamos fin
+                            let hrFinInt = parseInt(hh) + 1;
+                            let hrFinStr = String(hrFinInt).padStart(2, '0');
+                            if (hrFinInt >= 24) hrFinStr = "23"; 
+                            let hrFin = `${hrFinStr}${mm}${ss}`;
+                            
+                            // 4. Juntamos todo (Se inyecta info del alumno)
+                            let datesCal = `${fechaLimpia}T${hrInicio}/${fechaLimpia}T${hrFin}`;
+                            let titleCal = encodeURIComponent(`Revisión ETS: ${rev.materia} (${rev.boleta})`);
+                            let descCal = encodeURIComponent(`Cita de revisión.\nAlumno: ${rev.nombre}\nBoleta: ${rev.boleta}\nFolio: #REV-${rev.id_peticion}`);
+                            let locCal = encodeURIComponent(rev.salon || 'Por definir');
+                            
+                            let urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titleCal}&dates=${datesCal}&details=${descCal}&location=${locCal}`;
+                            
+                            // Añadimos el botón justo debajo de la hora en la tabla
+                            htmlLugarHorario += `<br><a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm mt-1 py-0 px-2 shadow-sm" style="font-size: 0.75rem;" title="Agendar en mi Google Calendar"><i class="bi bi-calendar-plus"></i> Agendar</a>`;
+                        }
+                    }
+                    // --- FIN MAGIA GOOGLE CALENDAR DOCENTE ---
+
                 } else if (rev.estado === 'Completada') {
                     badgeEstado = 'success';
                     botonAccion = `<span class="text-success fw-bold"><i class="bi bi-check-all"></i> Resuelto</span>`;
@@ -392,8 +450,7 @@ function cargarRevisiones() {
                         </td>
                         <td class="fw-semibold">${rev.materia}</td>
                         <td>
-                            <small><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.salon || 'Por definir'}</small><br>
-                            <small><i class="bi bi-clock-fill text-primary"></i> ${rev.horario || 'Por definir'}</small>
+                            ${htmlLugarHorario}
                         </td>
                         <td><span class="badge bg-${badgeEstado}">${rev.estado}</span></td>
                         <td class="text-end">${botonAccion}</td>
