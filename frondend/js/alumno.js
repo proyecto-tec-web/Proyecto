@@ -390,6 +390,7 @@ function cargarHistorialRevisiones() {
             datos.data.forEach(rev => {
                 let badgeEstado = '';
                 let infoCita = '<span class="text-muted small fst-italic">Por definir</span>';
+                let botonCalendar = ''; // Inicializamos la variable vacía para poder moverla de columna
                 
                 const motivoCodificado = encodeURIComponent(rev.motivo_alumno || '');
                 let htmlMotivo = `
@@ -408,15 +409,14 @@ function cargarHistorialRevisiones() {
                 } else if (rev.estado === 'Agendada') {
                     badgeEstado = `<span class="badge bg-info-subtle text-info border border-info-subtle"><i class="bi bi-calendar-event me-1"></i> Cita Agendada</span>`;
                     
-                    // --- INICIO MAGIA GOOGLE CALENDAR CORREGIDA ---
+                    // --- INICIO MAGIA GOOGLE CALENDAR ALUMNO ---
                     let urlCal = "#";
                     if (rev.fecha_cita) {
                         let partes = rev.fecha_cita.split(' '); 
                         if (partes.length === 2) {
-                            let fechaStr = partes[0]; // Ej: "24/06/2026"
-                            let horaStr = partes[1];  // Ej: "22:14" o "22:14:00"
+                            let fechaStr = partes[0]; 
+                            let horaStr = partes[1];  
 
-                            // 1. Armamos la fecha en formato YYYYMMDD perfecto
                             let anio, mes, dia;
                             if (fechaStr.includes('/')) {
                                 let fPartes = fechaStr.split('/');
@@ -431,40 +431,34 @@ function cargarHistorialRevisiones() {
                             }
                             let fechaLimpia = `${anio}${mes}${dia}`;
 
-                            // 2. Armamos la hora en formato HHMMSS perfecto
                             let hPartes = horaStr.split(':');
                             let hh = hPartes[0].padStart(2, '0');
                             let mm = hPartes[1].padStart(2, '0');
                             let ss = (hPartes[2] || '00').padStart(2, '0');
                             let hrInicio = `${hh}${mm}${ss}`;
 
-                            // 3. Calculamos la hora de fin (+1 hora)
                             let hrFinInt = parseInt(hh) + 1;
                             let hrFinStr = String(hrFinInt).padStart(2, '0');
                             if (hrFinInt >= 24) hrFinStr = "23"; 
                             let hrFin = `${hrFinStr}${mm}${ss}`;
                             
-                            // 4. Juntamos las piezas
                             let datesCal = `${fechaLimpia}T${hrInicio}/${fechaLimpia}T${hrFin}`;
-                            let titleCal = encodeURIComponent(`Revisión de ETS: ${rev.materia}`);
-                            let descCal = encodeURIComponent(`Cita para la aclaración y revisión de tu examen de ETS.\nFolio: #REV-${rev.id_peticion}`);
-                            let locCal = encodeURIComponent(rev.lugar_cita || 'Por definir');
+                            let titleCal = encodeURIComponent(`Revisión ETS: ${rev.materia}`);
+                            let descCal = encodeURIComponent(`Cita oficial para revisión de examen ETS.\nFolio: #REV-${rev.id_peticion}`);
+                            let locCal = encodeURIComponent(rev.lugar_cita || '');
                             
                             urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titleCal}&dates=${datesCal}&details=${descCal}&location=${locCal}`;
                         }
                     }
                     
-                    let botonCalendar = `<a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm ms-2 shadow-sm py-1 px-2" style="font-size: 0.8rem;" title="Añadir a mi Google Calendar"><i class="bi bi-calendar-plus"></i> Agendar</a>`;
-                    // --- FIN MAGIA GOOGLE CALENDAR CORREGIDA ---
+                    // Asignamos el botón a nuestra variable, pero ya NO lo metemos en la celda de la fecha
+                    botonCalendar = `<a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm shadow-sm py-1 px-2" style="font-size: 0.8rem;" title="Añadir a mi Google Calendar"><i class="bi bi-calendar-plus"></i> Agendar</a>`;
+                    // --- FIN MAGIA GOOGLE CALENDAR ALUMNO ---
 
+                    // La celda de la fecha vuelve a quedar limpia y sola
                     infoCita = `
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>${rev.fecha_cita}</strong><br>
-                                <small class="text-muted"><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.lugar_cita}</small>
-                            </div>
-                            ${botonCalendar}
-                        </div>
+                        <strong>${rev.fecha_cita}</strong><br>
+                        <small class="text-muted"><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.lugar_cita}</small>
                     `;
 
                 } else if (rev.estado === 'Completada') {
@@ -482,6 +476,12 @@ function cargarHistorialRevisiones() {
                     `;
                 }
 
+                // Agrupamos la etiqueta de estado y el botón en una estructura vertical
+                let columnaEstado = badgeEstado;
+                if (botonCalendar !== '') {
+                    columnaEstado = `<div class="d-flex flex-column align-items-center gap-2">${badgeEstado}${botonCalendar}</div>`;
+                }
+
                 tbody.innerHTML += `
                     <tr>
                         <td class="fw-bold text-secondary ps-4">#REV-${rev.id_peticion}</td>
@@ -489,7 +489,7 @@ function cargarHistorialRevisiones() {
                         <td class="text-muted small">${htmlMotivo}</td>
                         <td>${infoCita}</td>
                         <td>${htmlNotas}</td>
-                        <td class="text-center">${badgeEstado}</td>
+                        <td class="text-center">${columnaEstado}</td>
                     </tr>
                 `;
             });
