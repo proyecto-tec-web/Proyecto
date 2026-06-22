@@ -393,7 +393,7 @@ function cargarHistorialRevisiones() {
                         }
                     }
                     
-                    let botonCalendar = `<a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm ms-2 shadow-sm rounded-circle px-2 py-1" title="Añadir a mi Google Calendar"><i class="bi bi-calendar-plus"></i></a>`;
+                    let botonCalendar = `<a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm ms-2 shadow-sm py-1 px-2" style="font-size: 0.8rem;" title="Añadir a mi Google Calendar"><i class="bi bi-calendar-plus"></i> Agendar</a>`;
                     // --- FIN MAGIA GOOGLE CALENDAR CORREGIDA ---
 
                     infoCita = `
