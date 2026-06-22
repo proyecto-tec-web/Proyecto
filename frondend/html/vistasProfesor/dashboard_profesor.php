@@ -16,11 +16,11 @@
 
 <div class="row">
     <div class="col-md-4 mb-3">
-        <div class="card shadow-sm rounded-3 h-100 border border-4" style="background-color: #F8F4F8; border-color: #800020 !important;">
+        <div class="card shadow-sm rounded-3 h-100 border border-4" style="background-color: #F8F4F8; border-color: #800040 !important;">
             <div class="card-body">
-                <h6 class="text-dark fw-bold mb-2">MIS EXÁMENES ETS</h6>
+                <h5 class="text-dark fw-bold mb-2">MIS EXÁMENES ETS</h5>
                 <h2 class="fw-bold text-dark mb-0" id="kpi-examenes-prof">
-                    <span class="spinner-border spinner-border-sm" style="color: #800020 !important;"></span>
+                    <span class="spinner-border spinner-border-sm" style="color: #800040 !important;"></span>
                 </h2>
             </div>
         </div>
@@ -29,7 +29,7 @@
     <div class="col-md-4 mb-3">
         <div class="card shadow-sm rounded-3 h-100 border border-4" style="background-color: #FFF8F2; border-color: #ffa200 !important;">
             <div class="card-body">
-                <h6 class="text-dark fw-bold mb-2">ALUMNOS A EVALUAR</h6>
+                <h5 class="text-dark fw-bold mb-2">ALUMNOS A EVALUAR</h5>
                 <h2 class="fw-bold text-dark mb-0" id="kpi-alumnos-prof">
                     <span class="spinner-border spinner-border-sm" style="color: #ffa200 !important;"></span>
                 </h2>
@@ -38,11 +38,11 @@
     </div>
     
     <div class="col-md-4 mb-3">
-        <div class="card shadow-sm rounded-3 h-100 border border-4" style="background-color: #F5F4FC; border-color: #b254ff !important;">
+        <div class="card shadow-sm rounded-3 h-100 border border-4" style="background-color: #fcf4f5; border-color: #ff547f !important;">
             <div class="card-body">
-                <h6 class="text-dark fw-bold mb-2">EXÁMENES CALIFICADOS</h6>
+                <h5 class="text-dark fw-bold mb-2">EXÁMENES CALIFICADOS</h5>
                 <h2 class="fw-bold text-dark mb-0" id="kpi-pendientes-prof">
-                    <span class="spinner-border spinner-border-sm" style="color: #b254ff !important;"></span>
+                    <span class="spinner-border spinner-border-sm" style="color: #ff547f !important;"></span>
                 </h2>
             </div>
         </div>
@@ -54,9 +54,9 @@
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h6 class="fw-bold text-secondary mb-0" style="font-family: 'Montserrat', sans-serif;">
+                    <h5 class="fw-bold text-secondary mb-0" style="font-family: 'Montserrat', sans-serif;">
                         <i class="bi bi-bar-chart-fill me-2 text-primary"></i> Rendimiento por Materia
-                    </h6>
+                    </h5>
                     <h5 class="fw-bold mb-0 text-dark border px-3 py-1 rounded bg-light">
                         Promedio Global: <span id="promedioGlobalValor" class="text-primary">0.0</span>
                     </h5>

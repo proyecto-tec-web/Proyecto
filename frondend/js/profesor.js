@@ -1,3 +1,8 @@
+// =================================================================
+// MÓDULO PROFESOR: SISTEMA INTEGRAL (Dashboard, ETS, Revisiones)
+// =================================================================
+console.log('PROFESOR.JS CARGADO CORRECTAMENTE');
+
 // ==========================================
 // MÓDULO PROFESOR: DASHBOARD Y KPIs
 // Vista: vistasProfesor/dashboard_profesor.php
@@ -48,6 +53,7 @@ function cargarKPIsProfesor() {
 // ==========================================
 
 function cargarMisExamenes() {
+    console.log("¡La función cargarMisExamenes sí se está ejecutando!");
     const tbodyActivos = document.getElementById('tbody-examenes-activos');
     const tbodyHistorial = document.getElementById('tbody-examenes-historial');
     
@@ -259,6 +265,7 @@ let validadorAgendarCita = null;
 let validadorEjecutarRevision = null;
 
 function inicializarJustValidateRevisiones() {
+    console.log("Inicializando validadores de JustValidate para Revisiones...");
     // 1. Validador para el Modal de Agendar Cita
     const formCita = document.getElementById('form-agendar-cita');
     if (formCita) {
@@ -348,6 +355,7 @@ function inicializarJustValidateRevisiones() {
 }
 
 function cargarRevisiones() {
+    console.log("Cargando peticiones de revisión para el profesor...");
     const tbody = document.getElementById('tbody-revisiones');
     if (!tbody) return;
 
@@ -369,15 +377,77 @@ function cargarRevisiones() {
                 let califActual = rev.calificacion_actual !== null ? rev.calificacion_actual : 'S/C';
                 let motivoSeguro = rev.motivo_alumno ? rev.motivo_alumno.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/(\r\n|\n|\r)/gm, " ") : 'Sin motivo especificado';
 
+                // Preparamos el HTML base del lugar y horario (Ya no le pegaremos el botón aquí)
+                let htmlLugarHorario = `
+                    <small><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.salon || 'Por definir'}</small><br>
+                    <small><i class="bi bi-clock-fill text-primary"></i> ${rev.horario || 'Por definir'}</small>
+                `;
+
                 if (rev.estado === 'Pendiente') {
                     badgeEstado = 'danger';
-                    // Pasamos los 4 datos: ID, Info del Alumno, Calificación y Motivo
                     botonAccion = `<button class="btn btn-info btn-sm fw-bold shadow-sm text-dark" onclick="abrirModalAgendarCita(${rev.id_peticion}, '${rev.boleta} - ${rev.nombre}', '${califActual}', '${motivoSeguro}')"><i class="bi bi-calendar-event"></i> Agendar Cita</button>`;
                 
                 } else if (rev.estado === 'Agendada') {
+                    
                     badgeEstado = 'warning';
-                    botonAccion = `<button class="btn btn-warning btn-sm fw-bold shadow-sm text-dark" onclick="abrirModalAsentarCalificacion(${rev.id_peticion}, ${rev.calificacion_actual})"><i class="bi bi-pencil-square"></i> Calificar</button>`;
+                    
+                    let btnCalificar = `<button class="btn btn-warning btn-sm fw-bold shadow-sm text-dark" onclick="abrirModalAsentarCalificacion(${rev.id_peticion}, ${rev.calificacion_actual})"><i class="bi bi-pencil-square"></i> Calificar</button>`;
+                    let btnCalendar = '';
                 
+                    // --- INICIO MAGIA GOOGLE CALENDAR DOCENTE ---
+                    if (rev.horario) {
+                        let horarioLimpio = rev.horario.replace(' | ', ' ');
+                        let partes = horarioLimpio.split(' ');
+                        
+                        if (partes.length >= 2) {
+                            let fechaStr = partes[0]; 
+                            let horaStr = partes[1];  
+
+                            let anio, mes, dia;
+                            if (fechaStr.includes('/')) {
+                                let fPartes = fechaStr.split('/');
+                                dia = fPartes[0].padStart(2, '0');
+                                mes = fPartes[1].padStart(2, '0');
+                                anio = fPartes[2];
+                            } else {
+                                let fPartes = fechaStr.split('-');
+                                anio = fPartes[0];
+                                mes = fPartes[1].padStart(2, '0');
+                                dia = fPartes[2].padStart(2, '0');
+                            }
+                            let fechaLimpia = `${anio}${mes}${dia}`;
+
+                            let hPartes = horaStr.split(':');
+                            let hh = hPartes[0].padStart(2, '0');
+                            let mm = hPartes[1].padStart(2, '0');
+                            let ss = (hPartes[2] || '00').padStart(2, '0');
+                            let hrInicio = `${hh}${mm}${ss}`;
+
+                            let hrFinInt = parseInt(hh) + 1;
+                            let hrFinStr = String(hrFinInt).padStart(2, '0');
+                            if (hrFinInt >= 24) hrFinStr = "23"; 
+                            let hrFin = `${hrFinStr}${mm}${ss}`;
+                            
+                            let datesCal = `${fechaLimpia}T${hrInicio}/${fechaLimpia}T${hrFin}`;
+                            let titleCal = encodeURIComponent(`Revisión ETS: ${rev.materia} (${rev.boleta})`);
+                            let descCal = encodeURIComponent(`Cita de revisión.\nAlumno: ${rev.nombre}\nBoleta: ${rev.boleta}\nFolio: #REV-${rev.id_peticion}`);
+                            let locCal = encodeURIComponent(rev.salon || 'Por definir');
+                            
+                            let urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titleCal}&dates=${datesCal}&details=${descCal}&location=${locCal}`;
+                            
+                            // Creamos el botón pero sin pegarlo al horario
+                            btnCalendar = `<a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm fw-bold shadow-sm" title="Agendar en mi Google Calendar"><i class="bi bi-calendar-plus"></i> Agendar</a>`;
+                        }
+                    }
+                    // --- FIN MAGIA GOOGLE CALENDAR DOCENTE ---
+
+                    // Agrupamos ambos botones en la columna de Acciones
+                    if (btnCalendar !== '') {
+                        botonAccion = `<div class="d-flex justify-content-end align-items-center gap-2">${btnCalendar} ${btnCalificar}</div>`;
+                    } else {
+                        botonAccion = btnCalificar;
+                    }
+
                 } else if (rev.estado === 'Completada') {
                     badgeEstado = 'success';
                     botonAccion = `<span class="text-success fw-bold"><i class="bi bi-check-all"></i> Resuelto</span>`;
@@ -392,8 +462,7 @@ function cargarRevisiones() {
                         </td>
                         <td class="fw-semibold">${rev.materia}</td>
                         <td>
-                            <small><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.salon || 'Por definir'}</small><br>
-                            <small><i class="bi bi-clock-fill text-primary"></i> ${rev.horario || 'Por definir'}</small>
+                            ${htmlLugarHorario}
                         </td>
                         <td><span class="badge bg-${badgeEstado}">${rev.estado}</span></td>
                         <td class="text-end">${botonAccion}</td>
@@ -410,6 +479,7 @@ function cargarRevisiones() {
 
 // Abre Modal 1 (Cita) - Recibe calificación y motivo
 window.abrirModalAgendarCita = function(idPeticion, alumnoInfo, califActual, motivo) {
+    console.log("Abriendo Modal de Agendar Cita para la petición ID:", idPeticion);
     document.getElementById('cita-id-peticion').value = idPeticion;
     document.getElementById('cita-alumno-nombre').value = alumnoInfo;
     
@@ -428,6 +498,7 @@ window.abrirModalAgendarCita = function(idPeticion, alumnoInfo, califActual, mot
 
 // Abre Modal 2 (Calificar)
 window.abrirModalAsentarCalificacion = function(idPeticion, califActual) {
+    console.log("Abriendo Modal de Ejecutar Revisión para la petición ID:", idPeticion);
     document.getElementById('rev-id-peticion').value = idPeticion;
     document.getElementById('rev-calif-actual').value = (califActual !== null && califActual !== 'null') ? califActual : '0.0';
     
@@ -443,6 +514,7 @@ window.abrirModalAsentarCalificacion = function(idPeticion, califActual) {
 // ==========================================
 
 window.imprimirPaseDeLista = function(idExamen) {
+    console.log("Generando pase de lista para el examen:", idExamen);
     window.open(`/php/endpoints/generar_pase_lista.php?id_examen=${idExamen}`, '_blank');
 };
 
@@ -454,6 +526,7 @@ window.imprimirPaseDeLista = function(idExamen) {
 let miGraficaRendimiento = null;
 
 function pintarGraficaRendimiento() {
+    console.log("Pintando gráfica de rendimiento del profesor...");
     const canvas = document.getElementById('graficaRendimiento');
     if (!canvas) return; 
 
@@ -509,6 +582,7 @@ function pintarGraficaRendimiento() {
             // Destruimos la gráfica anterior si existía
             if (miGraficaRendimiento) {
                 miGraficaRendimiento.destroy();
+                console.log("Gráfica anterior destruida para evitar superposición.");
             }
 
             // Creamos la nueva gráfica de barras
@@ -565,6 +639,7 @@ function pintarGraficaRendimiento() {
 // ==========================================
 
 function solicitarNIPParaGuardar(idExamen) {
+    console.log("Solicitando NIP para guardar calificaciones del examen ID:", idExamen);
     Swal.fire({
         title: '<h3 style="font-family: \'Montserrat\', sans-serif; font-weight: bold; color: #004ec2;">Firma Electrónica</h3>',
         html: 'Por seguridad, ingresa tu <b>NIP de 4 dígitos</b> para asentar esta acta de forma definitiva.',
@@ -620,6 +695,7 @@ function solicitarNIPParaGuardar(idExamen) {
 // ==========================================
 
 function ejecutarGuardadoFinal(idExamen) {
+    console.log("Ejecutando guardado final de calificaciones para el examen ID:", idExamen);
     const inputs = document.querySelectorAll('.input-calificacion');
     let calificaciones = [];
 
@@ -689,6 +765,7 @@ function ejecutarGuardadoFinal(idExamen) {
 // ==========================================
 
 window.exportarActaCSV = function() {
+    console.log("Iniciando exportación de acta a CSV para el examen ID:", idExamenActual);
     const filas = document.querySelectorAll('#tbody-alumnos-examen tr');
     
     // Si la tabla está vacía o solo tiene el mensaje de "No hay alumnos"
@@ -732,6 +809,7 @@ window.exportarActaCSV = function() {
 // ==========================================
 
 function filtrarExamenes() {
+    console.log("Ejecutando función de filtrado de exámenes en tiempo real...");
     // 1. Buscamos todas las barras de búsqueda en la vista
     const buscadores = document.querySelectorAll("#buscadorExamenes");
     let filtro = "";
@@ -779,6 +857,7 @@ function filtrarExamenes() {
 // ==========================================
 
 function filtrarRevisiones() {
+    console.log("Ejecutando función de filtrado de revisiones en tiempo real...");
     const input = document.getElementById("buscadorRevisiones");
     if (!input) return; // Si no encuentra el buscador, se detiene
     
@@ -819,6 +898,7 @@ function filtrarRevisiones() {
 // ==========================================
 
 function exportarExamenesAExcel() {
+    console.log("Iniciando exportación de tabla a Excel...");
     const tabla = document.querySelector("table");
     if (!tabla) return;
 

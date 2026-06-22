@@ -115,8 +115,69 @@ function cargarETSDisponibles() {
                 const badgeCupo = sinCupo ? `<span class="badge bg-danger-subtle text-danger">Lleno</span>` : `<span class="badge bg-success-subtle text-success">${ets.cupo} disp.</span>`;
 
                 let btnAccion;
+                
                 if (yaInscrito) {
-                    btnAccion = `<button class="btn btn-outline-success btn-sm rounded-pill px-3" disabled><i class="bi bi-check-circle me-1"></i>Inscrito</button>`;
+                    // --- INICIO MAGIA GOOGLE CALENDAR ALUMNO (ETS) ---
+                    let urlCal = "#";
+                    if (ets.fecha && ets.hora) {
+                        // 1. Procesar la fecha (Soporta DD/MM/YYYY o YYYY-MM-DD)
+                        let anio, mes, dia;
+                        if (ets.fecha.includes('/')) {
+                            let fPartes = ets.fecha.split('/');
+                            dia = fPartes[0].padStart(2, '0');
+                            mes = fPartes[1].padStart(2, '0');
+                            anio = fPartes[2];
+                        } else {
+                            let fPartes = ets.fecha.split('-');
+                            anio = fPartes[0];
+                            mes = fPartes[1].padStart(2, '0');
+                            dia = fPartes[2].padStart(2, '0');
+                        }
+                        let fechaLimpia = `${anio}${mes}${dia}`;
+
+                        // 2. Procesar la hora (Soporta 12h AM/PM o 24h)
+                        let horaLimpia = ets.hora.toLowerCase();
+                        let isPM = horaLimpia.includes('pm');
+                        let isAM = horaLimpia.includes('am');
+                        // Quitamos las letras para dejar solo los números
+                        horaLimpia = horaLimpia.replace(/[a-z]/g, '').trim(); 
+                        
+                        let hPartes = horaLimpia.split(':');
+                        let hh = parseInt(hPartes[0], 10);
+                        let mm = hPartes[1] ? hPartes[1].padStart(2, '0') : '00';
+                        
+                        if (isPM && hh < 12) hh += 12; // Convierte 02:00 PM a 14:00
+                        if (isAM && hh === 12) hh = 0; // Convierte 12:00 AM a 00:00
+                        
+                        let hrInicio = `${String(hh).padStart(2, '0')}${mm}00`;
+                        
+                        // 3. Los exámenes ETS suelen tener un bloque de 2 horas
+                        let hrFinInt = hh + 2;
+                        let hrFinStr = String(hrFinInt).padStart(2, '0');
+                        if (hrFinInt >= 24) hrFinStr = "23";
+                        let hrFin = `${hrFinStr}${mm}00`;
+                        
+                        // 4. Juntamos las piezas
+                        let datesCal = `${fechaLimpia}T${hrInicio}/${fechaLimpia}T${hrFin}`;
+                        let titleCal = encodeURIComponent(`Examen ETS: ${ets.materia}`);
+                        let descCal = encodeURIComponent(`Aplicación de Examen a Título de Suficiencia (ETS).\nProfesor: ${ets.profesor}`);
+                        let locCal = encodeURIComponent(ets.salon || 'Por definir');
+                        
+                        urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titleCal}&dates=${datesCal}&details=${descCal}&location=${locCal}`;
+                    }
+                    
+                    // El botón verde de agendar
+                    let botonCalendar = `<a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm ms-2 rounded-pill shadow-sm px-3" title="Agendar en mi Google Calendar"><i class="bi bi-calendar-plus"></i> Agendar</a>`;
+                    
+                    // Contenedor flex para poner "Inscrito" y "Agendar" juntos
+                    btnAccion = `
+                        <div class="d-flex justify-content-center align-items-center">
+                            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" disabled><i class="bi bi-check-circle me-1"></i>Inscrito</button>
+                            ${botonCalendar}
+                        </div>
+                    `;
+                    // --- FIN MAGIA GOOGLE CALENDAR ALUMNO (ETS) ---
+
                 } else if (sinCupo) {
                     btnAccion = `<button class="btn btn-secondary btn-sm rounded-pill px-3" disabled>Agotado</button>`;
                 } else {
@@ -329,6 +390,7 @@ function cargarHistorialRevisiones() {
             datos.data.forEach(rev => {
                 let badgeEstado = '';
                 let infoCita = '<span class="text-muted small fst-italic">Por definir</span>';
+                let botonCalendar = ''; // Inicializamos la variable vacía para poder moverla de columna
                 
                 const motivoCodificado = encodeURIComponent(rev.motivo_alumno || '');
                 let htmlMotivo = `
@@ -346,7 +408,59 @@ function cargarHistorialRevisiones() {
                     badgeEstado = `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="bi bi-hourglass-split me-1"></i> Pendiente</span>`;
                 } else if (rev.estado === 'Agendada') {
                     badgeEstado = `<span class="badge bg-info-subtle text-info border border-info-subtle"><i class="bi bi-calendar-event me-1"></i> Cita Agendada</span>`;
-                    infoCita = `<strong>${rev.fecha_cita}</strong><br><small class="text-muted"><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.lugar_cita}</small>`;
+                    
+                    // --- INICIO MAGIA GOOGLE CALENDAR ALUMNO ---
+                    let urlCal = "#";
+                    if (rev.fecha_cita) {
+                        let partes = rev.fecha_cita.split(' '); 
+                        if (partes.length === 2) {
+                            let fechaStr = partes[0]; 
+                            let horaStr = partes[1];  
+
+                            let anio, mes, dia;
+                            if (fechaStr.includes('/')) {
+                                let fPartes = fechaStr.split('/');
+                                dia = fPartes[0].padStart(2, '0');
+                                mes = fPartes[1].padStart(2, '0');
+                                anio = fPartes[2];
+                            } else {
+                                let fPartes = fechaStr.split('-');
+                                anio = fPartes[0];
+                                mes = fPartes[1].padStart(2, '0');
+                                dia = fPartes[2].padStart(2, '0');
+                            }
+                            let fechaLimpia = `${anio}${mes}${dia}`;
+
+                            let hPartes = horaStr.split(':');
+                            let hh = hPartes[0].padStart(2, '0');
+                            let mm = hPartes[1].padStart(2, '0');
+                            let ss = (hPartes[2] || '00').padStart(2, '0');
+                            let hrInicio = `${hh}${mm}${ss}`;
+
+                            let hrFinInt = parseInt(hh) + 1;
+                            let hrFinStr = String(hrFinInt).padStart(2, '0');
+                            if (hrFinInt >= 24) hrFinStr = "23"; 
+                            let hrFin = `${hrFinStr}${mm}${ss}`;
+                            
+                            let datesCal = `${fechaLimpia}T${hrInicio}/${fechaLimpia}T${hrFin}`;
+                            let titleCal = encodeURIComponent(`Revisión ETS: ${rev.materia}`);
+                            let descCal = encodeURIComponent(`Cita oficial para revisión de examen ETS.\nFolio: #REV-${rev.id_peticion}`);
+                            let locCal = encodeURIComponent(rev.lugar_cita || '');
+                            
+                            urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titleCal}&dates=${datesCal}&details=${descCal}&location=${locCal}`;
+                        }
+                    }
+                    
+                    // Asignamos el botón a nuestra variable, pero ya NO lo metemos en la celda de la fecha
+                    botonCalendar = `<a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm shadow-sm py-1 px-2" style="font-size: 0.8rem;" title="Añadir a mi Google Calendar"><i class="bi bi-calendar-plus"></i> Agendar</a>`;
+                    // --- FIN MAGIA GOOGLE CALENDAR ALUMNO ---
+
+                    // La celda de la fecha vuelve a quedar limpia y sola
+                    infoCita = `
+                        <strong>${rev.fecha_cita}</strong><br>
+                        <small class="text-muted"><i class="bi bi-geo-alt-fill text-danger"></i> ${rev.lugar_cita}</small>
+                    `;
+
                 } else if (rev.estado === 'Completada') {
                     badgeEstado = `<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-circle me-1"></i> Resuelto</span>`;
                     infoCita = `<strong>${rev.fecha_cita || '-'}</strong><br><small class="text-muted">${rev.lugar_cita || '-'}</small>`;
@@ -362,6 +476,12 @@ function cargarHistorialRevisiones() {
                     `;
                 }
 
+                // Agrupamos la etiqueta de estado y el botón en una estructura vertical
+                let columnaEstado = badgeEstado;
+                if (botonCalendar !== '') {
+                    columnaEstado = `<div class="d-flex flex-column align-items-center gap-2">${badgeEstado}${botonCalendar}</div>`;
+                }
+
                 tbody.innerHTML += `
                     <tr>
                         <td class="fw-bold text-secondary ps-4">#REV-${rev.id_peticion}</td>
@@ -369,7 +489,7 @@ function cargarHistorialRevisiones() {
                         <td class="text-muted small">${htmlMotivo}</td>
                         <td>${infoCita}</td>
                         <td>${htmlNotas}</td>
-                        <td class="text-center">${badgeEstado}</td>
+                        <td class="text-center">${columnaEstado}</td>
                     </tr>
                 `;
             });
@@ -400,32 +520,70 @@ function enviarPeticionRevision() {
     const motivo = document.getElementById('motivo-revision').value.trim();
 
     if (!idInscripcion || motivo.length < 15) {
-        alert("⚠️ Por favor selecciona un examen y redacta una justificación de al menos 15 caracteres.");
-        return;
+    Swal.fire({
+        // Alerta de validación
+        title: 'Atención',
+        text: 'Por favor, selecciona un examen y proporciona una justificación detallada (al menos 15 caracteres) para tu solicitud de revisión.',
+        icon: 'warning',
+        confirmButtonColor: '#0d6efd'
+    });
+    return;
     }
 
+    // Alerta de advertencia por enviar la solicitud
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Una vez enviada la petición, tu justificación no podrá ser modificada y el profesor será notificado.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, enviar petición',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        // Si el usuario confirma, procedemos a enviar la solicitud
+        if (result.isConfirmed) {
     const btn = document.getElementById('btn-enviar-revision');
+    const textoOriginal = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Enviando...`;
 
     fetch('/php/endpoints/crear_peticion_revision_alumno.php', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_inscripcion: idInscripcion, motivo: motivo })
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ id_inscripcion: idInscripcion, motivo: motivo })
     })
     .then(res => res.json())
     .then(datos => {
         if (datos.status === 'success') {
-            alert("✅ Petición enviada correctamente. Tu profesor la revisará a la brevedad.");
+            Swal.fire({
+                // Alerta de éxito
+                title: 'Petición enviada correctamente',
+                text: 'Tu profesor la revisará a la brevedad.',
+                icon: 'success',
+                confirmButtonColor: '#198754'
+            });
+
             const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaRevision'));
             if(modal) modal.hide();
             document.getElementById('form-nueva-revision').reset();
             cargarHistorialRevisiones(); 
             cargarExamenesParaRevision(); 
         } else {
-            alert("Error: " + datos.message);
+            // Alerta de error del servidor
+            Swal.fire('Error', datos.message, 'error');
         }
-        btn.disabled = false; btn.innerHTML = `<i class="bi bi-send me-1"></i> Enviar Petición`;
+        btn.disabled = false; 
+        btn.innerHTML = textoOriginal;
     })
-    .catch(() => { alert("Ocurrió un error de conexión."); btn.disabled = false; btn.innerHTML = `<i class="bi bi-send me-1"></i> Enviar Petición`; });
+    .catch(() => { 
+        // Alerta de error de conexión
+        Swal.fire('Error de conexión', 'Ocurrió un error al comunicar con el servidor.', 'error');
+        btn.disabled = false; 
+        btn.innerHTML = textoOriginal; 
+            });
+        }
+    });
 }
 
 // ==========================================
