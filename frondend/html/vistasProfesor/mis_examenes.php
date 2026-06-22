@@ -7,7 +7,6 @@
                 <i class="bi bi-calendar-event me-2"></i>Exámenes Pendientes
             </button>
         </li>
-
         <li class="nav-item" role="presentation">
             <button class="nav-link fw-bold text-secondary" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
                 <i class="bi bi-archive me-2"></i>Historial (Calificados)
@@ -18,23 +17,20 @@
     <div class="tab-content" id="examenesTabContent">
         
         <div class="tab-pane fade show active" id="activos" role="tabpanel">
+            
+            <div class="row mb-3 align-items-center">
+                <div class="col-12 col-md-8 mb-2 mb-md-0">
+                    <div class="input-group shadow-sm rounded-3">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" id="buscadorExamenes1" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por ID, nombre de materia, salón, fecha o estado...">
+                    </div>
+                </div>
+            </div>
+
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <div class="row mb-4 mt-2 align-items-center">
-                        <div class="col-md-7 col-lg-6 mb-2 mb-md-0">
-                            <div class="input-group shadow-sm rounded-3">
-                                <span class="input-group-text bg-white border-end-0">
-                                    <i class="bi bi-search text-muted"></i>
-                                </span>
-                                <input type="text" id="buscadorExamenes" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por ID, nombre de la Materia, salón, fecha o estado...">
-                            </div>
-                        </div>
-                    <div class="col-md-5 col-lg-6 text-end mb-3">
-                        <button onclick="exportarExamenesAExcel()" class="btn btn-success shadow-sm d-inline-flex align-items-center gap-2 px-3 rounded-3 fw-bold">
-                            <i class="bi bi-download fs-5"></i> Exportar a Excel
-                        </button>
-                    </div>
-                    </div>
+                <table class="table table-hover align-middle border">
                     <thead class="table-light">
                         <tr>
                             <th>ID</th><th>Materia</th><th>Fecha y Hora</th><th>Salón</th><th>Estado</th><th class="text-end">Acciones</th>
@@ -47,18 +43,20 @@
         </div>
 
         <div class="tab-pane fade" id="historial" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <div class="row mb-4 mt-2 align-items-center">
-                        <div class="col-md-7 col-lg-6 mb-2 mb-md-0">
-                            <div class="input-group shadow-sm rounded-3">
-                                <span class="input-group-text bg-white border-end-0">
-                                    <i class="bi bi-search text-muted"></i>
-                                </span>
-                                <input type="text" id="buscadorExamenes" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar por materia, salón, fecha, estado o ID...">
-                            </div>
-                        </div>
+            
+            <div class="row mb-3 align-items-center">
+                <div class="col-12 col-md-8 mb-2 mb-md-0">
+                    <div class="input-group shadow-sm rounded-3">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" id="buscadorExamenes2" onkeyup="filtrarExamenes()" class="form-control border-start-0" placeholder="Buscar en historial de actas calificadas...">
                     </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle border">
                     <thead class="table-light">
                         <tr>
                             <th>ID</th><th>Materia</th><th>Fecha y Hora</th><th>Salón</th><th>Estado</th><th class="text-end">Acciones</th>
@@ -69,6 +67,7 @@
                 </table>
             </div>
         </div>
+
     </div>
 </div>
 
