@@ -115,8 +115,69 @@ function cargarETSDisponibles() {
                 const badgeCupo = sinCupo ? `<span class="badge bg-danger-subtle text-danger">Lleno</span>` : `<span class="badge bg-success-subtle text-success">${ets.cupo} disp.</span>`;
 
                 let btnAccion;
+                
                 if (yaInscrito) {
-                    btnAccion = `<button class="btn btn-outline-success btn-sm rounded-pill px-3" disabled><i class="bi bi-check-circle me-1"></i>Inscrito</button>`;
+                    // --- INICIO MAGIA GOOGLE CALENDAR ALUMNO (ETS) ---
+                    let urlCal = "#";
+                    if (ets.fecha && ets.hora) {
+                        // 1. Procesar la fecha (Soporta DD/MM/YYYY o YYYY-MM-DD)
+                        let anio, mes, dia;
+                        if (ets.fecha.includes('/')) {
+                            let fPartes = ets.fecha.split('/');
+                            dia = fPartes[0].padStart(2, '0');
+                            mes = fPartes[1].padStart(2, '0');
+                            anio = fPartes[2];
+                        } else {
+                            let fPartes = ets.fecha.split('-');
+                            anio = fPartes[0];
+                            mes = fPartes[1].padStart(2, '0');
+                            dia = fPartes[2].padStart(2, '0');
+                        }
+                        let fechaLimpia = `${anio}${mes}${dia}`;
+
+                        // 2. Procesar la hora (Soporta 12h AM/PM o 24h)
+                        let horaLimpia = ets.hora.toLowerCase();
+                        let isPM = horaLimpia.includes('pm');
+                        let isAM = horaLimpia.includes('am');
+                        // Quitamos las letras para dejar solo los números
+                        horaLimpia = horaLimpia.replace(/[a-z]/g, '').trim(); 
+                        
+                        let hPartes = horaLimpia.split(':');
+                        let hh = parseInt(hPartes[0], 10);
+                        let mm = hPartes[1] ? hPartes[1].padStart(2, '0') : '00';
+                        
+                        if (isPM && hh < 12) hh += 12; // Convierte 02:00 PM a 14:00
+                        if (isAM && hh === 12) hh = 0; // Convierte 12:00 AM a 00:00
+                        
+                        let hrInicio = `${String(hh).padStart(2, '0')}${mm}00`;
+                        
+                        // 3. Los exámenes ETS suelen tener un bloque de 2 horas
+                        let hrFinInt = hh + 2;
+                        let hrFinStr = String(hrFinInt).padStart(2, '0');
+                        if (hrFinInt >= 24) hrFinStr = "23";
+                        let hrFin = `${hrFinStr}${mm}00`;
+                        
+                        // 4. Juntamos las piezas
+                        let datesCal = `${fechaLimpia}T${hrInicio}/${fechaLimpia}T${hrFin}`;
+                        let titleCal = encodeURIComponent(`Examen ETS: ${ets.materia}`);
+                        let descCal = encodeURIComponent(`Aplicación de Examen a Título de Suficiencia (ETS).\nProfesor: ${ets.profesor}`);
+                        let locCal = encodeURIComponent(ets.salon || 'Por definir');
+                        
+                        urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titleCal}&dates=${datesCal}&details=${descCal}&location=${locCal}`;
+                    }
+                    
+                    // El botón verde de agendar
+                    let botonCalendar = `<a href="${urlCal}" target="_blank" class="btn btn-outline-success btn-sm ms-2 rounded-pill shadow-sm px-3" title="Agendar en mi Google Calendar"><i class="bi bi-calendar-plus"></i> Agendar</a>`;
+                    
+                    // Contenedor flex para poner "Inscrito" y "Agendar" juntos
+                    btnAccion = `
+                        <div class="d-flex justify-content-center align-items-center">
+                            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" disabled><i class="bi bi-check-circle me-1"></i>Inscrito</button>
+                            ${botonCalendar}
+                        </div>
+                    `;
+                    // --- FIN MAGIA GOOGLE CALENDAR ALUMNO (ETS) ---
+
                 } else if (sinCupo) {
                     btnAccion = `<button class="btn btn-secondary btn-sm rounded-pill px-3" disabled>Agotado</button>`;
                 } else {
