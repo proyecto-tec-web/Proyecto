@@ -54,11 +54,16 @@ if (isset($_SESSION['usuario_nombre']) && !empty(trim($_SESSION['usuario_nombre'
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
+        /* Quita el rebote y movimiento lateral, pero ASEGURA el scroll hacia abajo */
+        html, body {
+            overscroll-behavior-y: none;
+            overscroll-behavior-x: none;
+        }
         /* Fondo de pantalla para toda la aplicación */
         body {
             background-image: url('../img/fondo.jpg');
             background-size: cover;
-            background-position: center;
+            background-position: center center;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-color: #f8f9fa;
@@ -162,22 +167,14 @@ if (isset($_SESSION['usuario_nombre']) && !empty(trim($_SESSION['usuario_nombre'
                     
                     <div class="offcanvas-body d-flex flex-column py-4 flex-grow-1">
                         
-                        <div class="text-center mb-4 mt-3 d-none d-md-block">
+                        <div class="text-center mb-4 mt-3">
                             <div class="d-flex justify-content-center align-items-center gap-3 px-3 mb-3">
-                                <img src="../img/logoESCOMBlanco.png" alt="ESCOM" class="img-fluid" style="max-height: 65px;">
-                                <img src="../img/tiburonProfesor.png" alt="Logo Institucional" class="img-fluid" style="max-height: 65px;">
+                                <img src="../img/logoESCOMBlanco.png" alt="ESCOM" class="img-fluid" style="max-height: 60px;">
+                                <img src="../img/tiburonProfesor.png" alt="Logo Institucional" class="img-fluid" style="max-height: 60px;">
                             </div>
                             <h5 class="fw-bold mt-2" style="font-family: 'Montserrat', sans-serif;">Planta Docente</h5>
                             <span class="badge bg-light text-primary mb-2 px-3 py-1 rounded-pill">Profesor</span><br>
                             <small class="text-light opacity-75" style="letter-spacing: 0.5px;"><?php echo $_SESSION['usuario_correo']; ?></small>
-                        </div>
-
-                        <div class="text-center mb-4 d-md-none">
-                            <div class="d-flex justify-content-center align-items-center gap-3 px-4 mb-2">
-                                <img src="../img/logoESCOMBlanco.png" alt="ESCOM" class="img-fluid" style="max-height: 50px;">
-                                <img src="../img/tiburonProfesor.png" alt="Logo Institucional" class="img-fluid" style="max-height: 50px;">
-                            </div>
-                            <br><small class="text-light opacity-75"><?php echo $_SESSION['usuario_correo']; ?></small>
                         </div>
 
                         <hr class="text-secondary mt-0 mb-4 border-2 opacity-25">
