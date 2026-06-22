@@ -1,3 +1,8 @@
+// =================================================================
+// MÓDULO PROFESOR: SISTEMA INTEGRAL (Dashboard, ETS, Revisiones)
+// =================================================================
+console.log('PROFESOR.JS CARGADO CORRECTAMENTE');
+
 // ==========================================
 // MÓDULO PROFESOR: DASHBOARD Y KPIs
 // Vista: vistasProfesor/dashboard_profesor.php
@@ -48,6 +53,7 @@ function cargarKPIsProfesor() {
 // ==========================================
 
 function cargarMisExamenes() {
+    console.log("¡La función cargarMisExamenes sí se está ejecutando!");
     const tbodyActivos = document.getElementById('tbody-examenes-activos');
     const tbodyHistorial = document.getElementById('tbody-examenes-historial');
     
@@ -259,6 +265,7 @@ let validadorAgendarCita = null;
 let validadorEjecutarRevision = null;
 
 function inicializarJustValidateRevisiones() {
+    console.log("Inicializando validadores de JustValidate para Revisiones...");
     // 1. Validador para el Modal de Agendar Cita
     const formCita = document.getElementById('form-agendar-cita');
     if (formCita) {
@@ -348,6 +355,7 @@ function inicializarJustValidateRevisiones() {
 }
 
 function cargarRevisiones() {
+    console.log("Cargando peticiones de revisión para el profesor...");
     const tbody = document.getElementById('tbody-revisiones');
     if (!tbody) return;
 
@@ -380,6 +388,7 @@ function cargarRevisiones() {
                     botonAccion = `<button class="btn btn-info btn-sm fw-bold shadow-sm text-dark" onclick="abrirModalAgendarCita(${rev.id_peticion}, '${rev.boleta} - ${rev.nombre}', '${califActual}', '${motivoSeguro}')"><i class="bi bi-calendar-event"></i> Agendar Cita</button>`;
                 
                 } else if (rev.estado === 'Agendada') {
+                    
                     badgeEstado = 'warning';
                     
                     let btnCalificar = `<button class="btn btn-warning btn-sm fw-bold shadow-sm text-dark" onclick="abrirModalAsentarCalificacion(${rev.id_peticion}, ${rev.calificacion_actual})"><i class="bi bi-pencil-square"></i> Calificar</button>`;
@@ -470,6 +479,7 @@ function cargarRevisiones() {
 
 // Abre Modal 1 (Cita) - Recibe calificación y motivo
 window.abrirModalAgendarCita = function(idPeticion, alumnoInfo, califActual, motivo) {
+    console.log("Abriendo Modal de Agendar Cita para la petición ID:", idPeticion);
     document.getElementById('cita-id-peticion').value = idPeticion;
     document.getElementById('cita-alumno-nombre').value = alumnoInfo;
     
@@ -488,6 +498,7 @@ window.abrirModalAgendarCita = function(idPeticion, alumnoInfo, califActual, mot
 
 // Abre Modal 2 (Calificar)
 window.abrirModalAsentarCalificacion = function(idPeticion, califActual) {
+    console.log("Abriendo Modal de Ejecutar Revisión para la petición ID:", idPeticion);
     document.getElementById('rev-id-peticion').value = idPeticion;
     document.getElementById('rev-calif-actual').value = (califActual !== null && califActual !== 'null') ? califActual : '0.0';
     
@@ -503,6 +514,7 @@ window.abrirModalAsentarCalificacion = function(idPeticion, califActual) {
 // ==========================================
 
 window.imprimirPaseDeLista = function(idExamen) {
+    console.log("Generando pase de lista para el examen:", idExamen);
     window.open(`/php/endpoints/generar_pase_lista.php?id_examen=${idExamen}`, '_blank');
 };
 
@@ -514,6 +526,7 @@ window.imprimirPaseDeLista = function(idExamen) {
 let miGraficaRendimiento = null;
 
 function pintarGraficaRendimiento() {
+    console.log("Pintando gráfica de rendimiento del profesor...");
     const canvas = document.getElementById('graficaRendimiento');
     if (!canvas) return; 
 
@@ -569,6 +582,7 @@ function pintarGraficaRendimiento() {
             // Destruimos la gráfica anterior si existía
             if (miGraficaRendimiento) {
                 miGraficaRendimiento.destroy();
+                console.log("Gráfica anterior destruida para evitar superposición.");
             }
 
             // Creamos la nueva gráfica de barras
@@ -625,6 +639,7 @@ function pintarGraficaRendimiento() {
 // ==========================================
 
 function solicitarNIPParaGuardar(idExamen) {
+    console.log("Solicitando NIP para guardar calificaciones del examen ID:", idExamen);
     Swal.fire({
         title: '<h3 style="font-family: \'Montserrat\', sans-serif; font-weight: bold; color: #004ec2;">Firma Electrónica</h3>',
         html: 'Por seguridad, ingresa tu <b>NIP de 4 dígitos</b> para asentar esta acta de forma definitiva.',
@@ -680,6 +695,7 @@ function solicitarNIPParaGuardar(idExamen) {
 // ==========================================
 
 function ejecutarGuardadoFinal(idExamen) {
+    console.log("Ejecutando guardado final de calificaciones para el examen ID:", idExamen);
     const inputs = document.querySelectorAll('.input-calificacion');
     let calificaciones = [];
 
@@ -749,6 +765,7 @@ function ejecutarGuardadoFinal(idExamen) {
 // ==========================================
 
 window.exportarActaCSV = function() {
+    console.log("Iniciando exportación de acta a CSV para el examen ID:", idExamenActual);
     const filas = document.querySelectorAll('#tbody-alumnos-examen tr');
     
     // Si la tabla está vacía o solo tiene el mensaje de "No hay alumnos"
@@ -792,6 +809,7 @@ window.exportarActaCSV = function() {
 // ==========================================
 
 function filtrarExamenes() {
+    console.log("Ejecutando función de filtrado de exámenes en tiempo real...");
     // 1. Buscamos todas las barras de búsqueda en la vista
     const buscadores = document.querySelectorAll("#buscadorExamenes");
     let filtro = "";
@@ -839,6 +857,7 @@ function filtrarExamenes() {
 // ==========================================
 
 function filtrarRevisiones() {
+    console.log("Ejecutando función de filtrado de revisiones en tiempo real...");
     const input = document.getElementById("buscadorRevisiones");
     if (!input) return; // Si no encuentra el buscador, se detiene
     
@@ -879,6 +898,7 @@ function filtrarRevisiones() {
 // ==========================================
 
 function exportarExamenesAExcel() {
+    console.log("Iniciando exportación de tabla a Excel...");
     const tabla = document.querySelector("table");
     if (!tabla) return;
 
